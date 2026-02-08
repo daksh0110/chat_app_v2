@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/core/app_routes.dart';
+import 'package:my_app/screens/home.dart';
 import 'package:my_app/screens/log_in.dart';
 import 'package:my_app/screens/onboarding_screen.dart';
 import 'package:my_app/screens/sign_up.dart';
@@ -19,11 +20,10 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(fontFamily: "Caros"),
 
-      initialRoute: AppRoutes.onboarding,
+      initialRoute: AppRoutes.home,
 
       routes: {
-        AppRoutes.home: (context) =>
-            const MyHomePage(title: 'Flutter Demo Home Page'),
+        AppRoutes.home: (context) => Home(),
         AppRoutes.onboarding: (context) => const OnboardingScreen(),
         AppRoutes.logIn: (context) => const LogIn(),
         AppRoutes.signUp: (context) => const SignUp(),

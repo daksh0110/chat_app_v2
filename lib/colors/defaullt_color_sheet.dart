@@ -9,4 +9,7 @@ class DefaultColorSheet {
   static const Color primary = Color(0xFF24786D);
   static const Color disbaledButton = Color(0xFFF3F6F6);
   static const Color error = Color(0xFFFF2D1B);
+  static const Color white100 = Color(0xFFEEFAF8);
+  static const Color lightBlack = Color(0xFF000E08);
+  static const Color red100 = Color(0xFFF04A4C);
 }

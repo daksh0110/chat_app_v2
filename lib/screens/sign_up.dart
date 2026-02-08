@@ -36,9 +36,7 @@ class _SignUpState extends State<SignUp> {
     confirmPasswordController.addListener(_onTextChange);
   }
 
-  void _onTextChange() {
-    setState(() {});
-  }
+  void _onTextChange() => setState(() {});
 
   @override
   void dispose() {
@@ -51,7 +49,7 @@ class _SignUpState extends State<SignUp> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDisabled = !isFormFilled;
+    final isDisabled = !isFormFilled;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -63,141 +61,145 @@ class _SignUpState extends State<SignUp> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: SizedBox(
-            width: double.infinity,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const SizedBox(height: 60),
+          child: Column(
+            children: [
+              const SizedBox(height: 60),
 
-                const PrimaryText(
-                  "Sign up with Email",
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  textAlign: TextAlign.center,
-                ),
+              const PrimaryText(
+                "Sign up with Email",
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
 
-                const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-                const Padding(
-                  padding: EdgeInsets.all(13),
-                  child: PrimaryText(
-                    "Get chatting with friends and family today by signing up for our chat app!",
-                    textAlign: TextAlign.center,
-                    color: DefaultColorSheet.grey500,
-                  ),
-                ),
+              const PrimaryText(
+                "Get chatting with friends and family today by signing up for our chat app!",
+                textAlign: TextAlign.center,
+                color: DefaultColorSheet.grey500,
+              ),
 
-                const SizedBox(height: 30),
+              const SizedBox(height: 30),
 
-                SocialIconButton(
-                  assetPath: "assets/screens/onboarding_screen/google.svg",
-                  onTap: () {},
-                ),
+              SocialIconButton(
+                assetPath: "assets/screens/onboarding_screen/google.svg",
+                onTap: () {},
+              ),
 
-                const SizedBox(height: 30),
+              const SizedBox(height: 30),
+              const DividerText(text: "OR"),
+              const SizedBox(height: 30),
 
-                const DividerText(
-                  text: "OR",
-                  textColor: DefaultColorSheet.grey500,
-                ),
+              /// 🔥 SCROLLABLE AREA
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return SingleChildScrollView(
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: constraints.maxHeight,
+                        ),
+                        child: IntrinsicHeight(
+                          child: Column(
+                            children: [
+                              Form(
+                                key: _formKey,
+                                child: Column(
+                                  children: [
+                                    PrimaryTextField(
+                                      label: "Your name",
+                                      controller: nameController,
+                                      validator: (value) => value!.isEmpty
+                                          ? "Name is required"
+                                          : null,
+                                    ),
 
-                const SizedBox(height: 30),
+                                    const SizedBox(height: 24),
 
-                Expanded(
-                  child: Column(
-                    children: [
-                      Form(
-                        key: _formKey,
-                        child: Column(
-                          children: [
-                            PrimaryTextField(
-                              label: "Your name",
-                              controller: nameController,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return "Name is required";
-                                }
-                                return null;
-                              },
-                            ),
+                                    PrimaryTextField(
+                                      label: "Email",
+                                      controller: emailController,
+                                      keyboardType: TextInputType.emailAddress,
+                                      validator: (value) {
+                                        if (value!.isEmpty) {
+                                          return "Email is required";
+                                        }
+                                        if (!RegExp(
+                                          r'^[^@]+@[^@]+\.[^@]+',
+                                        ).hasMatch(value)) {
+                                          return "Enter a valid email";
+                                        }
+                                        return null;
+                                      },
+                                    ),
 
-                            const SizedBox(height: 24),
+                                    const SizedBox(height: 24),
 
-                            PrimaryTextField(
-                              label: "Email",
-                              controller: emailController,
-                              keyboardType: TextInputType.emailAddress,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return "Email is required";
-                                }
-                                if (!RegExp(
-                                  r'^[^@]+@[^@]+\.[^@]+',
-                                ).hasMatch(value)) {
-                                  return "Enter a valid email";
-                                }
-                                return null;
-                              },
-                            ),
+                                    PrimaryTextField(
+                                      label: "Password",
+                                      controller: passwordController,
+                                      obscureText: true,
+                                      validator: (value) {
+                                        if (value!.isEmpty) {
+                                          return "Password is required";
+                                        }
+                                        if (value.length < 6) {
+                                          return "Minimum 6 characters";
+                                        }
+                                        return null;
+                                      },
+                                    ),
 
-                            const SizedBox(height: 24),
+                                    const SizedBox(height: 24),
 
-                            PrimaryTextField(
-                              label: "Password",
-                              controller: passwordController,
-                              obscureText: true,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return "Password is required";
-                                }
-                                if (value.length < 6) {
-                                  return "Password must be at least 6 characters";
-                                }
-                                return null;
-                              },
-                            ),
+                                    PrimaryTextField(
+                                      label: "Confirm Password",
+                                      controller: confirmPasswordController,
+                                      obscureText: true,
+                                      validator: (value) {
+                                        if (value!.isEmpty) {
+                                          return "Confirm your password";
+                                        }
+                                        if (value != passwordController.text) {
+                                          return "Passwords do not match";
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
 
-                            const SizedBox(height: 24),
+                              const Spacer(),
 
-                            PrimaryTextField(
-                              label: "Confirm Password",
-                              controller: confirmPasswordController,
-                              obscureText: true,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return "Confirm your password";
-                                }
-                                if (value != passwordController.text) {
-                                  return "Passwords do not match";
-                                }
-                                return null;
-                              },
-                            ),
-                          ],
+                              PrimaryButton(
+                                text: "Create Account",
+                                onPressed: isDisabled
+                                    ? () {}
+                                    : () {
+                                        Navigator.pushNamed(context, "/");
+                                      },
+                                backgroundColor: isDisabled
+                                    ? DefaultColorSheet.disbaledButton
+                                    : DefaultColorSheet.primary,
+                                borderColor: isDisabled
+                                    ? DefaultColorSheet.disbaledButton
+                                    : DefaultColorSheet.primary,
+                                textColor: isDisabled
+                                    ? DefaultColorSheet.grey500
+                                    : Colors.white,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-
-                      const Spacer(),
-
-                      PrimaryButton(
-                        text: "Create Account",
-                        onPressed: () {},
-                        backgroundColor: isDisabled
-                            ? DefaultColorSheet.disbaledButton
-                            : DefaultColorSheet.primary,
-                        borderColor: isDisabled
-                            ? DefaultColorSheet.disbaledButton
-                            : DefaultColorSheet.primary,
-                        textColor: isDisabled
-                            ? DefaultColorSheet.grey500
-                            : Colors.white,
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

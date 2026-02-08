@@ -142,7 +142,11 @@ class _LogInState extends State<LogIn> {
 
                       PrimaryButton(
                         text: "Log In",
-                        onPressed: () {},
+                        onPressed: isDisabled
+                            ? () {}
+                            : () {
+                                Navigator.pushNamed(context, "/");
+                              },
                         backgroundColor: isDisabled
                             ? DefaultColorSheet.disbaledButton
                             : DefaultColorSheet.primary,
