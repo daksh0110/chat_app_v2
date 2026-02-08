@@ -1,0 +1,12 @@
+import 'package:flutter/material.dart';
+
+class DefaultColorSheet {
+  static const Color grey400 = Color(0xFFB9C1BE);
+  static const Color grey300 = Color(0xFFA8B0AF);
+  static const Color grey200 = Color(0xFFD6E4E0);
+  static const Color grey100 = Color.fromRGBO(205, 209, 208, 0.2);
+  static const Color grey500 = Color(0xFF797C7B);
+  static const Color primary = Color(0xFF24786D);
+  static const Color disbaledButton = Color(0xFFF3F6F6);
+  static const Color error = Color(0xFFFF2D1B);
+}
