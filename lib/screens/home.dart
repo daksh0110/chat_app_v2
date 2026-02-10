@@ -28,7 +28,17 @@ class _HomeState extends State<Home> {
         actionsPadding: EdgeInsets.all(24),
         actions: [Image.asset("assets/screens/home/user1.png", height: 44)],
         backgroundColor: Colors.black,
-        leading: const Icon(Icons.search, color: Colors.white),
+        leading: Builder(
+          builder: (context) {
+            return IconButton(
+              onPressed: () {
+                Navigator.pushNamed(context, "/search");
+              },
+              icon: const Icon(Icons.search, color: Colors.white),
+            );
+          },
+        ),
+
         centerTitle: true,
         title: PrimaryText("Home", fontSize: 20, color: Colors.white),
       ),
@@ -45,16 +55,32 @@ class _HomeState extends State<Home> {
                   topStart: Radius.circular(40),
                 ),
               ),
-              child: ListView.builder(
-                itemCount: data.length,
-                itemBuilder: (context, index) {
-                  return ChatListItem(
-                    chat: data[index],
-                    onTap: () {
-                      // navigate to chat screen
-                    },
-                  );
-                },
+              child: Column(
+                children: [
+                  const SizedBox(height: 12),
+
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade400,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+
+                  const SizedBox(height: 5),
+
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: data.length,
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      itemBuilder: (context, index) {
+                        return ChatListItem(chat: data[index], onTap: () {});
+                      },
+                      separatorBuilder: (_, __) => const SizedBox(height: 1),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

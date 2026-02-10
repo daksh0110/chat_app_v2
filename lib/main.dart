@@ -3,6 +3,7 @@ import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/screens/home.dart';
 import 'package:my_app/screens/log_in.dart';
 import 'package:my_app/screens/onboarding_screen.dart';
+import 'package:my_app/screens/search.dart';
 import 'package:my_app/screens/sign_up.dart';
 
 void main() {
@@ -27,6 +28,7 @@ class MyApp extends StatelessWidget {
         AppRoutes.onboarding: (context) => const OnboardingScreen(),
         AppRoutes.logIn: (context) => const LogIn(),
         AppRoutes.signUp: (context) => const SignUp(),
+        AppRoutes.search: (context) => const Search(),
       },
     );
   }
