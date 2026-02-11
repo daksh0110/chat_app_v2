@@ -7,18 +7,32 @@ import 'package:my_app/widgets/comman/user_bubble.dart';
 class SearchGroupItem extends StatelessWidget {
   final SearchItem item;
   final VoidCallback? onTap;
+  final double height;
+  final double chatBubbleSize;
+  final bool needActiveIndicator;
 
-  const SearchGroupItem({super.key, required this.item, this.onTap});
+  const SearchGroupItem({
+    super.key,
+    required this.item,
+    this.onTap,
+    this.height = 52,
+    this.chatBubbleSize = 52,
+    this.needActiveIndicator = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
       child: SizedBox(
-        height: 52,
+        height: height,
         child: Row(
           children: [
-            UserBubble(profilePic: item.profilePic),
+            UserBubble(
+              profilePic: item.profilePic,
+              size: 52,
+              needActiveIndicator: needActiveIndicator,
+            ),
             const SizedBox(width: 10),
             Column(
               mainAxisAlignment: MainAxisAlignment.start,

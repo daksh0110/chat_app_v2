@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/screens/home.dart';
 import 'package:my_app/screens/log_in.dart';
+import 'package:my_app/screens/message.dart';
 import 'package:my_app/screens/onboarding_screen.dart';
 import 'package:my_app/screens/search.dart';
 import 'package:my_app/screens/sign_up.dart';
@@ -29,6 +30,7 @@ class MyApp extends StatelessWidget {
         AppRoutes.logIn: (context) => const LogIn(),
         AppRoutes.signUp: (context) => const SignUp(),
         AppRoutes.search: (context) => const Search(),
+        AppRoutes.message: (context) => const MessageScreen(),
       },
     );
   }

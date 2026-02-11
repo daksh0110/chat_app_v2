@@ -12,4 +12,6 @@ class DefaultColorSheet {
   static const Color white100 = Color(0xFFEEFAF8);
   static const Color lightBlack = Color(0xFF000E08);
   static const Color red100 = Color(0xFFF04A4C);
+  static const Color activeGreen = Color(0xFF2BEF83);
+  static const Color green500 = Color(0xFF20A090);
 }
