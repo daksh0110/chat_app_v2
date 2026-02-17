@@ -1,19 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
+import 'package:my_app/core/network/api_client.dart';
+import 'package:my_app/data/services/user_api_service.dart';
+import 'package:my_app/modal/screens/signup/register_user.dart';
+import 'package:my_app/providers/auth_notifier_provider.dart';
 import 'package:my_app/widgets/comman/divider_text.dart';
 import 'package:my_app/widgets/comman/primary_button.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
 import 'package:my_app/widgets/comman/primary_text_field.dart';
 import 'package:my_app/widgets/comman/social_icon_button.dart';
+import 'package:toastification/toastification.dart';
 
-class SignUp extends StatefulWidget {
+class SignUp extends ConsumerStatefulWidget {
   const SignUp({super.key});
 
   @override
-  State<SignUp> createState() => _SignUpState();
+  ConsumerState<SignUp> createState() => _SignUpState();
 }
 
-class _SignUpState extends State<SignUp> {
+class _SignUpState extends ConsumerState<SignUp> {
   final _formKey = GlobalKey<FormState>();
 
   final nameController = TextEditingController();
@@ -25,7 +31,8 @@ class _SignUpState extends State<SignUp> {
       nameController.text.isNotEmpty &&
       emailController.text.isNotEmpty &&
       passwordController.text.isNotEmpty &&
-      confirmPasswordController.text.isNotEmpty;
+      confirmPasswordController.text.isNotEmpty &&
+      passwordController.text == confirmPasswordController.text;
 
   @override
   void initState() {
@@ -37,6 +44,32 @@ class _SignUpState extends State<SignUp> {
   }
 
   void _onTextChange() => setState(() {});
+
+  void onSubmit() async {
+    final name = nameController.text;
+    final email = emailController.text;
+    final password = passwordController.text;
+    final ApiClient apiClient = ApiClient();
+    final result = await UserApiService(apiClient).createUser(
+      RegisterUser(name: name, email: email, password: password).toJson(),
+    );
+
+    if (!result.success) {
+      toastification.show(
+        context: context,
+        title: PrimaryText(result.message, color: Colors.white, fontSize: 18),
+        type: ToastificationType.error,
+        autoCloseDuration: Duration(seconds: 5),
+        style: ToastificationStyle.fillColored,
+      );
+    }
+
+    final data = result.data;
+    await ref.watch(authProvider.notifier).login(data?.accessToken ?? "");
+    if (!mounted) return;
+
+    Navigator.of(context).pop();
+  }
 
   @override
   void dispose() {
@@ -178,9 +211,10 @@ class _SignUpState extends State<SignUp> {
                                 text: "Create Account",
                                 onPressed: isDisabled
                                     ? () {}
-                                    : () {
-                                        Navigator.pushNamed(context, "/");
-                                      },
+                                    // : () {
+                                    //     Navigator.pushNamed(context, "/");
+                                    //   },
+                                    : onSubmit,
                                 backgroundColor: isDisabled
                                     ? DefaultColorSheet.disbaledButton
                                     : DefaultColorSheet.primary,

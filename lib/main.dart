@@ -1,28 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/core/app_routes.dart';
+import 'package:my_app/providers/auth_notifier_provider.dart';
 import 'package:my_app/screens/home.dart';
 import 'package:my_app/screens/log_in.dart';
 import 'package:my_app/screens/message.dart';
 import 'package:my_app/screens/onboarding_screen.dart';
 import 'package:my_app/screens/search.dart';
 import 'package:my_app/screens/sign_up.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const ProviderScope(child: MyApp()));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+
     return MaterialApp(
       title: 'Flutter Demo',
-
       debugShowCheckedModeBanner: false,
       theme: ThemeData(fontFamily: "Caros"),
 
-      initialRoute: AppRoutes.home,
+      home: authState.when(
+        loading: () =>
+            const Scaffold(body: Center(child: CircularProgressIndicator())),
+
+        error: (err, stack) =>
+            const Scaffold(body: Center(child: Text("Something went wrong"))),
+
+        data: (state) {
+          print(state);
+          if (state == AuthState.authenticated) {
+            return Home();
+          } else {
+            return const OnboardingScreen();
+          }
+        },
+      ),
 
       routes: {
         AppRoutes.home: (context) => Home(),
@@ -33,16 +51,5 @@ class MyApp extends StatelessWidget {
         AppRoutes.message: (context) => const MessageScreen(),
       },
     );
-  }
-}
-
-class MyHomePage extends StatelessWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(body: Center(child: Text(title)));
   }
 }

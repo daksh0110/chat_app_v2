@@ -1,19 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
+import 'package:my_app/core/network/api_client.dart';
+import 'package:my_app/data/services/user_api_service.dart';
+import 'package:my_app/modal/screens/login/login_user.dart';
+import 'package:my_app/providers/auth_notifier_provider.dart';
 import 'package:my_app/widgets/comman/divider_text.dart';
 import 'package:my_app/widgets/comman/primary_button.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
 import 'package:my_app/widgets/comman/primary_text_field.dart';
 import 'package:my_app/widgets/comman/social_icon_button.dart';
+import 'package:toastification/toastification.dart';
 
-class LogIn extends StatefulWidget {
+class LogIn extends ConsumerStatefulWidget {
   const LogIn({super.key});
 
   @override
-  State<LogIn> createState() => _LogInState();
+  ConsumerState<LogIn> createState() => _LogInState();
 }
 
-class _LogInState extends State<LogIn> {
+class _LogInState extends ConsumerState<LogIn> {
   final _formKey = GlobalKey<FormState>();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
@@ -37,6 +43,31 @@ class _LogInState extends State<LogIn> {
     emailController.dispose();
     passwordController.dispose();
     super.dispose();
+  }
+
+  void _onLogin() async {
+    final String email = emailController.text;
+    final String password = passwordController.text;
+    final ApiClient apiClient = ApiClient();
+    final result = await UserApiService(
+      apiClient,
+    ).loginUser(LoginUser(email: email, password: password).toJson());
+    if (!result.success) {
+      if (!mounted) return;
+      toastification.show(
+        context: context,
+        title: PrimaryText(result.message, color: Colors.white, fontSize: 18),
+        type: ToastificationType.error,
+        autoCloseDuration: Duration(seconds: 5),
+        style: ToastificationStyle.fillColored,
+      );
+      return;
+    }
+    final data = result.data;
+    await ref.read(authProvider.notifier).login(data?.accessToken ?? "");
+    if (!mounted) return;
+
+    Navigator.of(context).pop();
   }
 
   @override
@@ -142,11 +173,7 @@ class _LogInState extends State<LogIn> {
 
                       PrimaryButton(
                         text: "Log In",
-                        onPressed: isDisabled
-                            ? () {}
-                            : () {
-                                Navigator.pushNamed(context, "/");
-                              },
+                        onPressed: isDisabled ? () {} : _onLogin,
                         backgroundColor: isDisabled
                             ? DefaultColorSheet.disbaledButton
                             : DefaultColorSheet.primary,
