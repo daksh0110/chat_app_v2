@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/providers/auth_notifier_provider.dart';
-import 'package:my_app/screens/home.dart';
+import 'package:my_app/screens/main_screen.dart';
 import 'package:my_app/screens/log_in.dart';
 import 'package:my_app/screens/message.dart';
 import 'package:my_app/screens/onboarding_screen.dart';
 import 'package:my_app/screens/search.dart';
+import 'package:my_app/screens/settings/settings_main.dart';
 import 'package:my_app/screens/sign_up.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -33,9 +34,8 @@ class MyApp extends ConsumerWidget {
             const Scaffold(body: Center(child: Text("Something went wrong"))),
 
         data: (state) {
-          print(state);
           if (state == AuthState.authenticated) {
-            return Home();
+            return MainScreen();
           } else {
             return const OnboardingScreen();
           }
@@ -43,12 +43,13 @@ class MyApp extends ConsumerWidget {
       ),
 
       routes: {
-        AppRoutes.home: (context) => Home(),
+        AppRoutes.home: (context) => MainScreen(),
         AppRoutes.onboarding: (context) => const OnboardingScreen(),
         AppRoutes.logIn: (context) => const LogIn(),
         AppRoutes.signUp: (context) => const SignUp(),
         AppRoutes.search: (context) => const Search(),
         AppRoutes.message: (context) => const MessageScreen(),
+        AppRoutes.settingsMain: (context) => const SettingsMain(),
       },
     );
   }
