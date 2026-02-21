@@ -10,6 +10,7 @@ class SearchGroupItem extends StatelessWidget {
   final double height;
   final double chatBubbleSize;
   final bool needActiveIndicator;
+  final List<Widget>? actionWidget;
 
   const SearchGroupItem({
     super.key,
@@ -18,6 +19,7 @@ class SearchGroupItem extends StatelessWidget {
     this.height = 52,
     this.chatBubbleSize = 52,
     this.needActiveIndicator = false,
+    this.actionWidget,
   });
 
   @override
@@ -58,6 +60,12 @@ class SearchGroupItem extends StatelessWidget {
                 ],
               ],
             ),
+            ...[
+              if (actionWidget != null) ...[
+                const SizedBox(width: 10),
+                ...actionWidget!,
+              ],
+            ],
           ],
         ),
       ),

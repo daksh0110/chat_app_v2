@@ -9,7 +9,7 @@ final List<NavigationMenuModal> menu = [
   NavigationMenuModal(
     label: "Message",
     icon: LucideIcons.messageCircleMore,
-    screen: () => Homescreen(data: []),
+    screen: ({dynamic data}) => Homescreen(data: data),
     appBar: (context) => AppBar(
       toolbarHeight: 90,
       actionsPadding: const EdgeInsets.all(24),
@@ -32,7 +32,7 @@ final List<NavigationMenuModal> menu = [
   NavigationMenuModal(
     label: "Calls",
     icon: LucideIcons.phone,
-    screen: () => const Center(),
+    screen: ({data}) => const Center(),
     appBar: (context) => AppBar(
       toolbarHeight: 90,
       actionsPadding: const EdgeInsets.all(24),
@@ -54,7 +54,7 @@ final List<NavigationMenuModal> menu = [
   NavigationMenuModal(
     label: "Contacts",
     icon: LucideIcons.circleUserRound,
-    screen: () => const SettingsMain(),
+    screen: ({data}) => const SettingsMain(),
     appBar: (context) => AppBar(
       toolbarHeight: 90,
       actionsPadding: const EdgeInsets.all(24),
@@ -76,7 +76,7 @@ final List<NavigationMenuModal> menu = [
   NavigationMenuModal(
     label: "Settings",
     icon: LucideIcons.settings,
-    screen: () => const SettingsMain(),
+    screen: ({data}) => const SettingsMain(),
     appBar: (context) => AppBar(
       toolbarHeight: 90,
       actionsPadding: const EdgeInsets.all(24),

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/data/dummy_chat_list.dart';
 import 'package:my_app/data/navigation_menu.dart';
+import 'package:my_app/modal/chat_list_modal.dart';
+import 'package:my_app/screens/homescreen.dart';
+import 'package:my_app/screens/settings/settings_main.dart';
 import 'package:my_app/widgets/screens/home/bottom_nav_item.dart';
 
 class MainScreen extends StatefulWidget {
@@ -11,6 +15,20 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int currentActive = 0;
+  final List<ChatListModal> data = dummyChatListData;
+
+  late final List<Widget> screens;
+
+  @override
+  void initState() {
+    super.initState();
+    screens = [
+      Homescreen(data: data),
+      const Center(child: Text("Calls Screen", style: TextStyle(color: Colors.white))),
+      const SettingsMain(),
+      const SettingsMain(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,11 +36,8 @@ class _MainScreenState extends State<MainScreen> {
 
     return Scaffold(
       backgroundColor: Colors.black,
-
       appBar: currentItem.appBar(context),
-
-      body: currentItem.screen(),
-
+      body: screens[currentActive],
       bottomNavigationBar: BottomAppBar(
         color: Colors.white,
         child: SizedBox(
