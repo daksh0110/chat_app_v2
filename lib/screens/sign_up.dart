@@ -4,12 +4,13 @@ import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/core/network/api_client.dart';
 import 'package:my_app/data/services/user_api_service.dart';
 import 'package:my_app/modal/screens/signup/register_user.dart';
+import 'package:my_app/modal/screens/signup/register_user_argument.dart';
 import 'package:my_app/providers/auth_notifier_provider.dart';
 import 'package:my_app/widgets/comman/divider_text.dart';
+import 'package:my_app/widgets/comman/google_auth_login.dart';
 import 'package:my_app/widgets/comman/primary_button.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
 import 'package:my_app/widgets/comman/primary_text_field.dart';
-import 'package:my_app/widgets/comman/social_icon_button.dart';
 import 'package:toastification/toastification.dart';
 
 class SignUp extends ConsumerStatefulWidget {
@@ -33,6 +34,21 @@ class _SignUpState extends ConsumerState<SignUp> {
       passwordController.text.isNotEmpty &&
       confirmPasswordController.text.isNotEmpty &&
       passwordController.text == confirmPasswordController.text;
+  RegisterUserArgument? args;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (args == null) {
+      args =
+          ModalRoute.of(context)?.settings.arguments as RegisterUserArgument?;
+
+      if (args != null) {
+        nameController.text = args!.name ?? "";
+        emailController.text = args!.email ?? "";
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -114,10 +130,7 @@ class _SignUpState extends ConsumerState<SignUp> {
 
               const SizedBox(height: 30),
 
-              SocialIconButton(
-                assetPath: "assets/screens/onboarding_screen/google.svg",
-                onTap: () {},
-              ),
+              GoogleAuthLogin(),
 
               const SizedBox(height: 30),
               const DividerText(text: "OR"),

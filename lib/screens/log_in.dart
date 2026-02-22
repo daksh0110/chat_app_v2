@@ -6,10 +6,10 @@ import 'package:my_app/data/services/user_api_service.dart';
 import 'package:my_app/modal/screens/login/login_user.dart';
 import 'package:my_app/providers/auth_notifier_provider.dart';
 import 'package:my_app/widgets/comman/divider_text.dart';
+import 'package:my_app/widgets/comman/google_auth_login.dart';
 import 'package:my_app/widgets/comman/primary_button.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
 import 'package:my_app/widgets/comman/primary_text_field.dart';
-import 'package:my_app/widgets/comman/social_icon_button.dart';
 import 'package:toastification/toastification.dart';
 
 class LogIn extends ConsumerStatefulWidget {
@@ -111,10 +111,7 @@ class _LogInState extends ConsumerState<LogIn> {
 
                 const SizedBox(height: 30),
 
-                SocialIconButton(
-                  assetPath: "assets/screens/onboarding_screen/google.svg",
-                  onTap: () {},
-                ),
+                GoogleAuthLogin(),
 
                 const SizedBox(height: 30),
 

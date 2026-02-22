@@ -1,14 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/widgets/comman/divider_text.dart';
+import 'package:my_app/widgets/comman/google_auth_login.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
 import 'package:my_app/widgets/comman/secondary_button.dart';
-import 'package:my_app/widgets/comman/social_icon_button.dart';
 
-class OnboardingScreen extends StatelessWidget {
+class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
+
+  @override
+  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
+}
+
+class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,13 +34,11 @@ class OnboardingScreen extends StatelessWidget {
         body: Stack(
           fit: StackFit.expand,
           children: [
-            // Background image
             Image.asset(
               "assets/screens/onboarding_screen/Onboarding.jpg",
               fit: BoxFit.cover,
             ),
 
-            // Foreground content (acts like normal layout)
             SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
@@ -65,22 +74,22 @@ class OnboardingScreen extends StatelessWidget {
                       fontSize: 16,
                     ),
                     const SizedBox(height: 38),
-                    SocialIconButton(
-                      assetPath: "assets/screens/onboarding_screen/google.svg",
-                      onTap: () {
-                        print("Google login");
-                      },
-                    ),
+
+                    GoogleAuthLogin(),
+
                     const SizedBox(height: 30),
                     DividerText(text: "OR"),
                     const SizedBox(height: 30),
+
                     SecondaryButton(
                       text: "Sign up with mail",
                       onPressed: () {
                         Navigator.pushNamed(context, AppRoutes.signUp);
                       },
                     ),
+
                     const SizedBox(height: 46),
+
                     InkWell(
                       onTap: () {
                         Navigator.pushNamed(context, AppRoutes.logIn);

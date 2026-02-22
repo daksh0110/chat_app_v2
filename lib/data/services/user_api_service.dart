@@ -1,6 +1,7 @@
 import 'package:my_app/core/network/api_client.dart';
 import 'package:my_app/core/network/api_constant.dart';
 import 'package:my_app/modal/api_response.dart';
+import 'package:my_app/modal/google_auth_response.dart';
 import 'package:my_app/modal/sucessfull_authentication.dart';
 
 class UserApiService {
@@ -42,6 +43,22 @@ class UserApiService {
             SucessfullAuthentication.fromJson(json as Map<String, dynamic>),
       );
 
+      return apiResponse;
+    } catch (e) {
+      throw Exception("Create user failed: $e");
+    }
+  }
+
+  Future<ApiResponse<GoogleAuthResponse>> googleAuth(data) async {
+    try {
+      final response = await apiClient.post(
+        "${ApiConstants.baseUrl}${ApiConstants.users}/google/auth",
+        {"token": data},
+      );
+      final apiResponse = ApiResponse<GoogleAuthResponse>.fromJson(
+        response,
+        (json) => GoogleAuthResponse.fromJson(json as Map<String, dynamic>),
+      );
       return apiResponse;
     } catch (e) {
       throw Exception("Create user failed: $e");

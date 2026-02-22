@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "781228422790",
+    "project_id": "atlas-messenger-488106",
+    "storage_bucket": "atlas-messenger-488106.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:781228422790:android:af25c3e37c8eb2361d0307",
+        "android_client_info": {
+          "package_name": "com.example.atlas"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "781228422790-8gehfs9p2gn6mg9e6g2jd98gf0s6quer.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.atlas",
+            "certificate_hash": "e050a051625d508b3a4f2277e6bc07eddbfbcac2"
+          }
+        },
+        {
+          "client_id": "781228422790-b1j3l7gna8vtegqe4kcn152bi7njojio.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAoMgnsh-cSkiXYPSnoLME2RWZMnjEzB_M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "781228422790-b1j3l7gna8vtegqe4kcn152bi7njojio.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
