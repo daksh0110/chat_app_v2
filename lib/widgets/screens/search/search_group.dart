@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/modal/screens/search/message_screen_arguments.dart';
 import 'package:my_app/modal/screens/search/search_item_group.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
@@ -25,7 +26,7 @@ class SearchGroup extends StatelessWidget {
               onTap: () {
                 Navigator.pushNamed(
                   context,
-                  "/message",
+                  AppRoutes.message,
                   arguments: MessageScreenArguments(id: list.items[index].id),
                 );
               },

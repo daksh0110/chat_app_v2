@@ -3,7 +3,6 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/data/search_list.dart';
 import 'package:my_app/modal/screens/search/search_item_group.dart';
-import 'package:my_app/widgets/comman/primary_text.dart';
 import 'package:my_app/widgets/screens/search/search_group.dart';
 
 class Search extends StatefulWidget {

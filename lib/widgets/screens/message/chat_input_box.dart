@@ -3,7 +3,9 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
 
 class ChatInputBox extends StatefulWidget {
-  const ChatInputBox({super.key});
+  final Function(String) onSend;
+
+  const ChatInputBox({super.key, required this.onSend});
 
   @override
   State<ChatInputBox> createState() => _ChatInputBoxState();
@@ -90,7 +92,17 @@ class _ChatInputBoxState extends State<ChatInputBox> {
                 child: isTyping
                     ? InkWell(
                         key: const ValueKey('send'),
-                        onTap: () {},
+                        onTap: () {
+                          final text = chatMessageController.text.trim();
+                          if (text.isEmpty) return;
+
+                          widget.onSend(text);
+
+                          chatMessageController.clear();
+                          setState(() {
+                            isTyping = false;
+                          });
+                        },
                         child: Container(
                           padding: const EdgeInsets.all(11),
                           decoration: const BoxDecoration(
