@@ -9,6 +9,7 @@ import 'package:my_app/screens/search.dart';
 import 'package:my_app/screens/settings/settings_main.dart';
 import 'package:my_app/screens/sign_up.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:my_app/widgets/socket_initilizer.dart';
 
 void main() {
   runApp(const ProviderScope(child: MyApp()));
@@ -35,7 +36,7 @@ class MyApp extends ConsumerWidget {
 
         data: (state) {
           if (state == AuthState.authenticated) {
-            return MainScreen();
+            return SocketInitializer(child: MainScreen());
           } else {
             return const OnboardingScreen();
           }
