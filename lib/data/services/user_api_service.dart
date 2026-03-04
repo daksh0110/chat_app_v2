@@ -2,6 +2,7 @@ import 'package:my_app/core/network/api_client.dart';
 import 'package:my_app/core/network/api_constant.dart';
 import 'package:my_app/modal/api_response.dart';
 import 'package:my_app/modal/google_auth_response.dart';
+import 'package:my_app/modal/screens/search/search_item.dart';
 import 'package:my_app/modal/sucessfull_authentication.dart';
 
 class UserApiService {
@@ -58,6 +59,25 @@ class UserApiService {
       final apiResponse = ApiResponse<GoogleAuthResponse>.fromJson(
         response,
         (json) => GoogleAuthResponse.fromJson(json as Map<String, dynamic>),
+      );
+      return apiResponse;
+    } catch (e) {
+      throw Exception("Create user failed: $e");
+    }
+  }
+
+  Future<ApiResponse<List<SearchItem>>> getUsers({
+    required String search,
+    required int page,
+  }) async {
+    try {
+      final response = await apiClient.get(
+        "${ApiConstants.baseUrl}${ApiConstants.users}?search=$search&page=$page",
+      );
+      final apiResponse = ApiResponse<List<SearchItem>>.fromJson(
+        response,
+        (json) =>
+            (json as List).map((item) => SearchItem.fromJson(item)).toList(),
       );
       return apiResponse;
     } catch (e) {

@@ -29,7 +29,7 @@ class PrimaryContainer extends StatelessWidget {
           ),
 
           const SizedBox(height: 5),
-          children,
+          Expanded(child: children),
         ],
       ),
     );

@@ -31,13 +31,16 @@ class SettingsMain extends StatelessWidget {
             const SizedBox(height: 20),
             Divider(color: DefaultColorSheet.grey600),
             const SizedBox(height: 30),
-            ListView.separated(
-              shrinkWrap: true,
-              itemBuilder: (context, index) {
-                return SettingMenuItem(item: settingMenuData[index]);
-              },
-              separatorBuilder: (context, index) => SizedBox(height: 30),
-              itemCount: settingMenuData.length,
+
+            Expanded(
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemBuilder: (context, index) {
+                  return SettingMenuItem(item: settingMenuData[index]);
+                },
+                separatorBuilder: (context, index) => SizedBox(height: 30),
+                itemCount: settingMenuData.length,
+              ),
             ),
           ],
         ),

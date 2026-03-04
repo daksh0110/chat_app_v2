@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:my_app/providers/socket_provider.dart';
 
 enum AuthState { authenticated, unauthenticated }
 
@@ -13,8 +14,9 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   @override
   Future<AuthState> build() async {
     final token = await _storage.read(key: "accessToken");
-    print(token);
+
     if (token != null && token.isNotEmpty) {
+      ref.read(socketProvider).connect(token);
       return AuthState.authenticated;
     }
 
@@ -22,14 +24,18 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   }
 
   Future<void> login(String token) async {
-    print(token);
     await _storage.write(key: "accessToken", value: token);
+
+    ref.read(socketProvider).connect(token);
+
     state = const AsyncData(AuthState.authenticated);
-    print("STATE AFTER LOGIN: $state");
   }
 
   Future<void> logout() async {
     await _storage.delete(key: "accessToken");
+
+    ref.read(socketProvider).disconnect();
+
     state = const AsyncData(AuthState.unauthenticated);
   }
 }

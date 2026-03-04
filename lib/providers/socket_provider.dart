@@ -2,13 +2,5 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/services/socker_service.dart';
 
 final socketProvider = Provider<SocketService>((ref) {
-  final socketService = SocketService();
-
-  socketService.connect();
-
-  ref.onDispose(() {
-    socketService.dispose();
-  });
-
-  return socketService;
+  return SocketService();
 });

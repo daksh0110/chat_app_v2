@@ -38,6 +38,7 @@ class _HomeScreenState extends State<Homescreen> {
                         AppRoutes.message,
                         arguments: MessageScreenArguments(
                           id: widget.data[index].id,
+                          name: widget.data[index].name,
                         ),
                       );
                     },
