@@ -15,7 +15,7 @@ class SearchItem {
     return SearchItem(
       id: json['_id'],
       name: json['name'],
-      subtitle: json["subtitle"],
+      subtitle: json["subtitle"] ?? json["email"],
     );
   }
 }

@@ -25,27 +25,25 @@ class _HomeScreenState extends State<Homescreen> {
         StatusBar(),
         Expanded(
           child: PrimaryContainer(
-            children: Expanded(
-              child: ListView.separated(
-                itemCount: widget.data.length,
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                itemBuilder: (context, index) {
-                  return ChatListItem(
-                    chat: widget.data[index],
-                    onTap: () {
-                      Navigator.pushNamed(
-                        context,
-                        AppRoutes.message,
-                        arguments: MessageScreenArguments(
-                          id: widget.data[index].id,
-                          name: widget.data[index].name,
-                        ),
-                      );
-                    },
-                  );
-                },
-                separatorBuilder: (_, __) => const SizedBox(height: 1),
-              ),
+            children: ListView.separated(
+              itemCount: widget.data.length,
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              itemBuilder: (context, index) {
+                return ChatListItem(
+                  chat: widget.data[index],
+                  onTap: () {
+                    Navigator.pushNamed(
+                      context,
+                      AppRoutes.message,
+                      arguments: MessageScreenArguments(
+                        id: widget.data[index].id,
+                        name: widget.data[index].name,
+                      ),
+                    );
+                  },
+                );
+              },
+              separatorBuilder: (_, __) => const SizedBox(height: 1),
             ),
           ),
         ),

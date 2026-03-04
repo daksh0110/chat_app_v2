@@ -84,4 +84,22 @@ class UserApiService {
       throw Exception("Create user failed: $e");
     }
   }
+
+  Future<ApiResponse<SearchItem>> getMyProfile({required String token}) async {
+    try {
+      final response = await apiClient.get(
+        "${ApiConstants.baseUrl}${ApiConstants.users}/me",
+        token: token,
+      );
+
+      final apiResponse = ApiResponse<SearchItem>.fromJson(
+        response,
+        (json) => SearchItem.fromJson(json as Map<String, dynamic>),
+      );
+      print(apiResponse);
+      return apiResponse;
+    } catch (e) {
+      throw Exception("Get profile failed: $e");
+    }
+  }
 }

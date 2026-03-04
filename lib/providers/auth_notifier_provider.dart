@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 import 'package:my_app/providers/socket_provider.dart';
 
 enum AuthState { authenticated, unauthenticated }
@@ -16,7 +17,6 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     final token = await _storage.read(key: "accessToken");
 
     if (token != null && token.isNotEmpty) {
-      ref.read(socketProvider).connect(token);
       return AuthState.authenticated;
     }
 

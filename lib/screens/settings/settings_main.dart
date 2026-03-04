@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/data/settins_main_data.dart';
 import 'package:my_app/modal/screens/search/search_item.dart';
+import 'package:my_app/providers/settings_user_notifier_provider.dart';
 import 'package:my_app/widgets/comman/primary_container.dart';
 import 'package:my_app/widgets/screens/search/search_group_item.dart';
 import 'package:my_app/widgets/screens/settings/settingsMain/setting_menu_item.dart';
 
-class SettingsMain extends StatelessWidget {
+class SettingsMain extends ConsumerWidget {
   const SettingsMain({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(settingsUserProvider);
+
     return PrimaryContainer(
       children: Container(
         padding: EdgeInsets.symmetric(horizontal: 24, vertical: 10),
@@ -19,9 +23,9 @@ class SettingsMain extends StatelessWidget {
             SearchGroupItem(
               item: SearchItem(
                 id: "1",
-                name: "daksh",
+                name: user!.name,
                 profilePic: "assets/screens/home/user2.png",
-                subtitle: "Never give up 💪",
+                subtitle: user.email,
               ),
               actionWidget: [
                 const Spacer(),

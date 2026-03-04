@@ -12,8 +12,17 @@ class ApiClient {
     return jsonDecode(response.body);
   }
 
-  Future<dynamic> get(String url) async {
-    final response = await http.get(Uri.parse(url));
+  Future<dynamic> get(String url, {String? token}) async {
+    final response = await http.get(
+      Uri.parse(url),
+      headers: token != null
+          ? {
+              "Authorization": "Bearer $token",
+              "Content-Type": "application/json",
+            }
+          : {"Content-Type": "application/json"},
+    );
+
     return jsonDecode(response.body);
   }
 }

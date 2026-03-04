@@ -15,12 +15,8 @@ class $UserInfoSettingsTable extends UserInfoSettings
     'id',
     aliasedName,
     false,
-    hasAutoIncrement: true,
     type: DriftSqlType.int,
     requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
   );
   static const VerificationMeta _nameMeta = const VerificationMeta('name');
   @override
