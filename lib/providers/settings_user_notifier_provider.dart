@@ -28,7 +28,7 @@ class SettingsUserNotifier extends Notifier<UserInfoSetting?> {
 
     final apiClient = ApiClient();
     final userInfo = await UserApiService(apiClient).getMyProfile(token: token);
-
+    print(userInfo.data);
     final user = UserInfoSetting(
       id: 1,
       name: userInfo.data!.name,

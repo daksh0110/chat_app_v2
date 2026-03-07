@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/providers/auth_notifier_provider.dart';
+import 'package:my_app/providers/message_provider.dart';
 import 'package:my_app/providers/settings_user_notifier_provider.dart';
 import 'package:my_app/providers/socket_provider.dart';
 import 'package:my_app/screens/main_screen.dart';
@@ -30,6 +31,7 @@ class MyApp extends ConsumerWidget {
           await ref.read(settingsUserProvider.notifier).setUser(token);
 
           ref.read(socketProvider).connect(token);
+          ref.read(messageProvider.notifier).receiveMessage();
         }
       });
     });
