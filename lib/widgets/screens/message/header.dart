@@ -46,7 +46,7 @@ class _HeaderState extends State<Header> {
         chatBubbleSize: toolbarHeight - 12,
         needActiveIndicator: true,
         item: SearchItem(
-          id: "1",
+          id: widget.id,
           name: widget.name,
           profilePic: "assets/screens/home/user1.png",
           subtitle: "active now",

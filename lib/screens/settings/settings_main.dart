@@ -15,6 +15,10 @@ class SettingsMain extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(settingsUserProvider);
 
+    if (user == null) {
+      return const SizedBox.shrink();
+    }
+
     return PrimaryContainer(
       children: Container(
         padding: EdgeInsets.symmetric(horizontal: 24, vertical: 10),
@@ -22,8 +26,8 @@ class SettingsMain extends ConsumerWidget {
           children: [
             SearchGroupItem(
               item: SearchItem(
-                id: "1",
-                name: user!.name,
+                id: user.id,
+                name: user.name,
                 profilePic: "assets/screens/home/user2.png",
                 subtitle: user.email,
               ),

@@ -1,11 +1,10 @@
-import 'package:drift/drift.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:my_app/modal/screens/message/message_modal.dart';
 import 'package:my_app/modal/screens/search/message_screen_arguments.dart';
-import 'package:my_app/providers/database_provider.dart';
-import 'package:my_app/providers/socket_provider.dart';
-import 'package:my_app/services/socker_service.dart';
+import 'package:my_app/providers/chat_list_provider.dart';
+import 'package:my_app/providers/chat_message_provider.dart';
+import 'package:my_app/providers/message_provider.dart';
+import 'package:my_app/providers/settings_user_notifier_provider.dart';
 import 'package:my_app/widgets/screens/message/chat_input_box.dart';
 import 'package:my_app/widgets/screens/message/header.dart';
 import 'package:my_app/widgets/screens/message/message_item.dart';
@@ -20,18 +19,15 @@ class MessageScreen extends ConsumerStatefulWidget {
 }
 
 class _MessageScreen extends ConsumerState<MessageScreen> {
-  final List<MessageModel> _messages = [];
   final ScrollController _scrollController = ScrollController();
-  late SocketService socket;
   late String receiverId;
   late String name;
+  String? _lastActiveUserId;
+  late final ChatListController _chatListController;
   @override
   void initState() {
     super.initState();
-    socket = ref.read(socketProvider);
-    socket.listen("receive_message", (dynamic data) {
-      print(data);
-    });
+    _chatListController = ref.read(chatListControllerProvider);
   }
 
   @override
@@ -42,73 +38,28 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
 
     receiverId = args.id;
     name = args.name;
+
+    if (_lastActiveUserId != receiverId) {
+      _lastActiveUserId = receiverId;
+      _chatListController.setActiveChatUserId(receiverId);
+    }
+  }
+
+  @override
+  void dispose() {
+    _chatListController.setActiveChatUserId(null);
+    _scrollController.dispose();
+    super.dispose();
   }
 
   void _handleSend(String text) async {
-    socket.sendMessage("send_message", {
-      "message": text,
-      "receiver_id": receiverId,
-    });
-
-    final database = ref.read(databaseProvider);
-    final now = DateTime.now().millisecondsSinceEpoch;
-
-    final existingChat = await database.managers.chatListTable
-        .filter((f) => f.userId(receiverId))
-        .getSingleOrNull();
-
-    int chatId;
-
-    if (existingChat == null) {
-      final newId = await database.managers.chatListTable.create(
-        (o) => o(
-          userId: receiverId,
-          name: name,
-          lastMessage: Value(text),
-          lastMessageTime: Value(now),
-        ),
-      );
-
-      chatId = newId;
-    } else {
-      await database.managers.chatListTable
-          .filter((f) => f.id(existingChat.id))
-          .update(
-            (o) => o(lastMessage: Value(text), lastMessageTime: Value(now)),
-          );
-
-      chatId = existingChat.id;
-    }
-
-    await database.managers.messages.create(
-      (o) => o(
-        id: now.toString(),
-        chatId: chatId,
-        message: text,
-        receiverId: receiverId,
-        senderId: "me",
-        createdAt: now,
-      ),
-    );
-
-    final newMessage = MessageModel(
-      id: now.toString(),
-      text: text,
-      isMe: true,
-      createdAt: DateTime.now(),
-    );
-
-    setState(() {
-      _messages.add(newMessage);
-    });
-
-    Future.delayed(const Duration(milliseconds: 100), () {
-      _scrollController.animateTo(
-        0,
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOut,
-      );
-    });
+    ref
+        .read(messageProvider.notifier)
+        .sendMessagea(
+          message: text,
+          receiverId: receiverId,
+          receiverName: name,
+        );
   }
 
   @override
@@ -116,21 +67,47 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
     final args =
         ModalRoute.of(context)!.settings.arguments as MessageScreenArguments;
     final String name = args.name;
+    final currentUser = ref.watch(settingsUserProvider);
+    final chatIdAsync = ref.watch(chatIdProvider(receiverId));
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: Header(id: receiverId, name: name),
       bottomNavigationBar: ChatInputBox(onSend: _handleSend),
-      body: ListView.separated(
-        controller: _scrollController,
-        reverse: true,
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        itemCount: _messages.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 4),
-        itemBuilder: (context, index) {
-          final msg = _messages[_messages.length - 1 - index];
+      body: chatIdAsync.when(
+        data: (chatId) {
+          if (chatId == null) {
+            return const Center(child: Text("No messages yet"));
+          }
 
-          return MessageItem(message: msg.text, isSender: msg.isMe);
+          final messagesAsync = ref.watch(chatMessagesProvider(chatId));
+
+          return messagesAsync.when(
+            data: (messages) {
+              if (currentUser == null) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              return ListView.builder(
+                controller: _scrollController,
+                reverse: true,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                itemCount: messages.length,
+                itemBuilder: (context, index) {
+                  final msg = messages[messages.length - 1 - index];
+
+                  return MessageItem(
+                    message: msg.message,
+                    isSender: msg.senderId == currentUser.id,
+                  );
+                },
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Center(child: Text(e.toString())),
+          );
         },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(child: Text(e.toString())),
       ),
     );
   }

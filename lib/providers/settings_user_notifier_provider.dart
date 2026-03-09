@@ -28,11 +28,11 @@ class SettingsUserNotifier extends Notifier<UserInfoSetting?> {
 
     final apiClient = ApiClient();
     final userInfo = await UserApiService(apiClient).getMyProfile(token: token);
-    print(userInfo.data);
+    final profile = userInfo.data!;
     final user = UserInfoSetting(
-      id: 1,
-      name: userInfo.data!.name,
-      email: userInfo.data!.subtitle,
+      id: profile.id,
+      name: profile.name,
+      email: profile.subtitle,
       accessToken: token,
     );
 
@@ -42,7 +42,7 @@ class SettingsUserNotifier extends Notifier<UserInfoSetting?> {
         .into(database.userInfoSettings)
         .insert(
           UserInfoSettingsCompanion.insert(
-            id: const Value(1),
+            id: profile.id,
             name: user.name,
             email: user.email,
             accessToken: token,

@@ -11,12 +11,12 @@ class $UserInfoSettingsTable extends UserInfoSettings
   $UserInfoSettingsTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
     'id',
     aliasedName,
     false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
   );
   static const VerificationMeta _nameMeta = const VerificationMeta('name');
   @override
@@ -67,6 +67,8 @@ class $UserInfoSettingsTable extends UserInfoSettings
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
     }
     if (data.containsKey('name')) {
       context.handle(
@@ -105,7 +107,7 @@ class $UserInfoSettingsTable extends UserInfoSettings
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return UserInfoSetting(
       id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
+        DriftSqlType.string,
         data['${effectivePrefix}id'],
       )!,
       name: attachedDatabase.typeMapping.read(
@@ -130,7 +132,7 @@ class $UserInfoSettingsTable extends UserInfoSettings
 }
 
 class UserInfoSetting extends DataClass implements Insertable<UserInfoSetting> {
-  final int id;
+  final String id;
   final String name;
   final String email;
   final String accessToken;
@@ -143,7 +145,7 @@ class UserInfoSetting extends DataClass implements Insertable<UserInfoSetting> {
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
+    map['id'] = Variable<String>(id);
     map['name'] = Variable<String>(name);
     map['email'] = Variable<String>(email);
     map['access_token'] = Variable<String>(accessToken);
@@ -165,7 +167,7 @@ class UserInfoSetting extends DataClass implements Insertable<UserInfoSetting> {
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return UserInfoSetting(
-      id: serializer.fromJson<int>(json['id']),
+      id: serializer.fromJson<String>(json['id']),
       name: serializer.fromJson<String>(json['name']),
       email: serializer.fromJson<String>(json['email']),
       accessToken: serializer.fromJson<String>(json['accessToken']),
@@ -175,7 +177,7 @@ class UserInfoSetting extends DataClass implements Insertable<UserInfoSetting> {
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
+      'id': serializer.toJson<String>(id),
       'name': serializer.toJson<String>(name),
       'email': serializer.toJson<String>(email),
       'accessToken': serializer.toJson<String>(accessToken),
@@ -183,7 +185,7 @@ class UserInfoSetting extends DataClass implements Insertable<UserInfoSetting> {
   }
 
   UserInfoSetting copyWith({
-    int? id,
+    String? id,
     String? name,
     String? email,
     String? accessToken,
@@ -228,49 +230,57 @@ class UserInfoSetting extends DataClass implements Insertable<UserInfoSetting> {
 }
 
 class UserInfoSettingsCompanion extends UpdateCompanion<UserInfoSetting> {
-  final Value<int> id;
+  final Value<String> id;
   final Value<String> name;
   final Value<String> email;
   final Value<String> accessToken;
+  final Value<int> rowid;
   const UserInfoSettingsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.email = const Value.absent(),
     this.accessToken = const Value.absent(),
+    this.rowid = const Value.absent(),
   });
   UserInfoSettingsCompanion.insert({
-    this.id = const Value.absent(),
+    required String id,
     required String name,
     required String email,
     required String accessToken,
-  }) : name = Value(name),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
        email = Value(email),
        accessToken = Value(accessToken);
   static Insertable<UserInfoSetting> custom({
-    Expression<int>? id,
+    Expression<String>? id,
     Expression<String>? name,
     Expression<String>? email,
     Expression<String>? accessToken,
+    Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (name != null) 'name': name,
       if (email != null) 'email': email,
       if (accessToken != null) 'access_token': accessToken,
+      if (rowid != null) 'rowid': rowid,
     });
   }
 
   UserInfoSettingsCompanion copyWith({
-    Value<int>? id,
+    Value<String>? id,
     Value<String>? name,
     Value<String>? email,
     Value<String>? accessToken,
+    Value<int>? rowid,
   }) {
     return UserInfoSettingsCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
       email: email ?? this.email,
       accessToken: accessToken ?? this.accessToken,
+      rowid: rowid ?? this.rowid,
     );
   }
 
@@ -278,7 +288,7 @@ class UserInfoSettingsCompanion extends UpdateCompanion<UserInfoSetting> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     if (id.present) {
-      map['id'] = Variable<int>(id.value);
+      map['id'] = Variable<String>(id.value);
     }
     if (name.present) {
       map['name'] = Variable<String>(name.value);
@@ -289,6 +299,9 @@ class UserInfoSettingsCompanion extends UpdateCompanion<UserInfoSetting> {
     if (accessToken.present) {
       map['access_token'] = Variable<String>(accessToken.value);
     }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
     return map;
   }
 
@@ -298,7 +311,8 @@ class UserInfoSettingsCompanion extends UpdateCompanion<UserInfoSetting> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('email: $email, ')
-          ..write('accessToken: $accessToken')
+          ..write('accessToken: $accessToken, ')
+          ..write('rowid: $rowid')
           ..write(')'))
         .toString();
   }
@@ -788,6 +802,19 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _isReadMeta = const VerificationMeta('isRead');
+  @override
+  late final GeneratedColumn<bool> isRead = GeneratedColumn<bool>(
+    'is_read',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_read" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -796,6 +823,7 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
     receiverId,
     message,
     createdAt,
+    isRead,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -854,6 +882,12 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
+    if (data.containsKey('is_read')) {
+      context.handle(
+        _isReadMeta,
+        isRead.isAcceptableOrUnknown(data['is_read']!, _isReadMeta),
+      );
+    }
     return context;
   }
 
@@ -887,6 +921,10 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
         DriftSqlType.int,
         data['${effectivePrefix}created_at'],
       )!,
+      isRead: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_read'],
+      )!,
     );
   }
 
@@ -903,6 +941,7 @@ class Message extends DataClass implements Insertable<Message> {
   final String receiverId;
   final String message;
   final int createdAt;
+  final bool isRead;
   const Message({
     required this.id,
     required this.chatId,
@@ -910,6 +949,7 @@ class Message extends DataClass implements Insertable<Message> {
     required this.receiverId,
     required this.message,
     required this.createdAt,
+    required this.isRead,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -920,6 +960,7 @@ class Message extends DataClass implements Insertable<Message> {
     map['receiver_id'] = Variable<String>(receiverId);
     map['message'] = Variable<String>(message);
     map['created_at'] = Variable<int>(createdAt);
+    map['is_read'] = Variable<bool>(isRead);
     return map;
   }
 
@@ -931,6 +972,7 @@ class Message extends DataClass implements Insertable<Message> {
       receiverId: Value(receiverId),
       message: Value(message),
       createdAt: Value(createdAt),
+      isRead: Value(isRead),
     );
   }
 
@@ -946,6 +988,7 @@ class Message extends DataClass implements Insertable<Message> {
       receiverId: serializer.fromJson<String>(json['receiverId']),
       message: serializer.fromJson<String>(json['message']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
+      isRead: serializer.fromJson<bool>(json['isRead']),
     );
   }
   @override
@@ -958,6 +1001,7 @@ class Message extends DataClass implements Insertable<Message> {
       'receiverId': serializer.toJson<String>(receiverId),
       'message': serializer.toJson<String>(message),
       'createdAt': serializer.toJson<int>(createdAt),
+      'isRead': serializer.toJson<bool>(isRead),
     };
   }
 
@@ -968,6 +1012,7 @@ class Message extends DataClass implements Insertable<Message> {
     String? receiverId,
     String? message,
     int? createdAt,
+    bool? isRead,
   }) => Message(
     id: id ?? this.id,
     chatId: chatId ?? this.chatId,
@@ -975,6 +1020,7 @@ class Message extends DataClass implements Insertable<Message> {
     receiverId: receiverId ?? this.receiverId,
     message: message ?? this.message,
     createdAt: createdAt ?? this.createdAt,
+    isRead: isRead ?? this.isRead,
   );
   Message copyWithCompanion(MessagesCompanion data) {
     return Message(
@@ -986,6 +1032,7 @@ class Message extends DataClass implements Insertable<Message> {
           : this.receiverId,
       message: data.message.present ? data.message.value : this.message,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      isRead: data.isRead.present ? data.isRead.value : this.isRead,
     );
   }
 
@@ -997,14 +1044,15 @@ class Message extends DataClass implements Insertable<Message> {
           ..write('senderId: $senderId, ')
           ..write('receiverId: $receiverId, ')
           ..write('message: $message, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('isRead: $isRead')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode =>
-      Object.hash(id, chatId, senderId, receiverId, message, createdAt);
+      Object.hash(id, chatId, senderId, receiverId, message, createdAt, isRead);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1014,7 +1062,8 @@ class Message extends DataClass implements Insertable<Message> {
           other.senderId == this.senderId &&
           other.receiverId == this.receiverId &&
           other.message == this.message &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.isRead == this.isRead);
 }
 
 class MessagesCompanion extends UpdateCompanion<Message> {
@@ -1024,6 +1073,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
   final Value<String> receiverId;
   final Value<String> message;
   final Value<int> createdAt;
+  final Value<bool> isRead;
   final Value<int> rowid;
   const MessagesCompanion({
     this.id = const Value.absent(),
@@ -1032,6 +1082,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     this.receiverId = const Value.absent(),
     this.message = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.isRead = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   MessagesCompanion.insert({
@@ -1041,6 +1092,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     required String receiverId,
     required String message,
     required int createdAt,
+    this.isRead = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        chatId = Value(chatId),
@@ -1055,6 +1107,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     Expression<String>? receiverId,
     Expression<String>? message,
     Expression<int>? createdAt,
+    Expression<bool>? isRead,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1064,6 +1117,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
       if (receiverId != null) 'receiver_id': receiverId,
       if (message != null) 'message': message,
       if (createdAt != null) 'created_at': createdAt,
+      if (isRead != null) 'is_read': isRead,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1075,6 +1129,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     Value<String>? receiverId,
     Value<String>? message,
     Value<int>? createdAt,
+    Value<bool>? isRead,
     Value<int>? rowid,
   }) {
     return MessagesCompanion(
@@ -1084,6 +1139,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
       receiverId: receiverId ?? this.receiverId,
       message: message ?? this.message,
       createdAt: createdAt ?? this.createdAt,
+      isRead: isRead ?? this.isRead,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1109,6 +1165,9 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     if (createdAt.present) {
       map['created_at'] = Variable<int>(createdAt.value);
     }
+    if (isRead.present) {
+      map['is_read'] = Variable<bool>(isRead.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1124,6 +1183,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
           ..write('receiverId: $receiverId, ')
           ..write('message: $message, ')
           ..write('createdAt: $createdAt, ')
+          ..write('isRead: $isRead, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1161,17 +1221,19 @@ abstract class _$AppDatabase extends GeneratedDatabase {
 
 typedef $$UserInfoSettingsTableCreateCompanionBuilder =
     UserInfoSettingsCompanion Function({
-      Value<int> id,
+      required String id,
       required String name,
       required String email,
       required String accessToken,
+      Value<int> rowid,
     });
 typedef $$UserInfoSettingsTableUpdateCompanionBuilder =
     UserInfoSettingsCompanion Function({
-      Value<int> id,
+      Value<String> id,
       Value<String> name,
       Value<String> email,
       Value<String> accessToken,
+      Value<int> rowid,
     });
 
 class $$UserInfoSettingsTableFilterComposer
@@ -1183,7 +1245,7 @@ class $$UserInfoSettingsTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<int> get id => $composableBuilder(
+  ColumnFilters<String> get id => $composableBuilder(
     column: $table.id,
     builder: (column) => ColumnFilters(column),
   );
@@ -1213,7 +1275,7 @@ class $$UserInfoSettingsTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<int> get id => $composableBuilder(
+  ColumnOrderings<String> get id => $composableBuilder(
     column: $table.id,
     builder: (column) => ColumnOrderings(column),
   );
@@ -1243,7 +1305,7 @@ class $$UserInfoSettingsTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<int> get id =>
+  GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
   GeneratedColumn<String> get name =>
@@ -1295,27 +1357,31 @@ class $$UserInfoSettingsTableTableManager
               $$UserInfoSettingsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
-                Value<int> id = const Value.absent(),
+                Value<String> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<String> email = const Value.absent(),
                 Value<String> accessToken = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
               }) => UserInfoSettingsCompanion(
                 id: id,
                 name: name,
                 email: email,
                 accessToken: accessToken,
+                rowid: rowid,
               ),
           createCompanionCallback:
               ({
-                Value<int> id = const Value.absent(),
+                required String id,
                 required String name,
                 required String email,
                 required String accessToken,
+                Value<int> rowid = const Value.absent(),
               }) => UserInfoSettingsCompanion.insert(
                 id: id,
                 name: name,
                 email: email,
                 accessToken: accessToken,
+                rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -1676,6 +1742,7 @@ typedef $$MessagesTableCreateCompanionBuilder =
       required String receiverId,
       required String message,
       required int createdAt,
+      Value<bool> isRead,
       Value<int> rowid,
     });
 typedef $$MessagesTableUpdateCompanionBuilder =
@@ -1686,6 +1753,7 @@ typedef $$MessagesTableUpdateCompanionBuilder =
       Value<String> receiverId,
       Value<String> message,
       Value<int> createdAt,
+      Value<bool> isRead,
       Value<int> rowid,
     });
 
@@ -1747,6 +1815,11 @@ class $$MessagesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<bool> get isRead => $composableBuilder(
+    column: $table.isRead,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$ChatListTableTableFilterComposer get chatId {
     final $$ChatListTableTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -1805,6 +1878,11 @@ class $$MessagesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isRead => $composableBuilder(
+    column: $table.isRead,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$ChatListTableTableOrderingComposer get chatId {
     final $$ChatListTableTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -1854,6 +1932,9 @@ class $$MessagesTableAnnotationComposer
 
   GeneratedColumn<int> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get isRead =>
+      $composableBuilder(column: $table.isRead, builder: (column) => column);
 
   $$ChatListTableTableAnnotationComposer get chatId {
     final $$ChatListTableTableAnnotationComposer composer = $composerBuilder(
@@ -1913,6 +1994,7 @@ class $$MessagesTableTableManager
                 Value<String> receiverId = const Value.absent(),
                 Value<String> message = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
+                Value<bool> isRead = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MessagesCompanion(
                 id: id,
@@ -1921,6 +2003,7 @@ class $$MessagesTableTableManager
                 receiverId: receiverId,
                 message: message,
                 createdAt: createdAt,
+                isRead: isRead,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -1931,6 +2014,7 @@ class $$MessagesTableTableManager
                 required String receiverId,
                 required String message,
                 required int createdAt,
+                Value<bool> isRead = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MessagesCompanion.insert(
                 id: id,
@@ -1939,6 +2023,7 @@ class $$MessagesTableTableManager
                 receiverId: receiverId,
                 message: message,
                 createdAt: createdAt,
+                isRead: isRead,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

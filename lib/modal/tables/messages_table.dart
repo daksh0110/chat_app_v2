@@ -9,6 +9,8 @@ class Messages extends Table {
   TextColumn get receiverId => text()();
   TextColumn get message => text()();
   IntColumn get createdAt => integer()();
+  BoolColumn get isRead => boolean().withDefault(const Constant(false))();
+
   @override
   Set<Column> get primaryKey => {id};
 }

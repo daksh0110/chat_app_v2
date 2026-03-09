@@ -5,7 +5,7 @@ class SocketService {
 
   void connect(String token) {
     socket = IO.io(
-      'http://192.168.1.11:5000',
+      'http://192.168.29.193:5000',
       IO.OptionBuilder()
           .setTransports(['websocket'])
           .setAuth({"token": token})
