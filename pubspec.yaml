@@ -80,6 +80,7 @@ flutter:
     - assets/screens/home/user4.png
     - assets/screens/home/user5.png
     - assets/screens/home/user6.png
+    - assets/no-image-icon.jpg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

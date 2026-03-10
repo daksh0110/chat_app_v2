@@ -5,6 +5,7 @@ import 'package:my_app/providers/chat_list_provider.dart';
 import 'package:my_app/providers/chat_message_provider.dart';
 import 'package:my_app/providers/message_provider.dart';
 import 'package:my_app/providers/settings_user_notifier_provider.dart';
+import 'package:my_app/providers/socket_provider.dart';
 import 'package:my_app/widgets/screens/message/chat_input_box.dart';
 import 'package:my_app/widgets/screens/message/header.dart';
 import 'package:my_app/widgets/screens/message/message_item.dart';
@@ -23,11 +24,37 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
   late String receiverId;
   late String name;
   String? _lastActiveUserId;
+  bool _isOnline = false;
   late final ChatListController _chatListController;
   @override
   void initState() {
     super.initState();
     _chatListController = ref.read(chatListControllerProvider);
+    final socketService = ref.read(socketProvider);
+
+    socketService.getUserStatus((data) {
+      if (data["userId"] == receiverId) {
+        setState(() {
+          _isOnline = data["online"];
+        });
+      }
+    });
+
+    socketService.listenUserOnline((data) {
+      if (data["userId"] == receiverId) {
+        setState(() {
+          _isOnline = true;
+        });
+      }
+    });
+
+    socketService.listenUserOffline((data) {
+      if (data["userId"] == receiverId) {
+        setState(() {
+          _isOnline = false;
+        });
+      }
+    });
   }
 
   @override
@@ -43,6 +70,8 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
       _lastActiveUserId = receiverId;
       _chatListController.setActiveChatUserId(receiverId);
     }
+    final socketService = ref.read(socketProvider);
+    socketService.checkUserStatus(receiverId);
   }
 
   @override
@@ -71,7 +100,7 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
     final chatIdAsync = ref.watch(chatIdProvider(receiverId));
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: Header(id: receiverId, name: name),
+      appBar: Header(id: receiverId, name: name, isOnline: _isOnline),
       bottomNavigationBar: ChatInputBox(onSend: _handleSend),
       body: chatIdAsync.when(
         data: (chatId) {

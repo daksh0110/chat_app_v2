@@ -21,7 +21,7 @@ class StatusBar extends StatelessWidget {
               item: StatusBarModal(
                 id: "0",
                 name: "",
-                profileUrl: "assets/screens/home/user1.png",
+                profileUrl: "assets/no-image-icon.jpg",
               ),
               isMe: true,
             ),

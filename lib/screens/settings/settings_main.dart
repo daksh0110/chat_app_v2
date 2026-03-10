@@ -28,7 +28,7 @@ class SettingsMain extends ConsumerWidget {
               item: SearchItem(
                 id: user.id,
                 name: user.name,
-                profilePic: "assets/screens/home/user2.png",
+                profilePic: "assets/no-image-icon.jpg",
                 subtitle: user.email,
               ),
               actionWidget: [

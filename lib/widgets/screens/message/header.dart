@@ -5,10 +5,16 @@ import 'package:my_app/modal/screens/search/search_item.dart';
 import 'package:my_app/widgets/screens/search/search_group_item.dart';
 
 class Header extends StatefulWidget implements PreferredSizeWidget {
-  const Header({super.key, required this.name, required this.id});
+  const Header({
+    super.key,
+    required this.name,
+    required this.id,
+    required this.isOnline,
+  });
 
   final String name;
   final String id;
+  final bool isOnline;
 
   @override
   Size get preferredSize {
@@ -41,15 +47,16 @@ class _HeaderState extends State<Header> {
       toolbarHeight: toolbarHeight,
       shadowColor: const Color(0x05111222),
       backgroundColor: Colors.white,
+      scrolledUnderElevation: 0.0,
       title: SearchGroupItem(
         height: toolbarHeight - 8,
         chatBubbleSize: toolbarHeight - 12,
-        needActiveIndicator: true,
+        needActiveIndicator: widget.isOnline,
         item: SearchItem(
           id: widget.id,
           name: widget.name,
-          profilePic: "assets/screens/home/user1.png",
-          subtitle: "active now",
+          profilePic: "assets/no-image-icon.jpg",
+          subtitle: widget.isOnline ? "active now" : "",
         ),
       ),
       actionsPadding: const EdgeInsets.only(right: 15),

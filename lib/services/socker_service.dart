@@ -40,6 +40,25 @@ class SocketService {
     socket.on(event, callback);
   }
 
+  void checkUserStatus(String receiverId) {
+    socket.emit("check_user_status", {"userId": receiverId});
+  }
+
+  void getUserStatus(void Function(dynamic data) callback) {
+    socket.off("user_status");
+    socket.on("user_status", callback);
+  }
+
+  void listenUserOnline(void Function(dynamic data) callback) {
+    socket.off("user_online");
+    socket.on("user_online", callback);
+  }
+
+  void listenUserOffline(void Function(dynamic data) callback) {
+    socket.off("user_offline");
+    socket.on("user_offline", callback);
+  }
+
   void dispose() {
     socket.dispose();
   }

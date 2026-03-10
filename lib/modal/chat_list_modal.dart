@@ -22,7 +22,7 @@ class ChatListModal {
     return ChatListModal(
       id: data.userId.toString(),
       name: data.name,
-      profilePic: "assets/screens/home/user1.png",
+      profilePic: "assets/no-image-icon.jpg",
       lastMessage: data.lastMessage ?? "",
       lastMessageTime: DateFormat(
         "HH:mm",
