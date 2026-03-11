@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:my_app/core/util/status_map.dart';
 import 'package:my_app/modal/screens/search/message_screen_arguments.dart';
 import 'package:my_app/providers/chat_list_provider.dart';
 import 'package:my_app/providers/chat_message_provider.dart';
@@ -123,10 +124,10 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
                 itemCount: messages.length,
                 itemBuilder: (context, index) {
                   final msg = messages[messages.length - 1 - index];
-
                   return MessageItem(
                     message: msg.message,
                     isSender: msg.senderId == currentUser.id,
+                    status: statusMap("sending"),
                   );
                 },
               );

@@ -5,13 +5,13 @@ class MessageModel {
   final String text;
   final bool isMe;
   final DateTime createdAt;
-  // final MessageStatus status;
+  final MessageStatus status;
 
   MessageModel({
     required this.id,
     required this.text,
     required this.isMe,
     required this.createdAt,
-    // this.status = MessageStatus.sending,
+    this.status = MessageStatus.sending,
   });
 }

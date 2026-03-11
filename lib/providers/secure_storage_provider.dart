@@ -16,7 +16,7 @@ class SecureStorageNotifier extends AsyncNotifier<String?> {
   @override
   Future<String?> build() async {
     _storage = ref.read(flutterSecureStorageProvider);
-
+    await clearToken();
     return await _storage.read(key: 'accessToken');
   }
 

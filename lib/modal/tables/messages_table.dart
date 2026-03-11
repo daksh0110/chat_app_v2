@@ -8,6 +8,8 @@ class Messages extends Table {
   TextColumn get senderId => text()();
   TextColumn get receiverId => text()();
   TextColumn get message => text()();
+  TextColumn get messageStatus =>
+      text().withDefault(const Constant("sending"))();
   IntColumn get createdAt => integer()();
   BoolColumn get isRead => boolean().withDefault(const Constant(false))();
 

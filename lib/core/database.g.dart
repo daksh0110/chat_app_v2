@@ -791,6 +791,18 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _messageStatusMeta = const VerificationMeta(
+    'messageStatus',
+  );
+  @override
+  late final GeneratedColumn<String> messageStatus = GeneratedColumn<String>(
+    'message_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant("sending"),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -822,6 +834,7 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
     senderId,
     receiverId,
     message,
+    messageStatus,
     createdAt,
     isRead,
   ];
@@ -874,6 +887,15 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
     } else if (isInserting) {
       context.missing(_messageMeta);
     }
+    if (data.containsKey('message_status')) {
+      context.handle(
+        _messageStatusMeta,
+        messageStatus.isAcceptableOrUnknown(
+          data['message_status']!,
+          _messageStatusMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -917,6 +939,10 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
         DriftSqlType.string,
         data['${effectivePrefix}message'],
       )!,
+      messageStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}message_status'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}created_at'],
@@ -940,6 +966,7 @@ class Message extends DataClass implements Insertable<Message> {
   final String senderId;
   final String receiverId;
   final String message;
+  final String messageStatus;
   final int createdAt;
   final bool isRead;
   const Message({
@@ -948,6 +975,7 @@ class Message extends DataClass implements Insertable<Message> {
     required this.senderId,
     required this.receiverId,
     required this.message,
+    required this.messageStatus,
     required this.createdAt,
     required this.isRead,
   });
@@ -959,6 +987,7 @@ class Message extends DataClass implements Insertable<Message> {
     map['sender_id'] = Variable<String>(senderId);
     map['receiver_id'] = Variable<String>(receiverId);
     map['message'] = Variable<String>(message);
+    map['message_status'] = Variable<String>(messageStatus);
     map['created_at'] = Variable<int>(createdAt);
     map['is_read'] = Variable<bool>(isRead);
     return map;
@@ -971,6 +1000,7 @@ class Message extends DataClass implements Insertable<Message> {
       senderId: Value(senderId),
       receiverId: Value(receiverId),
       message: Value(message),
+      messageStatus: Value(messageStatus),
       createdAt: Value(createdAt),
       isRead: Value(isRead),
     );
@@ -987,6 +1017,7 @@ class Message extends DataClass implements Insertable<Message> {
       senderId: serializer.fromJson<String>(json['senderId']),
       receiverId: serializer.fromJson<String>(json['receiverId']),
       message: serializer.fromJson<String>(json['message']),
+      messageStatus: serializer.fromJson<String>(json['messageStatus']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
       isRead: serializer.fromJson<bool>(json['isRead']),
     );
@@ -1000,6 +1031,7 @@ class Message extends DataClass implements Insertable<Message> {
       'senderId': serializer.toJson<String>(senderId),
       'receiverId': serializer.toJson<String>(receiverId),
       'message': serializer.toJson<String>(message),
+      'messageStatus': serializer.toJson<String>(messageStatus),
       'createdAt': serializer.toJson<int>(createdAt),
       'isRead': serializer.toJson<bool>(isRead),
     };
@@ -1011,6 +1043,7 @@ class Message extends DataClass implements Insertable<Message> {
     String? senderId,
     String? receiverId,
     String? message,
+    String? messageStatus,
     int? createdAt,
     bool? isRead,
   }) => Message(
@@ -1019,6 +1052,7 @@ class Message extends DataClass implements Insertable<Message> {
     senderId: senderId ?? this.senderId,
     receiverId: receiverId ?? this.receiverId,
     message: message ?? this.message,
+    messageStatus: messageStatus ?? this.messageStatus,
     createdAt: createdAt ?? this.createdAt,
     isRead: isRead ?? this.isRead,
   );
@@ -1031,6 +1065,9 @@ class Message extends DataClass implements Insertable<Message> {
           ? data.receiverId.value
           : this.receiverId,
       message: data.message.present ? data.message.value : this.message,
+      messageStatus: data.messageStatus.present
+          ? data.messageStatus.value
+          : this.messageStatus,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       isRead: data.isRead.present ? data.isRead.value : this.isRead,
     );
@@ -1044,6 +1081,7 @@ class Message extends DataClass implements Insertable<Message> {
           ..write('senderId: $senderId, ')
           ..write('receiverId: $receiverId, ')
           ..write('message: $message, ')
+          ..write('messageStatus: $messageStatus, ')
           ..write('createdAt: $createdAt, ')
           ..write('isRead: $isRead')
           ..write(')'))
@@ -1051,8 +1089,16 @@ class Message extends DataClass implements Insertable<Message> {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, chatId, senderId, receiverId, message, createdAt, isRead);
+  int get hashCode => Object.hash(
+    id,
+    chatId,
+    senderId,
+    receiverId,
+    message,
+    messageStatus,
+    createdAt,
+    isRead,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1062,6 +1108,7 @@ class Message extends DataClass implements Insertable<Message> {
           other.senderId == this.senderId &&
           other.receiverId == this.receiverId &&
           other.message == this.message &&
+          other.messageStatus == this.messageStatus &&
           other.createdAt == this.createdAt &&
           other.isRead == this.isRead);
 }
@@ -1072,6 +1119,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
   final Value<String> senderId;
   final Value<String> receiverId;
   final Value<String> message;
+  final Value<String> messageStatus;
   final Value<int> createdAt;
   final Value<bool> isRead;
   final Value<int> rowid;
@@ -1081,6 +1129,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     this.senderId = const Value.absent(),
     this.receiverId = const Value.absent(),
     this.message = const Value.absent(),
+    this.messageStatus = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.isRead = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1091,6 +1140,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     required String senderId,
     required String receiverId,
     required String message,
+    this.messageStatus = const Value.absent(),
     required int createdAt,
     this.isRead = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1106,6 +1156,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     Expression<String>? senderId,
     Expression<String>? receiverId,
     Expression<String>? message,
+    Expression<String>? messageStatus,
     Expression<int>? createdAt,
     Expression<bool>? isRead,
     Expression<int>? rowid,
@@ -1116,6 +1167,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
       if (senderId != null) 'sender_id': senderId,
       if (receiverId != null) 'receiver_id': receiverId,
       if (message != null) 'message': message,
+      if (messageStatus != null) 'message_status': messageStatus,
       if (createdAt != null) 'created_at': createdAt,
       if (isRead != null) 'is_read': isRead,
       if (rowid != null) 'rowid': rowid,
@@ -1128,6 +1180,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     Value<String>? senderId,
     Value<String>? receiverId,
     Value<String>? message,
+    Value<String>? messageStatus,
     Value<int>? createdAt,
     Value<bool>? isRead,
     Value<int>? rowid,
@@ -1138,6 +1191,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
       senderId: senderId ?? this.senderId,
       receiverId: receiverId ?? this.receiverId,
       message: message ?? this.message,
+      messageStatus: messageStatus ?? this.messageStatus,
       createdAt: createdAt ?? this.createdAt,
       isRead: isRead ?? this.isRead,
       rowid: rowid ?? this.rowid,
@@ -1162,6 +1216,9 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     if (message.present) {
       map['message'] = Variable<String>(message.value);
     }
+    if (messageStatus.present) {
+      map['message_status'] = Variable<String>(messageStatus.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<int>(createdAt.value);
     }
@@ -1182,6 +1239,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
           ..write('senderId: $senderId, ')
           ..write('receiverId: $receiverId, ')
           ..write('message: $message, ')
+          ..write('messageStatus: $messageStatus, ')
           ..write('createdAt: $createdAt, ')
           ..write('isRead: $isRead, ')
           ..write('rowid: $rowid')
@@ -1741,6 +1799,7 @@ typedef $$MessagesTableCreateCompanionBuilder =
       required String senderId,
       required String receiverId,
       required String message,
+      Value<String> messageStatus,
       required int createdAt,
       Value<bool> isRead,
       Value<int> rowid,
@@ -1752,6 +1811,7 @@ typedef $$MessagesTableUpdateCompanionBuilder =
       Value<String> senderId,
       Value<String> receiverId,
       Value<String> message,
+      Value<String> messageStatus,
       Value<int> createdAt,
       Value<bool> isRead,
       Value<int> rowid,
@@ -1807,6 +1867,11 @@ class $$MessagesTableFilterComposer
 
   ColumnFilters<String> get message => $composableBuilder(
     column: $table.message,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get messageStatus => $composableBuilder(
+    column: $table.messageStatus,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1873,6 +1938,11 @@ class $$MessagesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get messageStatus => $composableBuilder(
+    column: $table.messageStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -1929,6 +1999,11 @@ class $$MessagesTableAnnotationComposer
 
   GeneratedColumn<String> get message =>
       $composableBuilder(column: $table.message, builder: (column) => column);
+
+  GeneratedColumn<String> get messageStatus => $composableBuilder(
+    column: $table.messageStatus,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<int> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -1993,6 +2068,7 @@ class $$MessagesTableTableManager
                 Value<String> senderId = const Value.absent(),
                 Value<String> receiverId = const Value.absent(),
                 Value<String> message = const Value.absent(),
+                Value<String> messageStatus = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
                 Value<bool> isRead = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -2002,6 +2078,7 @@ class $$MessagesTableTableManager
                 senderId: senderId,
                 receiverId: receiverId,
                 message: message,
+                messageStatus: messageStatus,
                 createdAt: createdAt,
                 isRead: isRead,
                 rowid: rowid,
@@ -2013,6 +2090,7 @@ class $$MessagesTableTableManager
                 required String senderId,
                 required String receiverId,
                 required String message,
+                Value<String> messageStatus = const Value.absent(),
                 required int createdAt,
                 Value<bool> isRead = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -2022,6 +2100,7 @@ class $$MessagesTableTableManager
                 senderId: senderId,
                 receiverId: receiverId,
                 message: message,
+                messageStatus: messageStatus,
                 createdAt: createdAt,
                 isRead: isRead,
                 rowid: rowid,

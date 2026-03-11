@@ -23,8 +23,9 @@ class MessageNotifer extends Notifier {
       final String senderId = data["sender_id"];
       final String receiverId = data["receiver_id"];
       final currentUser = ref.read(settingsUserProvider);
-      final activeChatUserId =
-          ref.read(chatListControllerProvider).activeChatUserId;
+      final activeChatUserId = ref
+          .read(chatListControllerProvider)
+          .activeChatUserId;
 
       if (currentUser != null && senderId == currentUser.id) {
         return;
@@ -144,6 +145,8 @@ class MessageNotifer extends Notifier {
       ),
     );
   }
+
+  Future<void> changeMessageStatus() async {}
 
   Future<void> resetMessagesCount() async {}
 }
