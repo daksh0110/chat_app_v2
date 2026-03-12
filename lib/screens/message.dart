@@ -127,7 +127,7 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
                   return MessageItem(
                     message: msg.message,
                     isSender: msg.senderId == currentUser.id,
-                    status: statusMap("sending"),
+                    status: statusMap(msg.messageStatus),
                   );
                 },
               );

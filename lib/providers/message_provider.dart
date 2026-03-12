@@ -39,6 +39,27 @@ class MessageNotifer extends Notifier {
 
       final shouldAutoRead = activeChatUserId == senderId;
 
+      int _normalizeCreatedAt(dynamic raw) {
+        if (raw is int) {
+          return raw;
+        }
+
+        if (raw is String) {
+          final asInt = int.tryParse(raw);
+          if (asInt != null) {
+            return asInt;
+          }
+
+          try {
+            return DateTime.parse(raw).millisecondsSinceEpoch;
+          } catch (_) {}
+        }
+
+        return DateTime.now().millisecondsSinceEpoch;
+      }
+
+      final createdAt = DateTime.now().millisecondsSinceEpoch;
+
       final existingChat = await database.managers.chatListTable
           .filter((f) => f.userId(senderId))
           .getSingleOrNull();
@@ -54,7 +75,7 @@ class MessageNotifer extends Notifier {
             userId: senderId,
             name: user.name,
             lastMessage: Value(data["message"]),
-            lastMessageTime: Value(data["created_at"]),
+            lastMessageTime: Value(createdAt),
             unReadCount: const Value(1),
           ),
         );
@@ -66,7 +87,7 @@ class MessageNotifer extends Notifier {
             .update(
               (o) => o(
                 lastMessage: Value(data["message"]),
-                lastMessageTime: Value(data["created_at"]),
+                lastMessageTime: Value(createdAt),
                 unReadCount: Value(existingChat.unReadCount + 1),
               ),
             );
@@ -81,11 +102,16 @@ class MessageNotifer extends Notifier {
           message: data["message"],
           receiverId: receiverId,
           senderId: senderId,
-          createdAt: data["created_at"],
+          createdAt: createdAt,
           isRead: const Value(false),
         ),
         mode: InsertMode.insertOrIgnore,
       );
+
+      ref.read(socketProvider).sendMessage("message_delivered", {
+        "message_id": data["id"],
+        "sender_id": senderId,
+      });
 
       if (shouldAutoRead) {
         await ref.read(chatListControllerProvider).markChatAsRead(senderId);
@@ -98,12 +124,14 @@ class MessageNotifer extends Notifier {
     required String receiverId,
     required String receiverName,
   }) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+
     ref.read(socketProvider).sendMessage("send_message", {
       "message": message,
       "receiver_id": receiverId,
+      "temp_id": now,
     });
     final database = ref.read(databaseProvider);
-    final now = DateTime.now().millisecondsSinceEpoch;
     final user = ref.watch(settingsUserProvider);
     if (user == null) return;
     final existingChat = await database.managers.chatListTable
@@ -146,7 +174,46 @@ class MessageNotifer extends Notifier {
     );
   }
 
-  Future<void> changeMessageStatus() async {}
+  Future<void> messageSent() async {
+    final db = ref.read(databaseProvider);
+    ref.read(socketProvider).listen("message_sent", (dynamic data) async {
+      final String tempId = data["temp_id"].toString();
+      final String messageId = data["message_id"].toString();
+      print(messageId);
+      final message = await db.managers.messages
+          .filter((f) => f.id(tempId))
+          .getSingleOrNull();
+
+      if (message == null) return;
+
+      await db.managers.messages
+          .filter((f) => f.id(tempId))
+          .update(
+            (o) => o(id: Value(messageId), messageStatus: const Value("sent")),
+          );
+    });
+  }
+
+  Future<void> messageDelivered() async {
+    final db = ref.read(databaseProvider);
+
+    ref.read(socketProvider).listen("message_delivered", (data) async {
+      final messageId = data["message_id"].toString();
+
+      Future<void> _markDelivered([int attempt = 0]) async {
+        final updatedCount = await db.managers.messages
+            .filter((f) => f.id(messageId))
+            .update((o) => o(messageStatus: const Value("delivered")));
+
+        if (updatedCount == 0 && attempt < 3) {
+          await Future.delayed(const Duration(milliseconds: 200));
+          await _markDelivered(attempt + 1);
+        }
+      }
+
+      await _markDelivered();
+    });
+  }
 
   Future<void> resetMessagesCount() async {}
 }

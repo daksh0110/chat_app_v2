@@ -32,6 +32,8 @@ class MyApp extends ConsumerWidget {
 
           ref.read(socketProvider).connect(token);
           ref.read(messageProvider.notifier).receiveMessage();
+          ref.read(messageProvider.notifier).messageSent();
+          ref.read(messageProvider.notifier).messageDelivered();
         }
       });
     });
