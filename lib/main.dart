@@ -34,6 +34,7 @@ class MyApp extends ConsumerWidget {
           ref.read(messageProvider.notifier).receiveMessage();
           ref.read(messageProvider.notifier).messageSent();
           ref.read(messageProvider.notifier).messageDelivered();
+          ref.read(messageProvider.notifier).markRead();
         }
       });
     });

@@ -17,7 +17,7 @@ Widget _statusIcon(MessageStatus status) {
       return const Icon(LucideIcons.checkCheck, size: 10, color: Colors.white);
 
     case MessageStatus.read:
-      return const Icon(LucideIcons.checkCheck, size: 10, color: Colors.blue);
+      return const Icon(LucideIcons.checkCheck, size: 10, color: Colors.red);
 
     case MessageStatus.failed:
       return const Icon(LucideIcons.circleAlert, size: 10, color: Colors.red);
@@ -27,13 +27,13 @@ Widget _statusIcon(MessageStatus status) {
 class MessageItem extends ConsumerWidget {
   final String message;
   final bool isSender;
-  final MessageStatus status;
+  final MessageStatus? status;
 
   const MessageItem({
     super.key,
     required this.message,
     required this.isSender,
-    required this.status,
+    this.status,
   });
 
   @override
@@ -67,7 +67,9 @@ class MessageItem extends ConsumerWidget {
                 color: isSender ? Colors.white : Colors.black,
               ),
             ),
-            Positioned(bottom: -10, right: 0, child: _statusIcon(status)),
+
+            if (isSender && status != null)
+              Positioned(bottom: -10, right: 0, child: _statusIcon(status!)),
           ],
         ),
       ),

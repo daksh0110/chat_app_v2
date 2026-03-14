@@ -71,6 +71,10 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
       _lastActiveUserId = receiverId;
       _chatListController.setActiveChatUserId(receiverId);
     }
+
+    Future.microtask(() {
+      ref.read(messageProvider.notifier).markChatMessagesRead(receiverId);
+    });
     final socketService = ref.read(socketProvider);
     socketService.checkUserStatus(receiverId);
   }
@@ -116,6 +120,13 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
               if (currentUser == null) {
                 return const Center(child: CircularProgressIndicator());
               }
+              if (messages.isNotEmpty) {
+                Future.microtask(() {
+                  ref
+                      .read(messageProvider.notifier)
+                      .markChatMessagesRead(receiverId);
+                });
+              }
 
               return ListView.builder(
                 controller: _scrollController,
@@ -127,7 +138,9 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
                   return MessageItem(
                     message: msg.message,
                     isSender: msg.senderId == currentUser.id,
-                    status: statusMap(msg.messageStatus),
+                    status: msg.senderId == currentUser.id
+                        ? statusMap(msg.messageStatus)
+                        : statusMap("sending"),
                   );
                 },
               );

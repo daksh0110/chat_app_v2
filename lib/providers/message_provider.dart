@@ -38,34 +38,14 @@ class MessageNotifer extends Notifier {
       }
 
       final shouldAutoRead = activeChatUserId == senderId;
-
-      int _normalizeCreatedAt(dynamic raw) {
-        if (raw is int) {
-          return raw;
-        }
-
-        if (raw is String) {
-          final asInt = int.tryParse(raw);
-          if (asInt != null) {
-            return asInt;
-          }
-
-          try {
-            return DateTime.parse(raw).millisecondsSinceEpoch;
-          } catch (_) {}
-        }
-
-        return DateTime.now().millisecondsSinceEpoch;
-      }
-
       final createdAt = DateTime.now().millisecondsSinceEpoch;
-
       final existingChat = await database.managers.chatListTable
           .filter((f) => f.userId(senderId))
           .getSingleOrNull();
 
       int chatId;
 
+      final unreadIncrement = shouldAutoRead ? 0 : 1;
       if (existingChat == null) {
         final response = await UserApiService(apiClient).getUserById(senderId);
         final user = response.data!;
@@ -76,7 +56,7 @@ class MessageNotifer extends Notifier {
             name: user.name,
             lastMessage: Value(data["message"]),
             lastMessageTime: Value(createdAt),
-            unReadCount: const Value(1),
+            unReadCount: Value(unreadIncrement),
           ),
         );
 
@@ -88,7 +68,7 @@ class MessageNotifer extends Notifier {
               (o) => o(
                 lastMessage: Value(data["message"]),
                 lastMessageTime: Value(createdAt),
-                unReadCount: Value(existingChat.unReadCount + 1),
+                unReadCount: Value(existingChat.unReadCount + unreadIncrement),
               ),
             );
 
@@ -103,7 +83,8 @@ class MessageNotifer extends Notifier {
           receiverId: receiverId,
           senderId: senderId,
           createdAt: createdAt,
-          isRead: const Value(false),
+          isRead: Value(shouldAutoRead),
+          messageStatus: Value(shouldAutoRead ? "read" : "delivered"),
         ),
         mode: InsertMode.insertOrIgnore,
       );
@@ -114,7 +95,10 @@ class MessageNotifer extends Notifier {
       });
 
       if (shouldAutoRead) {
-        await ref.read(chatListControllerProvider).markChatAsRead(senderId);
+        ref.read(socketProvider).sendMessage("message_read", {
+          "message_id": data["id"],
+          "sender_id": senderId,
+        });
       }
     });
   }
@@ -179,7 +163,6 @@ class MessageNotifer extends Notifier {
     ref.read(socketProvider).listen("message_sent", (dynamic data) async {
       final String tempId = data["temp_id"].toString();
       final String messageId = data["message_id"].toString();
-      print(messageId);
       final message = await db.managers.messages
           .filter((f) => f.id(tempId))
           .getSingleOrNull();
@@ -201,18 +184,98 @@ class MessageNotifer extends Notifier {
       final messageId = data["message_id"].toString();
 
       Future<void> _markDelivered([int attempt = 0]) async {
-        final updatedCount = await db.managers.messages
+        final message = await db.managers.messages
+            .filter((f) => f.id(messageId))
+            .getSingleOrNull();
+        if (message == null) {
+          if (attempt < 3) {
+            await Future.delayed(const Duration(milliseconds: 200));
+            await _markDelivered(attempt + 1);
+          }
+          return;
+        }
+        if (message.messageStatus == "read") return;
+
+        await db.managers.messages
             .filter((f) => f.id(messageId))
             .update((o) => o(messageStatus: const Value("delivered")));
-
-        if (updatedCount == 0 && attempt < 3) {
-          await Future.delayed(const Duration(milliseconds: 200));
-          await _markDelivered(attempt + 1);
-        }
       }
 
       await _markDelivered();
     });
+  }
+
+  Future<void> markRead() async {
+    final db = ref.read(databaseProvider);
+
+    ref.read(socketProvider).listen("message_read", (data) async {
+      final messageId = data["message_id"].toString();
+
+      Future<void> _markRead([int attempt = 0]) async {
+        final message = await db.managers.messages
+            .filter((f) => f.id(messageId))
+            .getSingleOrNull();
+
+        if (message == null) {
+          print("Message not found (attempt $attempt)");
+
+          if (attempt < 5) {
+            await Future.delayed(const Duration(milliseconds: 200));
+            await _markRead(attempt + 1);
+          }
+
+          return;
+        }
+
+        if (message.messageStatus == "read") {
+          print("Already read");
+          return;
+        }
+
+        await db.managers.messages
+            .filter((f) => f.id(messageId))
+            .update((o) => o(messageStatus: const Value("read")));
+      }
+
+      await _markRead();
+    });
+  }
+
+  Future<void> markChatMessagesRead(String senderId) async {
+    final db = ref.read(databaseProvider);
+    final currentUser = ref.read(settingsUserProvider);
+
+    if (currentUser == null) return;
+
+    final unreadMessages = await db.managers.messages
+        .filter((f) => f.senderId(senderId) & f.isRead(false))
+        .get();
+
+    for (final msg in unreadMessages) {
+      await db.managers.messages
+          .filter((f) => f.id(msg.id))
+          .update(
+            (o) => o(
+              isRead: const Value(true),
+              messageStatus: const Value("read"),
+            ),
+          );
+
+      ref.read(socketProvider).sendMessage("message_read", {
+        "message_id": msg.id,
+        "sender_id": senderId,
+      });
+    }
+
+    // Reset unread count for this chat so list shows 0 when user is on screen
+    final chat = await db.managers.chatListTable
+        .filter((f) => f.userId(senderId))
+        .getSingleOrNull();
+    if (chat != null) {
+      await db.managers.chatListTable
+          .filter((f) => f.id(chat.id))
+          .update((o) => o(unReadCount: const Value(0)));
+    }
   }
 
   Future<void> resetMessagesCount() async {}
