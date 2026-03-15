@@ -35,6 +35,8 @@ class MyApp extends ConsumerWidget {
           ref.read(messageProvider.notifier).messageSent();
           ref.read(messageProvider.notifier).messageDelivered();
           ref.read(messageProvider.notifier).markRead();
+          ref.read(messageProvider.notifier).sendChatSyncEvent();
+          ref.read(messageProvider.notifier).chatSync();
         }
       });
     });

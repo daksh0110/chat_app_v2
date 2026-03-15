@@ -80,7 +80,6 @@ class MessageNotifer extends Notifier {
           id: data["id"],
           chatId: chatId,
           message: data["message"],
-          receiverId: receiverId,
           senderId: senderId,
           createdAt: createdAt,
           isRead: Value(shouldAutoRead),
@@ -150,7 +149,6 @@ class MessageNotifer extends Notifier {
         id: now.toString(),
         chatId: chatId,
         message: message,
-        receiverId: receiverId,
         senderId: user.id,
         createdAt: now,
         isRead: const Value(true),
@@ -267,7 +265,6 @@ class MessageNotifer extends Notifier {
       });
     }
 
-    // Reset unread count for this chat so list shows 0 when user is on screen
     final chat = await db.managers.chatListTable
         .filter((f) => f.userId(senderId))
         .getSingleOrNull();
@@ -278,5 +275,85 @@ class MessageNotifer extends Notifier {
     }
   }
 
-  Future<void> resetMessagesCount() async {}
+  void sendChatSyncEvent() {
+    ref.read(socketProvider).sendMessage("chat_sync", null);
+  }
+
+  Future<void> chatSync() async {
+    final db = ref.read(databaseProvider);
+
+    ref.read(socketProvider).listen("chat_sync_result", (data) async {
+      final chats = data["chats"] as List;
+      final messages = data["messages"] as List;
+
+      await db.transaction(() async {
+        /// Map backend chat_id → local Drift chatId
+        final Map<String, int> chatIdMap = {};
+
+        /// 1️⃣ Insert chats
+        for (final chat in chats) {
+          final existingChat = await db.managers.chatListTable
+              .filter((f) => f.userId(chat["user_id"]))
+              .getSingleOrNull();
+
+          int localChatId;
+
+          if (existingChat == null) {
+            localChatId = await db.managers.chatListTable.create(
+              (o) => o(
+                userId: chat["user_id"],
+                name: chat["name"],
+                lastMessage: Value(chat["last_message"]),
+                lastMessageTime: Value(DateTime.now().millisecondsSinceEpoch),
+                unReadCount: Value(chat["un_read_count"] ?? 0),
+              ),
+            );
+          } else {
+            localChatId = existingChat.id;
+
+            await db.managers.chatListTable
+                .filter((f) => f.id(existingChat.id))
+                .update(
+                  (o) => o(
+                    lastMessage: Value(chat["last_message"]),
+                    lastMessageTime: Value(
+                      DateTime.now().millisecondsSinceEpoch,
+                    ),
+                    unReadCount: Value(chat["un_read_count"] ?? 0),
+                  ),
+                );
+          }
+
+          /// store mapping
+          chatIdMap[chat["chat_id"]] = localChatId;
+        }
+
+        /// 2️⃣ Insert messages
+        for (final msg in messages) {
+          final localChatId = chatIdMap[msg["chat_id"]];
+
+          if (localChatId == null) continue;
+
+          await db.managers.messages.create(
+            (o) => o(
+              id: msg["_id"],
+              chatId: localChatId,
+              message: msg["message"],
+              senderId: msg["sender_id"],
+              createdAt: DateTime.parse(
+                msg["createdAt"],
+              ).millisecondsSinceEpoch,
+              isRead: Value(msg["is_read"] ?? false),
+              messageStatus: Value(
+                msg["is_read"] == true ? "read" : "delivered",
+              ),
+            ),
+            mode: InsertMode.insertOrIgnore,
+          );
+        }
+      });
+
+      print("Chat sync completed");
+    });
+  }
 }

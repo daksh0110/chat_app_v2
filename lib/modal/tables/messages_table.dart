@@ -6,7 +6,6 @@ class Messages extends Table {
   IntColumn get chatId =>
       integer().references(ChatListTable, #id, onDelete: KeyAction.cascade)();
   TextColumn get senderId => text()();
-  TextColumn get receiverId => text()();
   TextColumn get message => text()();
   TextColumn get messageStatus =>
       text().withDefault(const Constant("sending"))();

@@ -6,11 +6,9 @@ class SocketService {
   void connect(String token) {
     socket = IO.io(
       'http://10.0.2.2:5000',
-      IO.OptionBuilder()
-          .setTransports(['websocket'])
-          .setAuth({"token": token})
-          .disableAutoConnect()
-          .build(),
+      IO.OptionBuilder().setTransports(['websocket']).setAuth({
+        "token": token,
+      }).build(),
     );
 
     socket.connect();
