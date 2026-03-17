@@ -36,7 +36,7 @@ class MessageNotifer extends Notifier {
 
     while (_messageQueue.isNotEmpty) {
       final data = _messageQueue.removeFirst();
-      await _handleMessage(data); // 👈 your existing logic here
+      await _handleMessage(data);
     }
 
     _isProcessing = false;
@@ -54,7 +54,6 @@ class MessageNotifer extends Notifier {
     final currentUser = ref.read(settingsUserProvider);
     if (currentUser == null) return;
 
-    // 🔥 Ignore if already handled via ACK
     if (tempId != null) {
       final existingTemp = await database.managers.messages
           .filter((f) => f.id(tempId))
@@ -63,7 +62,6 @@ class MessageNotifer extends Notifier {
       if (existingTemp != null) return;
     }
 
-    // 🔥 Ignore own messages
     if (senderId == currentUser.id) return;
 
     final activeChatUserId = ref
@@ -75,7 +73,6 @@ class MessageNotifer extends Notifier {
     final createdAt =
         data["created_at"] ?? DateTime.now().millisecondsSinceEpoch;
 
-    // 🔹 1. Insert message FIRST
     await database.managers.messages.create(
       (o) => o(
         id: messageId,
@@ -129,7 +126,6 @@ class MessageNotifer extends Notifier {
           );
     }
 
-    // 🔹 3. Delivery events
     ref.read(socketProvider).sendMessage("message_delivered", {
       "message_id": messageId,
       "sender_id": senderId,
@@ -149,17 +145,16 @@ class MessageNotifer extends Notifier {
     required String receiverName,
   }) async {
     final now = DateTime.now().millisecondsSinceEpoch;
-    final tempId = const Uuid().v4(); // ✅ ONLY for message
+    final tempId = const Uuid().v4();
 
     final database = ref.read(databaseProvider);
     final user = ref.read(settingsUserProvider);
     if (user == null) return;
 
-    // 🔹 1. Insert TEMP message (chatId = null for first message)
     await database.managers.messages.create(
       (o) => o(
         id: tempId,
-        chatId: "", // or null if nullable
+        chatId: "",
         message: message,
         senderId: user.id,
         createdAt: now,
@@ -168,7 +163,6 @@ class MessageNotifer extends Notifier {
       ),
     );
 
-    // 🔹 2. Send to backend with ACK
     ref.read(socketProvider).sendMessageWithAck(
       "send_message",
       {"message": message, "receiver_id": receiverId, "temp_id": tempId},
@@ -177,7 +171,6 @@ class MessageNotifer extends Notifier {
         final messageId = response["message_id"];
         final createdAt = response["created_at"];
 
-        // 🔹 3. Update/Create chat AFTER backend response
         final existingChat = await database.managers.chatListTable
             .filter((f) => f.chatId(chatId))
             .getSingleOrNull();
