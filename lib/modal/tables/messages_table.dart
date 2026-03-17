@@ -1,10 +1,8 @@
 import 'package:drift/drift.dart';
-import 'chat_list_table.dart';
 
 class Messages extends Table {
   TextColumn get id => text()();
-  IntColumn get chatId =>
-      integer().references(ChatListTable, #id, onDelete: KeyAction.cascade)();
+  TextColumn get chatId => text()();
   TextColumn get senderId => text()();
   TextColumn get message => text()();
   TextColumn get messageStatus =>

@@ -34,6 +34,10 @@ class SocketService {
     socket.emit(event, data);
   }
 
+  void sendMessageWithAck(String event, dynamic data, Function(dynamic) onAck) {
+    socket.emitWithAck(event, data, ack: onAck);
+  }
+
   void listen(String event, Function(dynamic) callback) {
     socket.on(event, callback);
   }

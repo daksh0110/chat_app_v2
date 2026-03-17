@@ -114,7 +114,6 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
           }
 
           final messagesAsync = ref.watch(chatMessagesProvider(chatId));
-
           return messagesAsync.when(
             data: (messages) {
               if (currentUser == null) {

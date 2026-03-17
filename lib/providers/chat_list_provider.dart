@@ -45,7 +45,7 @@ class ChatListController {
         .write(const ChatListTableCompanion(unReadCount: Value(0)));
 
     await (db.update(db.messages)
-          ..where((m) => m.chatId.equals(chat.id) & m.isRead.equals(false)))
+          ..where((m) => m.chatId.equals(chat.chatId) & m.isRead.equals(false)))
         .write(const MessagesCompanion(isRead: Value(true)));
   }
 }

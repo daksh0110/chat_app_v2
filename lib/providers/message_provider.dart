@@ -1,11 +1,15 @@
+import 'dart:collection';
+
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:my_app/core/database.dart';
 import 'package:my_app/core/network/api_client.dart';
 import 'package:my_app/data/services/user_api_service.dart';
 import 'package:my_app/providers/chat_list_provider.dart';
 import 'package:my_app/providers/database_provider.dart';
 import 'package:my_app/providers/settings_user_notifier_provider.dart';
 import 'package:my_app/providers/socket_provider.dart';
+import 'package:uuid/uuid.dart';
 
 final messageProvider = NotifierProvider(MessageNotifer.new);
 
@@ -15,91 +19,128 @@ class MessageNotifer extends Notifier {
     return null;
   }
 
+  final _messageQueue = Queue<dynamic>();
+  bool _isProcessing = false;
+
   Future<void> receiveMessage() async {
-    ref.read(socketProvider).listen("receive_message", (dynamic data) async {
-      final database = ref.read(databaseProvider);
-      final apiClient = ApiClient();
+    ref.read(socketProvider).listen("receive_message", (dynamic data) {
+      _messageQueue.add(data);
+      _processQueue();
+    });
+  }
 
-      final String senderId = data["sender_id"];
-      final String receiverId = data["receiver_id"];
-      final currentUser = ref.read(settingsUserProvider);
-      final activeChatUserId = ref
-          .read(chatListControllerProvider)
-          .activeChatUserId;
+  Future<void> _processQueue() async {
+    if (_isProcessing) return;
 
-      if (currentUser != null && senderId == currentUser.id) {
-        return;
-      }
+    _isProcessing = true;
 
-      final isIncomingForMe =
-          currentUser != null && receiverId == currentUser.id;
-      if (!isIncomingForMe) {
-        return;
-      }
+    while (_messageQueue.isNotEmpty) {
+      final data = _messageQueue.removeFirst();
+      await _handleMessage(data); // 👈 your existing logic here
+    }
 
-      final shouldAutoRead = activeChatUserId == senderId;
-      final createdAt = DateTime.now().millisecondsSinceEpoch;
-      final existingChat = await database.managers.chatListTable
-          .filter((f) => f.userId(senderId))
+    _isProcessing = false;
+  }
+
+  Future<void> _handleMessage(dynamic data) async {
+    final database = ref.read(databaseProvider);
+    final apiClient = ApiClient();
+
+    final senderId = data["sender_id"];
+    final messageId = data["message_id"] ?? data["id"];
+    final chatId = data["chat_id"];
+    final tempId = data["temp_id"];
+
+    final currentUser = ref.read(settingsUserProvider);
+    if (currentUser == null) return;
+
+    // 🔥 Ignore if already handled via ACK
+    if (tempId != null) {
+      final existingTemp = await database.managers.messages
+          .filter((f) => f.id(tempId))
           .getSingleOrNull();
 
-      int chatId;
+      if (existingTemp != null) return;
+    }
 
-      final unreadIncrement = shouldAutoRead ? 0 : 1;
-      if (existingChat == null) {
-        final response = await UserApiService(apiClient).getUserById(senderId);
-        final user = response.data!;
+    // 🔥 Ignore own messages
+    if (senderId == currentUser.id) return;
 
-        final newId = await database.managers.chatListTable.create(
-          (o) => o(
-            userId: senderId,
-            name: user.name,
-            lastMessage: Value(data["message"]),
-            lastMessageTime: Value(createdAt),
-            unReadCount: Value(unreadIncrement),
-          ),
-        );
+    final activeChatUserId = ref
+        .read(chatListControllerProvider)
+        .activeChatUserId;
 
-        chatId = newId;
-      } else {
-        await database.managers.chatListTable
-            .filter((f) => f.id(existingChat.id))
-            .update(
-              (o) => o(
-                lastMessage: Value(data["message"]),
-                lastMessageTime: Value(createdAt),
-                unReadCount: Value(existingChat.unReadCount + unreadIncrement),
-              ),
-            );
+    final shouldAutoRead = activeChatUserId == senderId;
 
-        chatId = existingChat.id;
-      }
+    final createdAt =
+        data["created_at"] ?? DateTime.now().millisecondsSinceEpoch;
 
-      await database.managers.messages.create(
-        (o) => o(
-          id: data["id"],
-          chatId: chatId,
-          message: data["message"],
-          senderId: senderId,
-          createdAt: createdAt,
-          isRead: Value(shouldAutoRead),
-          messageStatus: Value(shouldAutoRead ? "read" : "delivered"),
-        ),
-        mode: InsertMode.insertOrIgnore,
-      );
+    // 🔹 1. Insert message FIRST
+    await database.managers.messages.create(
+      (o) => o(
+        id: messageId,
+        chatId: chatId,
+        message: data["message"],
+        senderId: senderId,
+        createdAt: createdAt,
+        isRead: Value(shouldAutoRead),
+        messageStatus: Value(shouldAutoRead ? "read" : "delivered"),
+      ),
+      mode: InsertMode.insertOrIgnore,
+    );
 
-      ref.read(socketProvider).sendMessage("message_delivered", {
-        "message_id": data["id"],
+    final existingChat = await database.managers.chatListTable
+        .filter((f) => f.chatId(chatId))
+        .getSingleOrNull();
+
+    if (existingChat == null) {
+      final response = await UserApiService(apiClient).getUserById(senderId);
+      final user = response.data!;
+
+      await database
+          .into(database.chatListTable)
+          .insert(
+            ChatListTableCompanion.insert(
+              userId: senderId,
+              name: user.name,
+              chatId: chatId,
+              lastMessage: Value(data["message"]),
+              lastMessageTime: Value(createdAt),
+              unReadCount: Value(shouldAutoRead ? 0 : 1),
+            ),
+          );
+    } else {
+      final isNewer =
+          existingChat.lastMessageTime == null ||
+          createdAt >= existingChat.lastMessageTime!;
+      final unReadCount = await getUnreadCount(senderId);
+      await database.managers.chatListTable
+          .filter((f) => f.id(existingChat.id))
+          .update(
+            (o) => o(
+              lastMessage: isNewer
+                  ? Value(data["message"])
+                  : Value(existingChat.lastMessage),
+              lastMessageTime: isNewer
+                  ? Value(createdAt)
+                  : Value(existingChat.lastMessageTime),
+              unReadCount: Value(unReadCount),
+            ),
+          );
+    }
+
+    // 🔹 3. Delivery events
+    ref.read(socketProvider).sendMessage("message_delivered", {
+      "message_id": messageId,
+      "sender_id": senderId,
+    });
+
+    if (shouldAutoRead) {
+      ref.read(socketProvider).sendMessage("message_read", {
+        "message_id": messageId,
         "sender_id": senderId,
       });
-
-      if (shouldAutoRead) {
-        ref.read(socketProvider).sendMessage("message_read", {
-          "message_id": data["id"],
-          "sender_id": senderId,
-        });
-      }
-    });
+    }
   }
 
   Future<void> sendMessagea({
@@ -108,51 +149,76 @@ class MessageNotifer extends Notifier {
     required String receiverName,
   }) async {
     final now = DateTime.now().millisecondsSinceEpoch;
+    final tempId = const Uuid().v4(); // ✅ ONLY for message
 
-    ref.read(socketProvider).sendMessage("send_message", {
-      "message": message,
-      "receiver_id": receiverId,
-      "temp_id": now,
-    });
     final database = ref.read(databaseProvider);
-    final user = ref.watch(settingsUserProvider);
+    final user = ref.read(settingsUserProvider);
     if (user == null) return;
-    final existingChat = await database.managers.chatListTable
-        .filter((f) => f.userId(receiverId))
-        .getSingleOrNull();
 
-    int chatId;
-
-    if (existingChat == null) {
-      final newId = await database.managers.chatListTable.create(
-        (o) => o(
-          userId: receiverId,
-          name: receiverName,
-          lastMessage: Value(message),
-          lastMessageTime: Value(now),
-        ),
-      );
-
-      chatId = newId;
-    } else {
-      await database.managers.chatListTable
-          .filter((f) => f.id(existingChat.id))
-          .update(
-            (o) => o(lastMessage: Value(message), lastMessageTime: Value(now)),
-          );
-
-      chatId = existingChat.id;
-    }
-
+    // 🔹 1. Insert TEMP message (chatId = null for first message)
     await database.managers.messages.create(
       (o) => o(
-        id: now.toString(),
-        chatId: chatId,
+        id: tempId,
+        chatId: "", // or null if nullable
         message: message,
         senderId: user.id,
         createdAt: now,
         isRead: const Value(true),
+        messageStatus: const Value("sending"),
       ),
+    );
+
+    // 🔹 2. Send to backend with ACK
+    ref.read(socketProvider).sendMessageWithAck(
+      "send_message",
+      {"message": message, "receiver_id": receiverId, "temp_id": tempId},
+      (response) async {
+        final chatId = response["chat_id"];
+        final messageId = response["message_id"];
+        final createdAt = response["created_at"];
+
+        // 🔹 3. Update/Create chat AFTER backend response
+        final existingChat = await database.managers.chatListTable
+            .filter((f) => f.chatId(chatId))
+            .getSingleOrNull();
+
+        int localChatId;
+
+        if (existingChat == null) {
+          final newId = await database.managers.chatListTable.create(
+            (o) => o(
+              chatId: chatId,
+              userId: receiverId,
+              name: receiverName,
+              lastMessage: Value(message),
+              lastMessageTime: Value(createdAt),
+            ),
+          );
+          localChatId = newId;
+        } else {
+          localChatId = existingChat.id;
+
+          await database.managers.chatListTable
+              .filter((f) => f.id(existingChat.id))
+              .update(
+                (o) => o(
+                  lastMessage: Value(message),
+                  lastMessageTime: Value(createdAt),
+                ),
+              );
+        }
+
+        await database.managers.messages
+            .filter((f) => f.id(tempId))
+            .update(
+              (o) => o(
+                id: Value(messageId),
+                chatId: Value(chatId),
+                createdAt: Value(createdAt),
+                messageStatus: const Value("sent"),
+              ),
+            );
+      },
     );
   }
 
@@ -279,81 +345,21 @@ class MessageNotifer extends Notifier {
     ref.read(socketProvider).sendMessage("chat_sync", null);
   }
 
-  Future<void> chatSync() async {
+  Future<int> getUnreadCount(String senderId) async {
     final db = ref.read(databaseProvider);
+    final me = ref.read(settingsUserProvider);
 
-    ref.read(socketProvider).listen("chat_sync_result", (data) async {
-      final chats = data["chats"] as List;
-      final messages = data["messages"] as List;
+    if (me == null) return 0;
 
-      await db.transaction(() async {
-        /// Map backend chat_id → local Drift chatId
-        final Map<String, int> chatIdMap = {};
+    final result =
+        await (db.selectOnly(db.messages)
+              ..addColumns([db.messages.id.count()])
+              ..where(
+                db.messages.senderId.equals(senderId) &
+                    db.messages.isRead.equals(false),
+              ))
+            .getSingle();
 
-        /// 1️⃣ Insert chats
-        for (final chat in chats) {
-          final existingChat = await db.managers.chatListTable
-              .filter((f) => f.userId(chat["user_id"]))
-              .getSingleOrNull();
-
-          int localChatId;
-
-          if (existingChat == null) {
-            localChatId = await db.managers.chatListTable.create(
-              (o) => o(
-                userId: chat["user_id"],
-                name: chat["name"],
-                lastMessage: Value(chat["last_message"]),
-                lastMessageTime: Value(DateTime.now().millisecondsSinceEpoch),
-                unReadCount: Value(chat["un_read_count"] ?? 0),
-              ),
-            );
-          } else {
-            localChatId = existingChat.id;
-
-            await db.managers.chatListTable
-                .filter((f) => f.id(existingChat.id))
-                .update(
-                  (o) => o(
-                    lastMessage: Value(chat["last_message"]),
-                    lastMessageTime: Value(
-                      DateTime.now().millisecondsSinceEpoch,
-                    ),
-                    unReadCount: Value(chat["un_read_count"] ?? 0),
-                  ),
-                );
-          }
-
-          /// store mapping
-          chatIdMap[chat["chat_id"]] = localChatId;
-        }
-
-        /// 2️⃣ Insert messages
-        for (final msg in messages) {
-          final localChatId = chatIdMap[msg["chat_id"]];
-
-          if (localChatId == null) continue;
-
-          await db.managers.messages.create(
-            (o) => o(
-              id: msg["_id"],
-              chatId: localChatId,
-              message: msg["message"],
-              senderId: msg["sender_id"],
-              createdAt: DateTime.parse(
-                msg["createdAt"],
-              ).millisecondsSinceEpoch,
-              isRead: Value(msg["is_read"] ?? false),
-              messageStatus: Value(
-                msg["is_read"] == true ? "read" : "delivered",
-              ),
-            ),
-            mode: InsertMode.insertOrIgnore,
-          );
-        }
-      });
-
-      print("Chat sync completed");
-    });
+    return result.read(db.messages.id.count()) ?? 0;
   }
 }

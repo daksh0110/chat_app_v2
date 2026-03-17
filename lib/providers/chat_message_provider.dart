@@ -3,7 +3,7 @@ import 'package:my_app/core/database.dart';
 import 'package:my_app/providers/database_provider.dart';
 import 'package:drift/drift.dart';
 
-final chatMessagesProvider = StreamProvider.family<List<Message>, int>((
+final chatMessagesProvider = StreamProvider.family<List<Message>, String>((
   ref,
   chatId,
 ) {
@@ -15,7 +15,7 @@ final chatMessagesProvider = StreamProvider.family<List<Message>, int>((
       .watch();
 });
 
-final chatIdProvider = FutureProvider.family<int?, String>((
+final chatIdProvider = FutureProvider.family<String?, String>((
   ref,
   receiverId,
 ) async {
@@ -25,5 +25,5 @@ final chatIdProvider = FutureProvider.family<int?, String>((
       .filter((f) => f.userId(receiverId))
       .getSingleOrNull();
 
-  return chat?.id;
+  return chat?.chatId;
 });

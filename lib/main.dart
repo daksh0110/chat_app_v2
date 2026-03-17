@@ -31,12 +31,14 @@ class MyApp extends ConsumerWidget {
           await ref.read(settingsUserProvider.notifier).setUser(token);
 
           ref.read(socketProvider).connect(token);
-          ref.read(messageProvider.notifier).receiveMessage();
-          ref.read(messageProvider.notifier).messageSent();
-          ref.read(messageProvider.notifier).messageDelivered();
-          ref.read(messageProvider.notifier).markRead();
-          ref.read(messageProvider.notifier).sendChatSyncEvent();
-          ref.read(messageProvider.notifier).chatSync();
+          final notifier = ref.read(messageProvider.notifier);
+
+          await notifier.receiveMessage();
+          await notifier.messageSent();
+          await notifier.messageDelivered();
+          await notifier.markRead();
+
+          notifier.sendChatSyncEvent();
         }
       });
     });
