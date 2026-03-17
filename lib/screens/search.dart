@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
-import 'package:my_app/data/search_list.dart';
+import 'package:my_app/core/network/api_client.dart';
+import 'package:my_app/data/services/user_api_service.dart';
 import 'package:my_app/modal/screens/search/search_item_group.dart';
 import 'package:my_app/widgets/screens/search/search_group.dart';
 
@@ -15,7 +16,23 @@ class Search extends StatefulWidget {
 }
 
 class _SearchState extends State<Search> {
-  final List<SearchItemGroup> data = searchList;
+  final List<SearchItemGroup> data = [];
+  final ApiClient apiClient = ApiClient();
+
+  void onSearching(String text) async {
+    final result = await UserApiService(
+      apiClient,
+    ).getUsers(page: 1, search: text);
+
+    if (result.data != null) {
+      setState(() {
+        data.clear();
+
+        data.add(SearchItemGroup(id: "1", name: "People", items: result.data!));
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -39,8 +56,9 @@ class _SearchState extends State<Search> {
 
               const SizedBox(width: 8),
 
-              const Expanded(
+              Expanded(
                 child: TextField(
+                  onChanged: (value) => onSearching(value),
                   decoration: InputDecoration(
                     hintText: "Search",
                     border: InputBorder.none,
@@ -64,11 +82,11 @@ class _SearchState extends State<Search> {
             Expanded(
               child: ListView.separated(
                 itemBuilder: (context, index) {
-                  return SearchGroup(list: searchList[index]);
+                  return SearchGroup(list: data[index]);
                 },
                 separatorBuilder: (context, index) =>
                     const SizedBox(height: 20),
-                itemCount: searchList.length,
+                itemCount: data.length,
               ),
             ),
           ],

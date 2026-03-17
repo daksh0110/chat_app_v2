@@ -1,9 +1,12 @@
+import 'package:intl/intl.dart';
+import 'package:my_app/core/database.dart';
+
 class ChatListModal {
   final String id;
   final String name;
   final String profilePic;
   final String lastMessage;
-  final String lastMessageAt;
+  final String lastMessageTime;
   final int unReadCount;
 
   ChatListModal({
@@ -11,7 +14,20 @@ class ChatListModal {
     required this.name,
     required this.profilePic,
     required this.lastMessage,
-    required this.lastMessageAt,
+    required this.lastMessageTime,
     this.unReadCount = 0,
   });
+
+  factory ChatListModal.fromDrift(ChatListTableData data) {
+    return ChatListModal(
+      id: data.userId.toString(),
+      name: data.name,
+      profilePic: "assets/no-image-icon.jpg",
+      lastMessage: data.lastMessage ?? "",
+      lastMessageTime: DateFormat(
+        "HH:mm",
+      ).format(DateTime.fromMillisecondsSinceEpoch(data.lastMessageTime!)),
+      unReadCount: data.unReadCount,
+    );
+  }
 }

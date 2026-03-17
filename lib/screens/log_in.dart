@@ -123,76 +123,92 @@ class _LogInState extends ConsumerState<LogIn> {
                 const SizedBox(height: 30),
 
                 Expanded(
-                  child: Column(
-                    children: [
-                      Form(
-                        key: _formKey,
-                        child: Column(
-                          children: [
-                            PrimaryTextField(
-                              label: "Email",
-                              controller: emailController,
-                              keyboardType: TextInputType.emailAddress,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return "Email is required";
-                                }
-                                if (!RegExp(
-                                  r'^[^@]+@[^@]+\.[^@]+',
-                                ).hasMatch(value)) {
-                                  return "Enter a valid email";
-                                }
-                                return null;
-                              },
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return SingleChildScrollView(
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: constraints.maxHeight,
+                          ),
+                          child: IntrinsicHeight(
+                            child: Column(
+                              children: [
+                                Form(
+                                  key: _formKey,
+                                  child: Column(
+                                    children: [
+                                      PrimaryTextField(
+                                        label: "Email",
+                                        controller: emailController,
+                                        keyboardType:
+                                            TextInputType.emailAddress,
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return "Email is required";
+                                          }
+                                          if (!RegExp(
+                                            r'^[^@]+@[^@]+\.[^@]+',
+                                          ).hasMatch(value)) {
+                                            return "Enter a valid email";
+                                          }
+                                          return null;
+                                        },
+                                      ),
+
+                                      const SizedBox(height: 24),
+
+                                      PrimaryTextField(
+                                        label: "Password",
+                                        controller: passwordController,
+                                        obscureText: true,
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return "Password is required";
+                                          }
+                                          if (value.length < 6) {
+                                            return "Password must be at least 6 characters";
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                const Spacer(),
+
+                                PrimaryButton(
+                                  text: "Log In",
+                                  onPressed: isDisabled ? () {} : _onLogin,
+                                  backgroundColor: isDisabled
+                                      ? DefaultColorSheet.disbaledButton
+                                      : DefaultColorSheet.primary,
+                                  borderColor: isDisabled
+                                      ? DefaultColorSheet.disbaledButton
+                                      : DefaultColorSheet.primary,
+                                  textColor: isDisabled
+                                      ? DefaultColorSheet.grey500
+                                      : Colors.white,
+                                ),
+
+                                const SizedBox(height: 16),
+
+                                InkWell(
+                                  onTap: () {},
+                                  child: const PrimaryText(
+                                    "Forgot password?",
+                                    color: DefaultColorSheet.primary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
                             ),
-
-                            const SizedBox(height: 24),
-
-                            PrimaryTextField(
-                              label: "Password",
-                              controller: passwordController,
-                              obscureText: true,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return "Password is required";
-                                }
-                                if (value.length < 6) {
-                                  return "Password must be at least 6 characters";
-                                }
-                                return null;
-                              },
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
-
-                      const Spacer(),
-
-                      PrimaryButton(
-                        text: "Log In",
-                        onPressed: isDisabled ? () {} : _onLogin,
-                        backgroundColor: isDisabled
-                            ? DefaultColorSheet.disbaledButton
-                            : DefaultColorSheet.primary,
-                        borderColor: isDisabled
-                            ? DefaultColorSheet.disbaledButton
-                            : DefaultColorSheet.primary,
-                        textColor: isDisabled
-                            ? DefaultColorSheet.grey500
-                            : Colors.white,
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      InkWell(
-                        onTap: () {},
-                        child: const PrimaryText(
-                          "Forgot password?",
-                          color: DefaultColorSheet.primary,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
+                      );
+                    },
                   ),
                 ),
               ],

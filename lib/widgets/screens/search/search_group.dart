@@ -27,7 +27,10 @@ class SearchGroup extends StatelessWidget {
                 Navigator.pushNamed(
                   context,
                   AppRoutes.message,
-                  arguments: MessageScreenArguments(id: list.items[index].id),
+                  arguments: MessageScreenArguments(
+                    id: list.items[index].id,
+                    name: list.items[index].name,
+                  ),
                 );
               },
             );

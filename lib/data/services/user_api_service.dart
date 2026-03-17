@@ -2,6 +2,7 @@ import 'package:my_app/core/network/api_client.dart';
 import 'package:my_app/core/network/api_constant.dart';
 import 'package:my_app/modal/api_response.dart';
 import 'package:my_app/modal/google_auth_response.dart';
+import 'package:my_app/modal/screens/search/search_item.dart';
 import 'package:my_app/modal/sucessfull_authentication.dart';
 
 class UserApiService {
@@ -62,6 +63,59 @@ class UserApiService {
       return apiResponse;
     } catch (e) {
       throw Exception("Create user failed: $e");
+    }
+  }
+
+  Future<ApiResponse<List<SearchItem>>> getUsers({
+    required String search,
+    required int page,
+  }) async {
+    try {
+      final response = await apiClient.get(
+        "${ApiConstants.baseUrl}${ApiConstants.users}?search=$search&page=$page",
+      );
+      final apiResponse = ApiResponse<List<SearchItem>>.fromJson(
+        response,
+        (json) =>
+            (json as List).map((item) => SearchItem.fromJson(item)).toList(),
+      );
+      return apiResponse;
+    } catch (e) {
+      throw Exception("Create user failed: $e");
+    }
+  }
+
+  Future<ApiResponse<SearchItem>> getMyProfile({required String token}) async {
+    print(token);
+    try {
+      final response = await apiClient.get(
+        "${ApiConstants.baseUrl}${ApiConstants.users}/me",
+        token: token,
+      );
+
+      final apiResponse = ApiResponse<SearchItem>.fromJson(
+        response,
+        (json) => SearchItem.fromJson(json as Map<String, dynamic>),
+      );
+      print(apiResponse);
+      return apiResponse;
+    } catch (e) {
+      throw Exception("Get profile failed: $e");
+    }
+  }
+
+  Future<ApiResponse<SearchItem>> getUserById(String userId) async {
+    try {
+      final response = await apiClient.get(
+        "${ApiConstants.baseUrl}${ApiConstants.users}/$userId",
+      );
+
+      return ApiResponse<SearchItem>.fromJson(
+        response,
+        (json) => SearchItem.fromJson(json as Map<String, dynamic>),
+      );
+    } catch (e) {
+      throw Exception("Get user by id failed: $e");
     }
   }
 }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:my_app/data/dummy_chat_list.dart';
 import 'package:my_app/data/navigation_menu.dart';
 import 'package:my_app/modal/chat_list_modal.dart';
 import 'package:my_app/screens/homescreen.dart';
@@ -15,7 +14,7 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int currentActive = 0;
-  final List<ChatListModal> data = dummyChatListData;
+  final List<ChatListModal> data = [];
 
   late final List<Widget> screens;
 
@@ -24,7 +23,9 @@ class _MainScreenState extends State<MainScreen> {
     super.initState();
     screens = [
       Homescreen(data: data),
-      const Center(child: Text("Calls Screen", style: TextStyle(color: Colors.white))),
+      const Center(
+        child: Text("Calls Screen", style: TextStyle(color: Colors.white)),
+      ),
       const SettingsMain(),
       const SettingsMain(),
     ];

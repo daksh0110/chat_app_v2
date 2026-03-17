@@ -41,6 +41,12 @@ dependencies:
   flutter_riverpod: ^3.2.1
   flutter_secure_storage: ^10.0.0
   google_sign_in: ^7.2.0
+  socket_io_client: ^3.1.4
+  drift: ^2.31.0
+  drift_flutter: ^0.2.8
+  path_provider: ^2.1.5
+  intl: ^0.20.2
+  uuid: ^4.0.0
 
 dev_dependencies:
   flutter_test:
@@ -52,6 +58,8 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  drift_dev: ^2.31.0
+  build_runner: ^2.11.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -73,6 +81,7 @@ flutter:
     - assets/screens/home/user4.png
     - assets/screens/home/user5.png
     - assets/screens/home/user6.png
+    - assets/no-image-icon.jpg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

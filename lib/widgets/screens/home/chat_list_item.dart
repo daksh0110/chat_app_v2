@@ -12,7 +12,7 @@ class ChatListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.transparent, // important
+      color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         child: Padding(
@@ -33,7 +33,6 @@ class ChatListItem extends StatelessWidget {
 
               const SizedBox(width: 12),
 
-              // Name + Last message
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -47,6 +46,8 @@ class ChatListItem extends StatelessWidget {
                     const SizedBox(height: 4),
                     PrimaryText(
                       chat.lastMessage,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       fontSize: 12,
                       color: DefaultColorSheet.grey500,
                     ),
@@ -56,12 +57,11 @@ class ChatListItem extends StatelessWidget {
 
               const SizedBox(width: 8),
 
-              // Time + Unread badge
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   PrimaryText(
-                    chat.lastMessageAt,
+                    chat.lastMessageTime,
                     fontSize: 12,
                     color: DefaultColorSheet.grey500,
                   ),

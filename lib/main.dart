@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/providers/auth_notifier_provider.dart';
+import 'package:my_app/providers/message_provider.dart';
+import 'package:my_app/providers/settings_user_notifier_provider.dart';
+import 'package:my_app/providers/socket_provider.dart';
 import 'package:my_app/screens/main_screen.dart';
 import 'package:my_app/screens/log_in.dart';
 import 'package:my_app/screens/message.dart';
@@ -19,6 +23,25 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.listen(authProvider, (previous, next) {
+      next.whenData((state) async {
+        if (state == AuthState.authenticated) {
+          final storage = const FlutterSecureStorage();
+          final token = await storage.read(key: "accessToken") ?? "";
+          await ref.read(settingsUserProvider.notifier).setUser(token);
+
+          ref.read(socketProvider).connect(token);
+          final notifier = ref.read(messageProvider.notifier);
+
+          await notifier.receiveMessage();
+          await notifier.messageSent();
+          await notifier.messageDelivered();
+          await notifier.markRead();
+
+          notifier.sendChatSyncEvent();
+        }
+      });
+    });
     final authState = ref.watch(authProvider);
 
     return MaterialApp(
