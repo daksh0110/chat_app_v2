@@ -34,7 +34,6 @@ class MyApp extends ConsumerWidget {
           final notifier = ref.read(messageProvider.notifier);
 
           await notifier.receiveMessage();
-          await notifier.messageSent();
           await notifier.messageDelivered();
           await notifier.markRead();
 

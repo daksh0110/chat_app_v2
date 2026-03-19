@@ -11,6 +11,18 @@ import 'package:my_app/providers/settings_user_notifier_provider.dart';
 import 'package:my_app/providers/socket_provider.dart';
 import 'package:uuid/uuid.dart';
 
+int _parseTimestamp(dynamic ts) {
+  if (ts == null) return DateTime.now().millisecondsSinceEpoch;
+  if (ts is int) return ts;
+  if (ts is String) {
+    return DateTime.tryParse(ts)?.millisecondsSinceEpoch ??
+        int.tryParse(ts) ??
+        DateTime.now().millisecondsSinceEpoch;
+  }
+  if (ts is double) return ts.toInt();
+  return DateTime.now().millisecondsSinceEpoch;
+}
+
 final messageProvider = NotifierProvider(MessageNotifer.new);
 
 class MessageNotifer extends Notifier {
@@ -70,12 +82,16 @@ class MessageNotifer extends Notifier {
 
     final shouldAutoRead = activeChatUserId == senderId;
 
-    final createdAt =
-        data["created_at"] ?? DateTime.now().millisecondsSinceEpoch;
+    final createdAt = _parseTimestamp(data["created_at"]);
+    final existing = await database.managers.messages
+        .filter((f) => f.serverId(messageId))
+        .getSingleOrNull();
 
+    if (existing != null) return;
     await database.managers.messages.create(
       (o) => o(
         id: messageId,
+        serverId: Value(messageId),
         chatId: chatId,
         message: data["message"],
         senderId: senderId,
@@ -144,17 +160,44 @@ class MessageNotifer extends Notifier {
     required String receiverId,
     required String receiverName,
   }) async {
-    final now = DateTime.now().millisecondsSinceEpoch;
+    int now = DateTime.now().millisecondsSinceEpoch;
     final tempId = const Uuid().v4();
 
     final database = ref.read(databaseProvider);
     final user = ref.read(settingsUserProvider);
     if (user == null) return;
 
+    final localChatId = "local_$receiverId";
+
+    final existingChat = await database.managers.chatListTable
+        .filter((f) => f.userId(receiverId))
+        .getSingleOrNull();
+
+    if (existingChat != null && existingChat.lastMessageTime != null) {
+      if (now <= existingChat.lastMessageTime!) {
+        now = existingChat.lastMessageTime! + 1;
+      }
+    }
+
+    final currentChatId = existingChat?.chatId ?? localChatId;
+
+    if (existingChat == null) {
+      await database.managers.chatListTable.create(
+        (o) => o(
+          chatId: localChatId,
+          userId: receiverId,
+          name: receiverName,
+          lastMessage: const Value(null),
+          lastMessageTime: const Value(null),
+          unReadCount: const Value(0),
+        ),
+      );
+    }
+
     await database.managers.messages.create(
       (o) => o(
         id: tempId,
-        chatId: "",
+        chatId: currentChatId,
         message: message,
         senderId: user.id,
         createdAt: now,
@@ -167,36 +210,37 @@ class MessageNotifer extends Notifier {
       "send_message",
       {"message": message, "receiver_id": receiverId, "temp_id": tempId},
       (response) async {
-        final chatId = response["chat_id"];
+        final realChatId = response["chat_id"];
         final messageId = response["message_id"];
-        final createdAt = response["created_at"];
+        final serverCreatedAt = _parseTimestamp(response["created_at"]);
 
-        final existingChat = await database.managers.chatListTable
-            .filter((f) => f.chatId(chatId))
+        if (currentChatId.startsWith("local_")) {
+          await database.managers.messages
+              .filter((f) => f.id(tempId))
+              .update((o) => o(chatId: Value(realChatId)));
+        }
+
+        final chat = await database.managers.chatListTable
+            .filter((f) => f.chatId(realChatId))
             .getSingleOrNull();
 
-        int localChatId;
-
-        if (existingChat == null) {
-          final newId = await database.managers.chatListTable.create(
+        if (chat == null) {
+          await database.managers.chatListTable.create(
             (o) => o(
-              chatId: chatId,
+              chatId: realChatId,
               userId: receiverId,
               name: receiverName,
               lastMessage: Value(message),
-              lastMessageTime: Value(createdAt),
+              lastMessageTime: Value(serverCreatedAt),
             ),
           );
-          localChatId = newId;
         } else {
-          localChatId = existingChat.id;
-
           await database.managers.chatListTable
-              .filter((f) => f.id(existingChat.id))
+              .filter((f) => f.id(chat.id))
               .update(
                 (o) => o(
                   lastMessage: Value(message),
-                  lastMessageTime: Value(createdAt),
+                  lastMessageTime: Value(serverCreatedAt),
                 ),
               );
         }
@@ -205,33 +249,14 @@ class MessageNotifer extends Notifier {
             .filter((f) => f.id(tempId))
             .update(
               (o) => o(
-                id: Value(messageId),
-                chatId: Value(chatId),
-                createdAt: Value(createdAt),
+                serverId: Value(messageId),
+                chatId: Value(realChatId),
+                createdAt: Value(serverCreatedAt),
                 messageStatus: const Value("sent"),
               ),
             );
       },
     );
-  }
-
-  Future<void> messageSent() async {
-    final db = ref.read(databaseProvider);
-    ref.read(socketProvider).listen("message_sent", (dynamic data) async {
-      final String tempId = data["temp_id"].toString();
-      final String messageId = data["message_id"].toString();
-      final message = await db.managers.messages
-          .filter((f) => f.id(tempId))
-          .getSingleOrNull();
-
-      if (message == null) return;
-
-      await db.managers.messages
-          .filter((f) => f.id(tempId))
-          .update(
-            (o) => o(id: Value(messageId), messageStatus: const Value("sent")),
-          );
-    });
   }
 
   Future<void> messageDelivered() async {
@@ -242,7 +267,7 @@ class MessageNotifer extends Notifier {
 
       Future<void> _markDelivered([int attempt = 0]) async {
         final message = await db.managers.messages
-            .filter((f) => f.id(messageId))
+            .filter((f) => f.serverId(messageId))
             .getSingleOrNull();
         if (message == null) {
           if (attempt < 3) {
@@ -254,7 +279,7 @@ class MessageNotifer extends Notifier {
         if (message.messageStatus == "read") return;
 
         await db.managers.messages
-            .filter((f) => f.id(messageId))
+            .filter((f) => f.serverId(messageId))
             .update((o) => o(messageStatus: const Value("delivered")));
       }
 
@@ -270,7 +295,7 @@ class MessageNotifer extends Notifier {
 
       Future<void> _markRead([int attempt = 0]) async {
         final message = await db.managers.messages
-            .filter((f) => f.id(messageId))
+            .filter((f) => f.serverId(messageId))
             .getSingleOrNull();
 
         if (message == null) {
@@ -290,7 +315,7 @@ class MessageNotifer extends Notifier {
         }
 
         await db.managers.messages
-            .filter((f) => f.id(messageId))
+            .filter((f) => f.serverId(messageId))
             .update((o) => o(messageStatus: const Value("read")));
       }
 
@@ -319,7 +344,7 @@ class MessageNotifer extends Notifier {
           );
 
       ref.read(socketProvider).sendMessage("message_read", {
-        "message_id": msg.id,
+        "message_id": msg.serverId ?? msg.id,
         "sender_id": senderId,
       });
     }
