@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/providers/auth_notifier_provider.dart';
+import 'package:my_app/providers/database_provider.dart';
 import 'package:my_app/providers/message_provider.dart';
 import 'package:my_app/providers/settings_user_notifier_provider.dart';
 import 'package:my_app/providers/socket_provider.dart';
@@ -13,8 +14,10 @@ import 'package:my_app/screens/search.dart';
 import 'package:my_app/screens/settings/settings_main.dart';
 import 'package:my_app/screens/sign_up.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() {
+void main() async {
+  await dotenv.load(fileName: ".env");
   runApp(const ProviderScope(child: MyApp()));
 }
 
@@ -23,7 +26,7 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.listen(authProvider, (previous, next) {
+    ref.listen(authProvider, (previous, next) async {
       next.whenData((state) async {
         if (state == AuthState.authenticated) {
           final storage = const FlutterSecureStorage();
@@ -34,7 +37,6 @@ class MyApp extends ConsumerWidget {
           final notifier = ref.read(messageProvider.notifier);
 
           await notifier.receiveMessage();
-          await notifier.messageSent();
           await notifier.messageDelivered();
           await notifier.markRead();
 

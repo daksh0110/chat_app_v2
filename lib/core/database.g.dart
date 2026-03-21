@@ -399,6 +399,17 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _serverIdMeta = const VerificationMeta(
+    'serverId',
+  );
+  @override
+  late final GeneratedColumn<String> serverId = GeneratedColumn<String>(
+    'server_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -408,6 +419,7 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
     messageStatus,
     createdAt,
     isRead,
+    serverId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -473,6 +485,12 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
         isRead.isAcceptableOrUnknown(data['is_read']!, _isReadMeta),
       );
     }
+    if (data.containsKey('server_id')) {
+      context.handle(
+        _serverIdMeta,
+        serverId.isAcceptableOrUnknown(data['server_id']!, _serverIdMeta),
+      );
+    }
     return context;
   }
 
@@ -510,6 +528,10 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
         DriftSqlType.bool,
         data['${effectivePrefix}is_read'],
       )!,
+      serverId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}server_id'],
+      ),
     );
   }
 
@@ -527,6 +549,7 @@ class Message extends DataClass implements Insertable<Message> {
   final String messageStatus;
   final int createdAt;
   final bool isRead;
+  final String? serverId;
   const Message({
     required this.id,
     required this.chatId,
@@ -535,6 +558,7 @@ class Message extends DataClass implements Insertable<Message> {
     required this.messageStatus,
     required this.createdAt,
     required this.isRead,
+    this.serverId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -546,6 +570,9 @@ class Message extends DataClass implements Insertable<Message> {
     map['message_status'] = Variable<String>(messageStatus);
     map['created_at'] = Variable<int>(createdAt);
     map['is_read'] = Variable<bool>(isRead);
+    if (!nullToAbsent || serverId != null) {
+      map['server_id'] = Variable<String>(serverId);
+    }
     return map;
   }
 
@@ -558,6 +585,9 @@ class Message extends DataClass implements Insertable<Message> {
       messageStatus: Value(messageStatus),
       createdAt: Value(createdAt),
       isRead: Value(isRead),
+      serverId: serverId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serverId),
     );
   }
 
@@ -574,6 +604,7 @@ class Message extends DataClass implements Insertable<Message> {
       messageStatus: serializer.fromJson<String>(json['messageStatus']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
       isRead: serializer.fromJson<bool>(json['isRead']),
+      serverId: serializer.fromJson<String?>(json['serverId']),
     );
   }
   @override
@@ -587,6 +618,7 @@ class Message extends DataClass implements Insertable<Message> {
       'messageStatus': serializer.toJson<String>(messageStatus),
       'createdAt': serializer.toJson<int>(createdAt),
       'isRead': serializer.toJson<bool>(isRead),
+      'serverId': serializer.toJson<String?>(serverId),
     };
   }
 
@@ -598,6 +630,7 @@ class Message extends DataClass implements Insertable<Message> {
     String? messageStatus,
     int? createdAt,
     bool? isRead,
+    Value<String?> serverId = const Value.absent(),
   }) => Message(
     id: id ?? this.id,
     chatId: chatId ?? this.chatId,
@@ -606,6 +639,7 @@ class Message extends DataClass implements Insertable<Message> {
     messageStatus: messageStatus ?? this.messageStatus,
     createdAt: createdAt ?? this.createdAt,
     isRead: isRead ?? this.isRead,
+    serverId: serverId.present ? serverId.value : this.serverId,
   );
   Message copyWithCompanion(MessagesCompanion data) {
     return Message(
@@ -618,6 +652,7 @@ class Message extends DataClass implements Insertable<Message> {
           : this.messageStatus,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       isRead: data.isRead.present ? data.isRead.value : this.isRead,
+      serverId: data.serverId.present ? data.serverId.value : this.serverId,
     );
   }
 
@@ -630,7 +665,8 @@ class Message extends DataClass implements Insertable<Message> {
           ..write('message: $message, ')
           ..write('messageStatus: $messageStatus, ')
           ..write('createdAt: $createdAt, ')
-          ..write('isRead: $isRead')
+          ..write('isRead: $isRead, ')
+          ..write('serverId: $serverId')
           ..write(')'))
         .toString();
   }
@@ -644,6 +680,7 @@ class Message extends DataClass implements Insertable<Message> {
     messageStatus,
     createdAt,
     isRead,
+    serverId,
   );
   @override
   bool operator ==(Object other) =>
@@ -655,7 +692,8 @@ class Message extends DataClass implements Insertable<Message> {
           other.message == this.message &&
           other.messageStatus == this.messageStatus &&
           other.createdAt == this.createdAt &&
-          other.isRead == this.isRead);
+          other.isRead == this.isRead &&
+          other.serverId == this.serverId);
 }
 
 class MessagesCompanion extends UpdateCompanion<Message> {
@@ -666,6 +704,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
   final Value<String> messageStatus;
   final Value<int> createdAt;
   final Value<bool> isRead;
+  final Value<String?> serverId;
   final Value<int> rowid;
   const MessagesCompanion({
     this.id = const Value.absent(),
@@ -675,6 +714,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     this.messageStatus = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.isRead = const Value.absent(),
+    this.serverId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   MessagesCompanion.insert({
@@ -685,6 +725,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     this.messageStatus = const Value.absent(),
     required int createdAt,
     this.isRead = const Value.absent(),
+    this.serverId = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        chatId = Value(chatId),
@@ -699,6 +740,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     Expression<String>? messageStatus,
     Expression<int>? createdAt,
     Expression<bool>? isRead,
+    Expression<String>? serverId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -709,6 +751,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
       if (messageStatus != null) 'message_status': messageStatus,
       if (createdAt != null) 'created_at': createdAt,
       if (isRead != null) 'is_read': isRead,
+      if (serverId != null) 'server_id': serverId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -721,6 +764,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     Value<String>? messageStatus,
     Value<int>? createdAt,
     Value<bool>? isRead,
+    Value<String?>? serverId,
     Value<int>? rowid,
   }) {
     return MessagesCompanion(
@@ -731,6 +775,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
       messageStatus: messageStatus ?? this.messageStatus,
       createdAt: createdAt ?? this.createdAt,
       isRead: isRead ?? this.isRead,
+      serverId: serverId ?? this.serverId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -759,6 +804,9 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     if (isRead.present) {
       map['is_read'] = Variable<bool>(isRead.value);
     }
+    if (serverId.present) {
+      map['server_id'] = Variable<String>(serverId.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -775,6 +823,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
           ..write('messageStatus: $messageStatus, ')
           ..write('createdAt: $createdAt, ')
           ..write('isRead: $isRead, ')
+          ..write('serverId: $serverId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1466,6 +1515,7 @@ typedef $$MessagesTableCreateCompanionBuilder =
       Value<String> messageStatus,
       required int createdAt,
       Value<bool> isRead,
+      Value<String?> serverId,
       Value<int> rowid,
     });
 typedef $$MessagesTableUpdateCompanionBuilder =
@@ -1477,6 +1527,7 @@ typedef $$MessagesTableUpdateCompanionBuilder =
       Value<String> messageStatus,
       Value<int> createdAt,
       Value<bool> isRead,
+      Value<String?> serverId,
       Value<int> rowid,
     });
 
@@ -1521,6 +1572,11 @@ class $$MessagesTableFilterComposer
 
   ColumnFilters<bool> get isRead => $composableBuilder(
     column: $table.isRead,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get serverId => $composableBuilder(
+    column: $table.serverId,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -1568,6 +1624,11 @@ class $$MessagesTableOrderingComposer
     column: $table.isRead,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get serverId => $composableBuilder(
+    column: $table.serverId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$MessagesTableAnnotationComposer
@@ -1601,6 +1662,9 @@ class $$MessagesTableAnnotationComposer
 
   GeneratedColumn<bool> get isRead =>
       $composableBuilder(column: $table.isRead, builder: (column) => column);
+
+  GeneratedColumn<String> get serverId =>
+      $composableBuilder(column: $table.serverId, builder: (column) => column);
 }
 
 class $$MessagesTableTableManager
@@ -1638,6 +1702,7 @@ class $$MessagesTableTableManager
                 Value<String> messageStatus = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
                 Value<bool> isRead = const Value.absent(),
+                Value<String?> serverId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MessagesCompanion(
                 id: id,
@@ -1647,6 +1712,7 @@ class $$MessagesTableTableManager
                 messageStatus: messageStatus,
                 createdAt: createdAt,
                 isRead: isRead,
+                serverId: serverId,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -1658,6 +1724,7 @@ class $$MessagesTableTableManager
                 Value<String> messageStatus = const Value.absent(),
                 required int createdAt,
                 Value<bool> isRead = const Value.absent(),
+                Value<String?> serverId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MessagesCompanion.insert(
                 id: id,
@@ -1667,6 +1734,7 @@ class $$MessagesTableTableManager
                 messageStatus: messageStatus,
                 createdAt: createdAt,
                 isRead: isRead,
+                serverId: serverId,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
