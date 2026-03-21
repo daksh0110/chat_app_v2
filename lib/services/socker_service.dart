@@ -1,11 +1,12 @@
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class SocketService {
   late IO.Socket socket;
 
   void connect(String token) {
     socket = IO.io(
-      'http://192.168.29.193:5000',
+      '${dotenv.env['BASE_URL']}',
       IO.OptionBuilder().setTransports(['websocket']).setAuth({
         "token": token,
       }).build(),

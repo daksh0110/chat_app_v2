@@ -20,15 +20,14 @@ final chatMessagesProvider =
       },
     );
 
-final chatIdProvider = FutureProvider.family<String?, String>((
+final chatIdProvider = StreamProvider.family<String?, String?>((
   ref,
   receiverId,
-) async {
-  final db = ref.read(databaseProvider);
+) {
+  final db = ref.watch(databaseProvider);
 
-  final chat = await db.managers.chatListTable
+  return db.managers.chatListTable
       .filter((f) => f.userId(receiverId))
-      .getSingleOrNull();
-
-  return chat?.chatId;
+      .watchSingleOrNull()
+      .map((chat) => chat?.chatId);
 });

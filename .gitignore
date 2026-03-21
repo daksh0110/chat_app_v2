@@ -91,3 +91,8 @@ web/build/
 # ===== Logs & misc =====
 *.log
 .DS_Store
+
+
+# env
+
+.env

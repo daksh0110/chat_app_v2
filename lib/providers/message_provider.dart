@@ -170,9 +170,8 @@ class MessageNotifer extends Notifier {
     final localChatId = "local_$receiverId";
 
     final existingChat = await database.managers.chatListTable
-        .filter((f) => f.userId(receiverId))
+        .filter((f) => f.userId.equals(receiverId))
         .getSingleOrNull();
-
     if (existingChat != null && existingChat.lastMessageTime != null) {
       if (now <= existingChat.lastMessageTime!) {
         now = existingChat.lastMessageTime! + 1;
@@ -221,7 +220,7 @@ class MessageNotifer extends Notifier {
         }
 
         final chat = await database.managers.chatListTable
-            .filter((f) => f.chatId(realChatId))
+            .filter((f) => f.userId(receiverId))
             .getSingleOrNull();
 
         if (chat == null) {
@@ -239,12 +238,12 @@ class MessageNotifer extends Notifier {
               .filter((f) => f.id(chat.id))
               .update(
                 (o) => o(
+                  chatId: Value(realChatId),
                   lastMessage: Value(message),
                   lastMessageTime: Value(serverCreatedAt),
                 ),
               );
         }
-
         await database.managers.messages
             .filter((f) => f.id(tempId))
             .update(

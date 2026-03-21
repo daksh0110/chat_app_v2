@@ -115,10 +115,6 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
       body: SafeArea(
         child: chatIdAsync.when(
           data: (chatId) {
-            if (chatId == null) {
-              return const Center(child: Text("No messages yet"));
-            }
-
             final messagesAsync = ref.watch(
               chatMessagesProvider((chatId: chatId, receiverId: receiverId)),
             );
