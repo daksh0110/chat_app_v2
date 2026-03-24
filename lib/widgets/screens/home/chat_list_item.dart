@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/modal/chat_list_modal.dart';
+import 'package:my_app/providers/message_typing_provider.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
 
-class ChatListItem extends StatelessWidget {
+class ChatListItem extends ConsumerWidget {
   const ChatListItem({super.key, required this.chat, this.onTap});
 
   final ChatListModal chat;
   final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final typingMap = ref.watch(messageTypingProvider);
+    final isTyping = typingMap[chat.id] ?? false;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -44,13 +48,19 @@ class ChatListItem extends StatelessWidget {
                       color: DefaultColorSheet.lightBlack,
                     ),
                     const SizedBox(height: 4),
-                    PrimaryText(
-                      chat.lastMessage,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      fontSize: 12,
-                      color: DefaultColorSheet.grey500,
-                    ),
+                    isTyping
+                        ? PrimaryText(
+                            "typing...",
+                            fontSize: 12,
+                            color: DefaultColorSheet.green500,
+                          )
+                        : PrimaryText(
+                            chat.lastMessage,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            fontSize: 12,
+                            color: DefaultColorSheet.grey500,
+                          ),
                   ],
                 ),
               ),

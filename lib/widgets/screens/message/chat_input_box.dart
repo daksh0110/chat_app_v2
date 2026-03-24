@@ -4,27 +4,33 @@ import 'package:my_app/colors/defaullt_color_sheet.dart';
 
 class ChatInputBox extends StatefulWidget {
   final Function(String) onSend;
-
-  const ChatInputBox({super.key, required this.onSend});
+  final Function() onTyping;
+  final Function() onStopTyping;
+  const ChatInputBox({
+    super.key,
+    required this.onSend,
+    required this.onTyping,
+    required this.onStopTyping,
+  });
 
   @override
   State<ChatInputBox> createState() => _ChatInputBoxState();
 }
 
 class _ChatInputBoxState extends State<ChatInputBox> {
-  bool isTyping = false;
   final chatMessageController = TextEditingController();
-
+  bool _isTyping = false;
   void onTyping(String text) {
+    setState(() {
+      _isTyping = text.isNotEmpty;
+    });
+
     if (text.isEmpty) {
-      setState(() {
-        isTyping = false;
-      });
-    } else {
-      setState(() {
-        isTyping = true;
-      });
+      widget.onStopTyping();
+      return;
     }
+
+    widget.onTyping();
   }
 
   @override
@@ -89,20 +95,20 @@ class _ChatInputBoxState extends State<ChatInputBox> {
                     child: FadeTransition(opacity: animation, child: child),
                   );
                 },
-                child: isTyping
+                child: _isTyping
                     ? InkWell(
                         key: const ValueKey('send'),
                         onTap: () {
                           final text = chatMessageController.text.trim();
                           if (text.isEmpty) return;
-
                           widget.onSend(text);
-
-                          chatMessageController.clear();
+                          widget.onStopTyping();
                           setState(() {
-                            isTyping = false;
+                            _isTyping = false;
                           });
+                          chatMessageController.clear();
                         },
+
                         child: Container(
                           padding: const EdgeInsets.all(11),
                           decoration: const BoxDecoration(
