@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/providers/auth_notifier_provider.dart';
-import 'package:my_app/providers/database_provider.dart';
 import 'package:my_app/providers/message_provider.dart';
 import 'package:my_app/providers/settings_user_notifier_provider.dart';
 import 'package:my_app/providers/socket_provider.dart';
@@ -31,16 +30,17 @@ class MyApp extends ConsumerWidget {
         if (state == AuthState.authenticated) {
           final storage = const FlutterSecureStorage();
           final token = await storage.read(key: "accessToken") ?? "";
+          ref.read(socketProvider).onConnect(() async {
+            final notifier = ref.read(messageProvider.notifier);
+            await notifier.receiveMessage();
+            await notifier.messageDelivered();
+            await notifier.markRead();
+            notifier.sendChatSyncEvent();
+            notifier.receiveTypingEvent();
+            notifier.receiveStopTypingEvent();
+          });
           await ref.read(settingsUserProvider.notifier).setUser(token);
-
           ref.read(socketProvider).connect(token);
-          final notifier = ref.read(messageProvider.notifier);
-
-          await notifier.receiveMessage();
-          await notifier.messageDelivered();
-          await notifier.markRead();
-
-          notifier.sendChatSyncEvent();
         }
       });
     });

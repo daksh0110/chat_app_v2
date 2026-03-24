@@ -7,6 +7,7 @@ import 'package:my_app/core/network/api_client.dart';
 import 'package:my_app/data/services/user_api_service.dart';
 import 'package:my_app/providers/chat_list_provider.dart';
 import 'package:my_app/providers/database_provider.dart';
+import 'package:my_app/providers/message_typing_provider.dart';
 import 'package:my_app/providers/settings_user_notifier_provider.dart';
 import 'package:my_app/providers/socket_provider.dart';
 import 'package:uuid/uuid.dart';
@@ -36,6 +37,8 @@ class MessageNotifer extends Notifier {
 
   Future<void> receiveMessage() async {
     ref.read(socketProvider).listen("receive_message", (dynamic data) {
+      final senderId = data["sender_id"];
+      ref.read(messageTypingProvider.notifier).clearTyping(senderId);
       _messageQueue.add(data);
       _processQueue();
     });
@@ -378,5 +381,31 @@ class MessageNotifer extends Notifier {
             .getSingle();
 
     return result.read(db.messages.id.count()) ?? 0;
+  }
+
+  void sendTypingEvent(String recieverId) {
+    ref.read(socketProvider).sendMessage("is_typing", {
+      "receiver_id": recieverId,
+    });
+  }
+
+  void receiveTypingEvent() {
+    ref.read(socketProvider).listen("user_typing", (senderId) {
+      ref.read(messageTypingProvider.notifier).receiveUserTyping(senderId);
+    });
+  }
+
+  void sendStopTypingEvent(String recieverId) {
+    ref.read(socketProvider).sendMessage("stop_typing", {
+      "receiver_id": recieverId,
+    });
+  }
+
+  void receiveStopTypingEvent() {
+    ref.read(socketProvider).listen("user_stop_typing", (data) {
+      final senderId = data;
+
+      ref.read(messageTypingProvider.notifier).clearTyping(senderId);
+    });
   }
 }

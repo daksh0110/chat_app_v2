@@ -5,11 +5,13 @@ import 'package:my_app/modal/screens/search/message_screen_arguments.dart';
 import 'package:my_app/providers/chat_list_provider.dart';
 import 'package:my_app/providers/chat_message_provider.dart';
 import 'package:my_app/providers/message_provider.dart';
+import 'package:my_app/providers/message_typing_provider.dart';
 import 'package:my_app/providers/settings_user_notifier_provider.dart';
 import 'package:my_app/providers/socket_provider.dart';
 import 'package:my_app/widgets/screens/message/chat_input_box.dart';
 import 'package:my_app/widgets/screens/message/header.dart';
 import 'package:my_app/widgets/screens/message/message_item.dart';
+import 'package:my_app/widgets/screens/message/typing_indicator.dart';
 
 class MessageScreen extends ConsumerStatefulWidget {
   const MessageScreen({super.key});
@@ -31,31 +33,6 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
   void initState() {
     super.initState();
     _chatListController = ref.read(chatListControllerProvider);
-    final socketService = ref.read(socketProvider);
-
-    socketService.getUserStatus((data) {
-      if (data["userId"] == receiverId) {
-        setState(() {
-          _isOnline = data["online"];
-        });
-      }
-    });
-
-    socketService.listenUserOnline((data) {
-      if (data["userId"] == receiverId) {
-        setState(() {
-          _isOnline = true;
-        });
-      }
-    });
-
-    socketService.listenUserOffline((data) {
-      if (data["userId"] == receiverId) {
-        setState(() {
-          _isOnline = false;
-        });
-      }
-    });
   }
 
   @override
@@ -72,11 +49,31 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
       _chatListController.setActiveChatUserId(receiverId);
     }
 
+    final socketService = ref.read(socketProvider);
+
+    socketService.checkUserStatus(receiverId);
+
+    socketService.getUserStatus((data) {
+      if (data["userId"] == receiverId) {
+        setState(() => _isOnline = data["online"]);
+      }
+    });
+
+    socketService.listenUserOnline((data) {
+      if (data["userId"] == receiverId) {
+        setState(() => _isOnline = true);
+      }
+    });
+
+    socketService.listenUserOffline((data) {
+      if (data["userId"] == receiverId) {
+        setState(() => _isOnline = false);
+      }
+    });
+
     Future.microtask(() {
       ref.read(messageProvider.notifier).markChatMessagesRead(receiverId);
     });
-    final socketService = ref.read(socketProvider);
-    socketService.checkUserStatus(receiverId);
   }
 
   @override
@@ -96,8 +93,18 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
         );
   }
 
+  void onTyping() {
+    ref.read(messageProvider.notifier).sendTypingEvent(receiverId);
+  }
+
+  void onStopTyping() {
+    ref.read(messageProvider.notifier).sendStopTypingEvent(receiverId);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final typingMap = ref.watch(messageTypingProvider);
+    final isTyping = typingMap[receiverId] ?? false;
     final args =
         ModalRoute.of(context)!.settings.arguments as MessageScreenArguments;
     final String name = args.name;
@@ -110,7 +117,11 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
-        child: ChatInputBox(onSend: _handleSend),
+        child: ChatInputBox(
+          onSend: _handleSend,
+          onTyping: onTyping,
+          onStopTyping: onStopTyping,
+        ),
       ),
       body: SafeArea(
         child: chatIdAsync.when(
@@ -136,9 +147,13 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
                   controller: _scrollController,
                   reverse: true,
                   padding: const EdgeInsets.symmetric(vertical: 10),
-                  itemCount: messages.length,
+                  itemCount: messages.length + (isTyping ? 1 : 0),
                   itemBuilder: (context, index) {
-                    final msg = messages[messages.length - 1 - index];
+                    if (isTyping && index == 0) {
+                      return TypingIndicator();
+                    }
+                    final msgIndex = isTyping ? index - 1 : index;
+                    final msg = messages[messages.length - 1 - msgIndex];
                     return MessageItem(
                       message: msg.message,
                       isSender: msg.senderId == currentUser.id,
