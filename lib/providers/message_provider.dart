@@ -365,6 +365,42 @@ class MessageNotifer extends Notifier {
     ref.read(socketProvider).sendMessage("chat_sync", null);
   }
 
+  Future<void> sendQueueMessages() async {
+    final db = ref.read(databaseProvider);
+    final socketService = ref.read(socketProvider);
+
+    if (!socketService.isConnected) return;
+
+    final messages = await db.managers.messages
+        .filter((f) => f.messageStatus.equals("sending"))
+        .get();
+
+    for (final msg in messages) {
+      final receiverId = msg.chatId.replaceFirst("local_", "");
+
+      socketService.sendMessageWithAck(
+        "send_message",
+        {"message": msg.message, "receiver_id": receiverId, "temp_id": msg.id},
+        (response) async {
+          final messageId = response["message_id"];
+          final chatId = response["chat_id"];
+          final createdAt = _parseTimestamp(response["created_at"]);
+
+          await db.managers.messages
+              .filter((f) => f.id(msg.id))
+              .update(
+                (o) => o(
+                  serverId: Value(messageId),
+                  chatId: Value(chatId),
+                  createdAt: Value(createdAt),
+                  messageStatus: const Value("sent"),
+                ),
+              );
+        },
+      );
+    }
+  }
+
   Future<int> getUnreadCount(String senderId) async {
     final db = ref.read(databaseProvider);
     final me = ref.read(settingsUserProvider);

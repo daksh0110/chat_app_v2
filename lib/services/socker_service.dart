@@ -2,73 +2,100 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class SocketService {
-  late IO.Socket socket;
+  IO.Socket? socket;
   final List<void Function()> _onConnectCallbacks = [];
+
+  bool get isInitialized => socket != null;
+  bool get isConnected => socket?.connected ?? false;
+
   void connect(String token) {
     socket = IO.io(
-      '${dotenv.env['BASE_URL']}',
-      IO.OptionBuilder().setTransports(['websocket']).setAuth({
-        "token": token,
-      }).build(),
+      dotenv.env['BASE_URL'],
+      IO.OptionBuilder()
+          .setTransports(['websocket'])
+          .setAuth({"token": token})
+          .enableReconnection()
+          .setReconnectionAttempts(999999)
+          .setReconnectionDelay(2000)
+          .build(),
     );
 
-    socket.connect();
+    socket!.connect();
 
-    socket.onConnect((_) {
+    socket!.onConnect((_) {
+      print('✅ Connected');
+
       for (final cb in _onConnectCallbacks) {
         cb();
       }
     });
 
-    socket.onDisconnect((_) {
+    socket!.onDisconnect((_) {
       print('❌ Disconnected');
     });
 
-    socket.onConnectError((data) {
+    socket!.onConnectError((data) {
       print('⚠️ Connect Error: $data');
     });
   }
 
   void disconnect() {
-    socket.disconnect();
+    socket?.disconnect();
   }
 
   void onConnect(void Function() callback) {
-    _onConnectCallbacks.add(callback);
+    if (socket?.connected == true) {
+      callback();
+    } else {
+      _onConnectCallbacks.add(callback);
+    }
   }
 
   void sendMessage(String event, dynamic data) {
-    socket.emit(event, data);
+    if (socket == null || !socket!.connected) return;
+    socket!.emit(event, data);
   }
 
   void sendMessageWithAck(String event, dynamic data, Function(dynamic) onAck) {
-    socket.emitWithAck(event, data, ack: onAck);
+    if (socket == null || !socket!.connected) return;
+    socket!.emitWithAck(event, data, ack: onAck);
   }
 
   void listen(String event, Function(dynamic) callback) {
-    socket.on(event, callback);
+    if (socket == null) return;
+    socket!.on(event, callback);
   }
 
   void checkUserStatus(String receiverId) {
-    socket.emit("check_user_status", {"userId": receiverId});
+    if (socket == null || !socket!.connected) return;
+    socket!.emit("check_user_status", {"userId": receiverId});
   }
 
   void getUserStatus(void Function(dynamic data) callback) {
-    socket.off("user_status");
-    socket.on("user_status", callback);
+    if (socket == null) return;
+    socket!.on("user_status", callback);
   }
 
   void listenUserOnline(void Function(dynamic data) callback) {
-    socket.off("user_online");
-    socket.on("user_online", callback);
+    if (socket == null) return;
+    socket!.on("user_online", callback);
   }
 
   void listenUserOffline(void Function(dynamic data) callback) {
-    socket.off("user_offline");
-    socket.on("user_offline", callback);
+    if (socket == null) return;
+    socket!.on("user_offline", callback);
+  }
+
+  void off(String event, [Function(dynamic)? callback]) {
+    if (socket == null) return;
+    if (callback != null) {
+      socket!.off(event, callback);
+    } else {
+      socket!.off(event);
+    }
   }
 
   void dispose() {
-    socket.dispose();
+    socket?.dispose();
   }
 }
