@@ -38,6 +38,7 @@ class MyApp extends ConsumerWidget {
             notifier.sendChatSyncEvent();
             notifier.receiveTypingEvent();
             notifier.receiveStopTypingEvent();
+            notifier.sendQueueMessages();
           });
           await ref.read(settingsUserProvider.notifier).setUser(token);
           ref.read(socketProvider).connect(token);

@@ -32,12 +32,12 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
   @override
   void initState() {
     super.initState();
-    _chatListController = ref.read(chatListControllerProvider);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _chatListController = ref.read(chatListControllerProvider);
     final args =
         ModalRoute.of(context)!.settings.arguments as MessageScreenArguments;
 
@@ -49,27 +49,31 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
       _chatListController.setActiveChatUserId(receiverId);
     }
 
-    final socketService = ref.read(socketProvider);
-
-    socketService.checkUserStatus(receiverId);
+    final socketService = ref.watch(socketProvider);
 
     socketService.getUserStatus((data) {
-      if (data["userId"] == receiverId) {
+      if (data["userId"] == receiverId && mounted) {
         setState(() => _isOnline = data["online"]);
       }
     });
 
     socketService.listenUserOnline((data) {
-      if (data["userId"] == receiverId) {
+      if (data["userId"] == receiverId && mounted) {
         setState(() => _isOnline = true);
       }
     });
 
     socketService.listenUserOffline((data) {
-      if (data["userId"] == receiverId) {
+      if (data["userId"] == receiverId && mounted) {
         setState(() => _isOnline = false);
       }
     });
+
+    socketService.onConnect(() {
+      socketService.checkUserStatus(receiverId);
+    });
+
+    socketService.checkUserStatus(receiverId);
 
     Future.microtask(() {
       ref.read(messageProvider.notifier).markChatMessagesRead(receiverId);
@@ -110,6 +114,7 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
     final String name = args.name;
     final currentUser = ref.watch(settingsUserProvider);
     final chatIdAsync = ref.watch(chatIdProvider(receiverId));
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: Header(id: receiverId, name: name, isOnline: _isOnline),
