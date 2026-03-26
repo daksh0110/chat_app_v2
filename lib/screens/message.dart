@@ -118,63 +118,64 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: Header(id: receiverId, name: name, isOnline: _isOnline),
-      bottomNavigationBar: Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: ChatInputBox(
-          onSend: _handleSend,
-          onTyping: onTyping,
-          onStopTyping: onStopTyping,
-        ),
-      ),
       body: SafeArea(
-        child: chatIdAsync.when(
-          data: (chatId) {
-            final messagesAsync = ref.watch(
-              chatMessagesProvider((chatId: chatId, receiverId: receiverId)),
-            );
+        child: Column(
+          children: [
+            Expanded(
+              child: chatIdAsync.when(
+                data: (chatId) {
+                  final messagesAsync = ref.watch(
+                    chatMessagesProvider((
+                      chatId: chatId,
+                      receiverId: receiverId,
+                    )),
+                  );
 
-            return messagesAsync.when(
-              data: (messages) {
-                if (currentUser == null) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (messages.isNotEmpty) {
-                  Future.microtask(() {
-                    ref
-                        .read(messageProvider.notifier)
-                        .markChatMessagesRead(receiverId);
-                  });
-                }
+                  return messagesAsync.when(
+                    data: (messages) {
+                      if (currentUser == null) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
 
-                return ListView.builder(
-                  controller: _scrollController,
-                  reverse: true,
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  itemCount: messages.length + (isTyping ? 1 : 0),
-                  itemBuilder: (context, index) {
-                    if (isTyping && index == 0) {
-                      return TypingIndicator();
-                    }
-                    final msgIndex = isTyping ? index - 1 : index;
-                    final msg = messages[messages.length - 1 - msgIndex];
-                    return MessageItem(
-                      message: msg.message,
-                      isSender: msg.senderId == currentUser.id,
-                      status: msg.senderId == currentUser.id
-                          ? statusMap(msg.messageStatus)
-                          : statusMap("sending"),
-                    );
-                  },
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text(e.toString())),
-            );
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text(e.toString())),
+                      return ListView.builder(
+                        controller: _scrollController,
+                        reverse: true,
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        itemCount: messages.length + (isTyping ? 1 : 0),
+                        itemBuilder: (context, index) {
+                          if (isTyping && index == 0) {
+                            return TypingIndicator();
+                          }
+
+                          final msgIndex = isTyping ? index - 1 : index;
+                          final msg = messages[messages.length - 1 - msgIndex];
+
+                          return MessageItem(
+                            message: msg.message,
+                            isSender: msg.senderId == currentUser.id,
+                            status: msg.senderId == currentUser.id
+                                ? statusMap(msg.messageStatus)
+                                : statusMap("sending"),
+                          );
+                        },
+                      );
+                    },
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (e, _) => Center(child: Text(e.toString())),
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) => Center(child: Text(e.toString())),
+              ),
+            ),
+
+            ChatInputBox(
+              onSend: _handleSend,
+              onTyping: onTyping,
+              onStopTyping: onStopTyping,
+            ),
+          ],
         ),
       ),
     );

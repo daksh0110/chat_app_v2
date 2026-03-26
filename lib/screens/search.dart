@@ -1,28 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/core/network/api_client.dart';
 import 'package:my_app/data/services/user_api_service.dart';
 import 'package:my_app/modal/screens/search/search_item_group.dart';
+import 'package:my_app/providers/secure_storage_provider.dart';
 import 'package:my_app/widgets/screens/search/search_group.dart';
 
-class Search extends StatefulWidget {
+class Search extends ConsumerStatefulWidget {
   const Search({super.key});
 
   @override
-  State<Search> createState() {
+  ConsumerState<Search> createState() {
     return _SearchState();
   }
 }
 
-class _SearchState extends State<Search> {
+class _SearchState extends ConsumerState<Search> {
   final List<SearchItemGroup> data = [];
   final ApiClient apiClient = ApiClient();
 
   void onSearching(String text) async {
+    final token = ref.read(secureStorageProvider).value;
     final result = await UserApiService(
       apiClient,
-    ).getUsers(page: 1, search: text);
+    ).getUsers(page: 1, search: text, token: token ?? "");
 
     if (result.data != null) {
       setState(() {
