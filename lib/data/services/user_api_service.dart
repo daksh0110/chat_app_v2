@@ -69,10 +69,12 @@ class UserApiService {
   Future<ApiResponse<List<SearchItem>>> getUsers({
     required String search,
     required int page,
+    required String token,
   }) async {
     try {
       final response = await apiClient.get(
         "${ApiConstants.baseUrl}${ApiConstants.users}?search=$search&page=$page",
+        token: token,
       );
       final apiResponse = ApiResponse<List<SearchItem>>.fromJson(
         response,
@@ -86,7 +88,6 @@ class UserApiService {
   }
 
   Future<ApiResponse<SearchItem>> getMyProfile({required String token}) async {
-    print(token);
     try {
       final response = await apiClient.get(
         "${ApiConstants.baseUrl}${ApiConstants.users}/me",
@@ -97,7 +98,6 @@ class UserApiService {
         response,
         (json) => SearchItem.fromJson(json as Map<String, dynamic>),
       );
-      print(apiResponse);
       return apiResponse;
     } catch (e) {
       throw Exception("Get profile failed: $e");
