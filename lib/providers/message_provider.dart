@@ -37,8 +37,10 @@ class MessageNotifer extends Notifier {
 
   Future<void> receiveMessage() async {
     ref.read(socketProvider).listen("receive_message", (dynamic data) {
-      final senderId = data["sender_id"];
-      ref.read(messageTypingProvider.notifier).clearTyping(senderId);
+      final chatId = data["chat_id"];
+      if (chatId != null) {
+        ref.read(messageTypingProvider.notifier).clearTyping(chatId);
+      }
       _messageQueue.add(data);
       _processQueue();
     });
@@ -147,13 +149,13 @@ class MessageNotifer extends Notifier {
 
     ref.read(socketProvider).sendMessage("message_delivered", {
       "message_id": messageId,
-      "sender_id": senderId,
+      "chat_id": chatId,
     });
 
     if (shouldAutoRead) {
       ref.read(socketProvider).sendMessage("message_read", {
         "message_id": messageId,
-        "sender_id": senderId,
+        "chat_id": chatId,
       });
     }
   }
@@ -207,10 +209,15 @@ class MessageNotifer extends Notifier {
         messageStatus: const Value("sending"),
       ),
     );
-
+    final isRealChat = !currentChatId.startsWith("local_");
     ref.read(socketProvider).sendMessageWithAck(
       "send_message",
-      {"message": message, "receiver_id": receiverId, "temp_id": tempId},
+      {
+        "message": message,
+        "receiver_id": receiverId,
+        "temp_id": tempId,
+        if (isRealChat) "chat_id": currentChatId,
+      },
       (response) async {
         final realChatId = response["chat_id"];
         final messageId = response["message_id"];
@@ -347,7 +354,7 @@ class MessageNotifer extends Notifier {
 
       ref.read(socketProvider).sendMessage("message_read", {
         "message_id": msg.serverId ?? msg.id,
-        "sender_id": senderId,
+        "chat_id": msg.chatId,
       });
     }
 
@@ -419,29 +426,51 @@ class MessageNotifer extends Notifier {
     return result.read(db.messages.id.count()) ?? 0;
   }
 
-  void sendTypingEvent(String recieverId) {
-    ref.read(socketProvider).sendMessage("is_typing", {
-      "receiver_id": recieverId,
-    });
+  void sendTypingEvent(String receiverId) async {
+    final db = ref.read(databaseProvider);
+    final existingChat = await db.managers.chatListTable
+        .filter((f) => f.userId.equals(receiverId))
+        .getSingleOrNull();
+
+    final chatId = existingChat?.chatId;
+
+    if (chatId != null && !chatId.startsWith("local_")) {
+      ref.read(socketProvider).sendMessage("is_typing", {
+        "chat_id": chatId,
+      });
+    }
   }
 
   void receiveTypingEvent() {
-    ref.read(socketProvider).listen("user_typing", (senderId) {
-      ref.read(messageTypingProvider.notifier).receiveUserTyping(senderId);
+    ref.read(socketProvider).listen("user_typing", (dynamic data) {
+      final chatId = data["chat_id"];
+      if (chatId != null) {
+        ref.read(messageTypingProvider.notifier).receiveUserTyping(chatId);
+      }
     });
   }
 
-  void sendStopTypingEvent(String recieverId) {
-    ref.read(socketProvider).sendMessage("stop_typing", {
-      "receiver_id": recieverId,
-    });
+  void sendStopTypingEvent(String receiverId) async {
+    final db = ref.read(databaseProvider);
+    final existingChat = await db.managers.chatListTable
+        .filter((f) => f.userId.equals(receiverId))
+        .getSingleOrNull();
+
+    final chatId = existingChat?.chatId;
+
+    if (chatId != null && !chatId.startsWith("local_")) {
+      ref.read(socketProvider).sendMessage("stop_typing", {
+        "chat_id": chatId,
+      });
+    }
   }
 
   void receiveStopTypingEvent() {
-    ref.read(socketProvider).listen("user_stop_typing", (data) {
-      final senderId = data;
-
-      ref.read(messageTypingProvider.notifier).clearTyping(senderId);
+    ref.read(socketProvider).listen("user_stop_typing", (dynamic data) {
+      final chatId = data["chat_id"];
+      if (chatId != null) {
+        ref.read(messageTypingProvider.notifier).clearTyping(chatId);
+      }
     });
   }
 }
