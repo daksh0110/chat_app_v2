@@ -3,6 +3,7 @@ import 'package:my_app/core/database.dart';
 
 class ChatListModal {
   final String id;
+  final String chatId;
   final String name;
   final String profilePic;
   final String lastMessage;
@@ -11,6 +12,7 @@ class ChatListModal {
 
   ChatListModal({
     required this.id,
+    required this.chatId,
     required this.name,
     required this.profilePic,
     required this.lastMessage,
@@ -21,6 +23,7 @@ class ChatListModal {
   factory ChatListModal.fromDrift(ChatListTableData data) {
     return ChatListModal(
       id: data.userId.toString(),
+      chatId: data.chatId.toString(),
       name: data.name,
       profilePic: "assets/no-image-icon.jpg",
       lastMessage: data.lastMessage ?? "",

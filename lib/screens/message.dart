@@ -108,12 +108,13 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
   @override
   Widget build(BuildContext context) {
     final typingMap = ref.watch(messageTypingProvider);
-    final isTyping = typingMap[receiverId] ?? false;
     final args =
         ModalRoute.of(context)!.settings.arguments as MessageScreenArguments;
     final String name = args.name;
     final currentUser = ref.watch(settingsUserProvider);
     final chatIdAsync = ref.watch(chatIdProvider(receiverId));
+    final chatId = chatIdAsync.asData?.value;
+    final isTyping = (chatId != null && typingMap[chatId] == true);
 
     return Scaffold(
       backgroundColor: Colors.white,

@@ -14,7 +14,7 @@ class ChatListItem extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final typingMap = ref.watch(messageTypingProvider);
-    final isTyping = typingMap[chat.id] ?? false;
+    final isTyping = typingMap[chat.chatId] ?? false;
     return Material(
       color: Colors.transparent,
       child: InkWell(
