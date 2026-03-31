@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/modal/screens/message/message_modal.dart';
@@ -28,12 +29,14 @@ class MessageItem extends ConsumerWidget {
   final String message;
   final bool isSender;
   final MessageStatus? status;
+  final int timestamp;
 
   const MessageItem({
     super.key,
     required this.message,
     required this.isSender,
     this.status,
+    required this.timestamp,
   });
 
   @override
@@ -61,15 +64,34 @@ class MessageItem extends ConsumerWidget {
           clipBehavior: Clip.none,
           children: [
             Padding(
-              padding: const EdgeInsets.only(right: 18),
+              padding: const EdgeInsets.only(right: 50, bottom: 2),
               child: PrimaryText(
                 message,
                 color: isSender ? Colors.white : Colors.black,
               ),
             ),
 
-            if (isSender && status != null)
-              Positioned(bottom: -10, right: 0, child: _statusIcon(status!)),
+            Positioned(
+              bottom: -10,
+              right: 0,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  PrimaryText(
+                    DateFormat(
+                      'hh:mm a',
+                    ).format(DateTime.fromMillisecondsSinceEpoch(timestamp)),
+                    fontSize: 8,
+                    color: isSender ? Colors.white70 : Colors.black54,
+                  ),
+
+                  if (isSender && status != null) ...[
+                    const SizedBox(width: 4),
+                    _statusIcon(status!),
+                  ],
+                ],
+              ),
+            ),
           ],
         ),
       ),

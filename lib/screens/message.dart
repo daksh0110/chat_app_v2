@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:my_app/core/util/getDatelabel.dart';
 import 'package:my_app/core/util/status_map.dart';
 import 'package:my_app/modal/screens/search/message_screen_arguments.dart';
 import 'package:my_app/providers/chat_list_provider.dart';
@@ -9,6 +10,7 @@ import 'package:my_app/providers/message_typing_provider.dart';
 import 'package:my_app/providers/settings_user_notifier_provider.dart';
 import 'package:my_app/providers/socket_provider.dart';
 import 'package:my_app/widgets/screens/message/chat_input_box.dart';
+import 'package:my_app/widgets/screens/message/date_banner.dart';
 import 'package:my_app/widgets/screens/message/header.dart';
 import 'package:my_app/widgets/screens/message/message_item.dart';
 import 'package:my_app/widgets/screens/message/typing_indicator.dart';
@@ -149,14 +151,32 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
                           }
 
                           final msgIndex = isTyping ? index - 1 : index;
+
                           final msg = messages[messages.length - 1 - msgIndex];
 
-                          return MessageItem(
-                            message: msg.message,
-                            isSender: msg.senderId == currentUser.id,
-                            status: msg.senderId == currentUser.id
-                                ? statusMap(msg.messageStatus)
-                                : statusMap("sending"),
+                          final currentLabel = getDateLabel(msg.createdAt);
+
+                          String? previousLabel;
+                          if (msgIndex < messages.length - 1) {
+                            final prevMsg =
+                                messages[messages.length - 1 - (msgIndex + 1)];
+                            previousLabel = getDateLabel(prevMsg.createdAt);
+                          }
+                          final showBanner = currentLabel != previousLabel;
+
+                          return Column(
+                            children: [
+                              if (showBanner) DateBanner(label: currentLabel),
+
+                              MessageItem(
+                                message: msg.message,
+                                isSender: msg.senderId == currentUser.id,
+                                status: msg.senderId == currentUser.id
+                                    ? statusMap(msg.messageStatus)
+                                    : statusMap("sending"),
+                                timestamp: msg.createdAt,
+                              ),
+                            ],
                           );
                         },
                       );
