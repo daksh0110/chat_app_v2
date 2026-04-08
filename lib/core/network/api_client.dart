@@ -25,4 +25,14 @@ class ApiClient {
 
     return jsonDecode(response.body);
   }
+
+  Future<dynamic> patch(String url, Map<String, dynamic> body) async {
+    final response = await http.patch(
+      Uri.parse(url),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode(body),
+    );
+
+    return jsonDecode(response.body);
+  }
 }

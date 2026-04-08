@@ -129,12 +129,13 @@ class _SignUpState extends ConsumerState<SignUp> {
                 ),
 
                 const SizedBox(height: 30),
+                if (args == null) ...[
+                  GoogleAuthLogin(),
 
-                GoogleAuthLogin(),
-
-                const SizedBox(height: 30),
-                const DividerText(text: "OR"),
-                const SizedBox(height: 30),
+                  const SizedBox(height: 30),
+                  const DividerText(text: "OR"),
+                  const SizedBox(height: 30),
+                ],
                 Form(
                   key: _formKey,
                   child: Column(

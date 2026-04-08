@@ -8,6 +8,7 @@ class PrimaryTextField extends StatelessWidget {
   final TextInputType keyboardType;
   final bool obscureText;
   final String? Function(String?)? validator;
+  final bool disabled;
 
   const PrimaryTextField({
     super.key,
@@ -16,6 +17,7 @@ class PrimaryTextField extends StatelessWidget {
     this.keyboardType = TextInputType.text,
     this.obscureText = false,
     this.validator,
+    this.disabled = false,
   });
 
   @override
@@ -40,7 +42,7 @@ class PrimaryTextField extends StatelessWidget {
           autovalidateMode: AutovalidateMode.onUserInteraction,
           decoration: InputDecoration(
             border: const UnderlineInputBorder(),
-
+            enabled: !disabled,
             enabledBorder: UnderlineInputBorder(
               borderSide: BorderSide(color: DefaultColorSheet.primary),
             ),

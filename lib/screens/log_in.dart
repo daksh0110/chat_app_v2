@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
+import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/core/network/api_client.dart';
 import 'package:my_app/data/services/user_api_service.dart';
 import 'package:my_app/modal/screens/login/login_user.dart';
@@ -180,7 +181,9 @@ class _LogInState extends ConsumerState<LogIn> {
                   const SizedBox(height: 16),
 
                   InkWell(
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.pushNamed(context, AppRoutes.changePassword);
+                    },
                     child: const PrimaryText(
                       "Forgot password?",
                       color: DefaultColorSheet.primary,

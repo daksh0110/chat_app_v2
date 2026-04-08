@@ -6,4 +6,5 @@ class AppRoutes {
   static const String search = "/search";
   static const String message = "/message";
   static const String settingsMain = "/settings";
+  static const String changePassword = "/change-password";
 }

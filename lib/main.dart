@@ -4,8 +4,10 @@ import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/providers/auth_notifier_provider.dart';
 import 'package:my_app/providers/database_provider.dart';
 import 'package:my_app/providers/message_provider.dart';
+import 'package:my_app/providers/secure_storage_provider.dart';
 import 'package:my_app/providers/settings_user_notifier_provider.dart';
 import 'package:my_app/providers/socket_provider.dart';
+import 'package:my_app/screens/change_password.dart';
 import 'package:my_app/screens/main_screen.dart';
 import 'package:my_app/screens/log_in.dart';
 import 'package:my_app/screens/message.dart';
@@ -30,6 +32,7 @@ class MyApp extends ConsumerWidget {
       // ref.read(databaseProvider).managers.chatListTable.delete();
       // ref.read(databaseProvider).managers.messages.delete();
       // ref.read(databaseProvider).managers.userInfoSettings.delete();
+      // ref.read(secureStorageProvider.notifier).clearToken();
       next.whenData((state) async {
         if (state == AuthState.authenticated) {
           final storage = const FlutterSecureStorage();
@@ -80,6 +83,7 @@ class MyApp extends ConsumerWidget {
         AppRoutes.search: (context) => const Search(),
         AppRoutes.message: (context) => const MessageScreen(),
         AppRoutes.settingsMain: (context) => const SettingsMain(),
+        AppRoutes.changePassword: (context) => const ChangePassword(),
       },
     );
   }
