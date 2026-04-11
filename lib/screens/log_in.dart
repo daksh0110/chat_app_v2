@@ -65,7 +65,7 @@ class _LogInState extends ConsumerState<LogIn> {
       return;
     }
     final data = result.data;
-    await ref.read(authProvider.notifier).login(data?.accessToken ?? "");
+    // await ref.read(authProvider.notifier).login(data?.accessToken ?? "");
     if (!mounted) return;
 
     Navigator.of(context).pop();

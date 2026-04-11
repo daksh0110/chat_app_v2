@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
+import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/core/network/api_client.dart';
 import 'package:my_app/data/services/user_api_service.dart';
 import 'package:my_app/modal/screens/signup/register_user.dart';
 import 'package:my_app/modal/screens/signup/register_user_argument.dart';
+import 'package:my_app/modal/screens/verifyEmail/verify_screen_arguments.dart';
 import 'package:my_app/providers/auth_notifier_provider.dart';
 import 'package:my_app/widgets/comman/divider_text.dart';
 import 'package:my_app/widgets/comman/google_auth_login.dart';
 import 'package:my_app/widgets/comman/primary_button.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
 import 'package:my_app/widgets/comman/primary_text_field.dart';
+import 'package:my_app/widgets/comman/toast_notification.dart';
 import 'package:toastification/toastification.dart';
 
 class SignUp extends ConsumerStatefulWidget {
@@ -69,22 +72,28 @@ class _SignUpState extends ConsumerState<SignUp> {
     final result = await UserApiService(apiClient).createUser(
       RegisterUser(name: name, email: email, password: password).toJson(),
     );
-
-    if (!result.success) {
-      toastification.show(
+    if (result.success) {
+      ToastHelper.show(
         context: context,
-        title: PrimaryText(result.message, color: Colors.white, fontSize: 18),
+        message: result.data?.message ?? result.message,
+      );
+      if (!mounted) return;
+      Navigator.of(context).pushNamed(
+        AppRoutes.verifyEmail,
+        arguments: VerifyScreenArguments(
+          email: result.data?.email ?? "",
+          verificationToken: result.data?.verificationToken ?? "",
+        ),
+      );
+      // await ref.watch(authProvider.notifier).login(data?.accessToken ?? "");
+    } else {
+      ToastHelper.show(
+        context: context,
+        message: result.message,
         type: ToastificationType.error,
-        autoCloseDuration: Duration(seconds: 5),
-        style: ToastificationStyle.fillColored,
       );
     }
-
-    final data = result.data;
-    await ref.watch(authProvider.notifier).login(data?.accessToken ?? "");
-    if (!mounted) return;
-
-    Navigator.of(context).pop();
+    return;
   }
 
   @override
@@ -174,8 +183,10 @@ class _SignUpState extends ConsumerState<SignUp> {
                           if (value!.isEmpty) {
                             return "Password is required";
                           }
-                          if (value.length < 6) {
-                            return "Minimum 6 characters";
+                          if (!RegExp(
+                            r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$',
+                          ).hasMatch(value)) {
+                            return "Email must contain one Alphabetical character,one small character,one number and must be min of 8 characters";
                           }
                           return null;
                         },

@@ -3,7 +3,9 @@ import 'package:my_app/core/network/api_constant.dart';
 import 'package:my_app/modal/api_response.dart';
 import 'package:my_app/modal/google_auth_response.dart';
 import 'package:my_app/modal/screens/search/search_item.dart';
+import 'package:my_app/modal/send_email_verification_otp.dart';
 import 'package:my_app/modal/send_otp_response.dart';
+import 'package:my_app/modal/succesfull_authentication_after_verification.dart';
 import 'package:my_app/modal/sucessfull_authentication.dart';
 
 class UserApiService {
@@ -164,6 +166,49 @@ class UserApiService {
       );
       final apiResponse = ApiResponse<void>.fromJson(response, (_) => {});
 
+      return apiResponse;
+    } catch (e) {
+      throw Exception("Send Otp Failed");
+    }
+  }
+
+  Future<ApiResponse<SuccesfullAuthenticationAfterVerification>>
+  verifyEmailVerificationOtp({
+    required String verificationToken,
+    required String otp,
+  }) async {
+    try {
+      final response = await apiClient.post(
+        "${ApiConstants.baseUrl}${ApiConstants.users}/verify-email-otp",
+        {"verification_token": verificationToken, "otp": otp},
+      );
+      final apiResponse =
+          ApiResponse<SuccesfullAuthenticationAfterVerification>.fromJson(
+            response,
+            (json) => SuccesfullAuthenticationAfterVerification.fromJson(
+              json as Map<String, dynamic>,
+            ),
+          );
+
+      return apiResponse;
+    } catch (e) {
+      throw Exception("Create user failed: $e");
+    }
+  }
+
+  Future<ApiResponse<SendEmailVerificationOtp>> sendEmailVerificationOtp({
+    required String email,
+  }) async {
+    try {
+      final response = await apiClient.post(
+        "${ApiConstants.baseUrl}${ApiConstants.users}/send-email-verification-otp",
+        {"email": email},
+      );
+      final apiResponse = ApiResponse<SendEmailVerificationOtp>.fromJson(
+        response,
+        (json) =>
+            SendEmailVerificationOtp.fromJson(json as Map<String, dynamic>),
+      );
       return apiResponse;
     } catch (e) {
       throw Exception("Send Otp Failed");

@@ -68,6 +68,7 @@ class PrimaryTextField extends StatelessWidget {
                 width: 1.5,
               ),
             ),
+            errorMaxLines: 3,
 
             errorStyle: const TextStyle(
               color: DefaultColorSheet.error,

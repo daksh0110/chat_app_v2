@@ -7,7 +7,7 @@ class ToastHelper {
     required BuildContext context,
     required String message,
     ToastificationType type = ToastificationType.success,
-    Duration duration = const Duration(seconds: 5),
+    Duration duration = const Duration(seconds: 2),
   }) {
     toastification.show(
       context: context,

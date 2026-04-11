@@ -17,6 +17,7 @@ import 'package:my_app/screens/settings/settings_main.dart';
 import 'package:my_app/screens/sign_up.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:my_app/screens/verify_email.dart';
 
 void main() async {
   await dotenv.load(fileName: ".env");
@@ -84,6 +85,7 @@ class MyApp extends ConsumerWidget {
         AppRoutes.message: (context) => const MessageScreen(),
         AppRoutes.settingsMain: (context) => const SettingsMain(),
         AppRoutes.changePassword: (context) => const ChangePassword(),
+        AppRoutes.verifyEmail: (context) => const VerifyEmailScreen(),
       },
     );
   }
