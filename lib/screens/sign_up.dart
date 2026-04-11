@@ -85,6 +85,7 @@ class _SignUpState extends ConsumerState<SignUp> {
           verificationToken: result.data?.verificationToken ?? "",
         ),
       );
+
       // await ref.watch(authProvider.notifier).login(data?.accessToken ?? "");
     } else {
       ToastHelper.show(

@@ -214,4 +214,26 @@ class UserApiService {
       throw Exception("Send Otp Failed");
     }
   }
+
+  Future<ApiResponse<void>> updateProfile({
+    required String token,
+    String? bio,
+    String? profilePicPath,
+  }) async {
+    try {
+      final response = await apiClient.patch(
+        "${ApiConstants.baseUrl}${ApiConstants.users}/update-profile",
+        {
+          if (bio != null) "bio": bio,
+          if (profilePicPath != null) "profile_picture": profilePicPath,
+          "token": token,
+        },
+      );
+      final apiResponse = ApiResponse<void>.fromJson(response, (_) => {});
+
+      return apiResponse;
+    } catch (e) {
+      throw Exception("Update profile failed: $e");
+    }
+  }
 }

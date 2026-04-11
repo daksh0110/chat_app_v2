@@ -29,7 +29,10 @@ class ApiClient {
   Future<dynamic> patch(String url, Map<String, dynamic> body) async {
     final response = await http.patch(
       Uri.parse(url),
-      headers: {"Content-Type": "application/json"},
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer ${body['token']}",
+      },
       body: jsonEncode(body),
     );
 

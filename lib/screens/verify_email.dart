@@ -1,24 +1,27 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
+import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/core/network/api_client.dart';
 import 'package:my_app/data/services/user_api_service.dart';
 import 'package:my_app/modal/screens/verifyEmail/verify_screen_arguments.dart';
+import 'package:my_app/providers/auth_notifier_provider.dart';
 import 'package:my_app/widgets/comman/otp_input_field.dart';
 import 'package:my_app/widgets/comman/primary_button.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
 import 'package:my_app/widgets/comman/toast_notification.dart';
 import 'package:toastification/toastification.dart';
 
-class VerifyEmailScreen extends StatefulWidget {
+class VerifyEmailScreen extends ConsumerStatefulWidget {
   const VerifyEmailScreen({super.key});
 
   @override
-  State<VerifyEmailScreen> createState() => _VerifyEmailState();
+  ConsumerState<VerifyEmailScreen> createState() => _VerifyEmailState();
 }
 
-class _VerifyEmailState extends State<VerifyEmailScreen> {
+class _VerifyEmailState extends ConsumerState<VerifyEmailScreen> {
   final TextEditingController otpController = TextEditingController();
 
   bool get isDisabled => otpController.text.length != 4;
@@ -110,7 +113,19 @@ class _VerifyEmailState extends State<VerifyEmailScreen> {
 
     if (result.success) {
       ToastHelper.show(context: context, message: result.message);
-      // await ref.read(authProvider.notifier).login(data?.accessToken ?? "");
+      await ref
+          .read(authProvider.notifier)
+          .login(result.data?.accessToken ?? "");
+      final profile = await UserApiService(
+        apiClient,
+      ).getMyProfile(token: result.data?.accessToken ?? "");
+
+      if (!mounted) return;
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        AppRoutes.profileSetup,
+        (route) => false,
+        arguments: profile.data,
+      );
     } else {
       ToastHelper.show(
         context: context,
