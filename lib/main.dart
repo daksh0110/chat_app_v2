@@ -15,6 +15,7 @@ import 'package:my_app/screens/onboarding_screen.dart';
 import 'package:my_app/screens/search.dart';
 import 'package:my_app/screens/settings/settings_main.dart';
 import 'package:my_app/screens/sign_up.dart';
+import 'package:my_app/screens/google_password_setup.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:my_app/screens/profile_setup.dart';
@@ -82,6 +83,7 @@ class MyApp extends ConsumerWidget {
         AppRoutes.onboarding: (context) => const OnboardingScreen(),
         AppRoutes.logIn: (context) => const LogIn(),
         AppRoutes.signUp: (context) => const SignUp(),
+        AppRoutes.googlePasswordSetup: (context) => const GooglePasswordSetup(),
         AppRoutes.search: (context) => const Search(),
         AppRoutes.message: (context) => const MessageScreen(),
         AppRoutes.settingsMain: (context) => const SettingsMain(),

@@ -25,7 +25,7 @@ class $UserInfoSettingsTable extends UserInfoSettings
     aliasedName,
     false,
     additionalChecks: GeneratedColumn.checkTextLength(
-      minTextLength: 6,
+      minTextLength: 4,
       maxTextLength: 32,
     ),
     type: DriftSqlType.string,

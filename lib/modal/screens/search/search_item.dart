@@ -21,7 +21,7 @@ class SearchItem {
       name: json['name'],
       subtitle: json["subtitle"] ?? json["email"],
       bio: json['bio'],
-      profilePicUrl: json['profile_pic'],
+      profilePicUrl: json['profile_picture'],
     );
   }
 }

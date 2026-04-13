@@ -56,13 +56,38 @@ class UserApiService {
   Future<ApiResponse<GoogleAuthResponse>> googleAuth(data) async {
     try {
       final response = await apiClient.post(
-        "${ApiConstants.baseUrl}${ApiConstants.users}/google/auth",
+        "${ApiConstants.baseUrl}${ApiConstants.users}/google/verify-auth-token",
         {"token": data},
       );
       final apiResponse = ApiResponse<GoogleAuthResponse>.fromJson(
         response,
         (json) => GoogleAuthResponse.fromJson(json as Map<String, dynamic>),
       );
+      return apiResponse;
+    } catch (e) {
+      throw Exception("Create user failed: $e");
+    }
+  }
+
+  Future<ApiResponse<SuccesfullAuthenticationAfterVerification>>
+  googleAuthSetPassword({
+    required String token,
+    required String password,
+    required String id,
+  }) async {
+    try {
+      final response = await apiClient.post(
+        "${ApiConstants.baseUrl}${ApiConstants.users}/google/auth/set-password",
+        {"token": token, "password": password, "id": id},
+      );
+      final apiResponse =
+          ApiResponse<SuccesfullAuthenticationAfterVerification>.fromJson(
+            response,
+            (json) => SuccesfullAuthenticationAfterVerification.fromJson(
+              json as Map<String, dynamic>,
+            ),
+          );
+
       return apiResponse;
     } catch (e) {
       throw Exception("Create user failed: $e");
