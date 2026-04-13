@@ -55,7 +55,6 @@ class _LogInState extends ConsumerState<LogIn> {
     final result = await UserApiService(
       apiClient,
     ).loginUser(LoginUser(email: email, password: password).toJson());
-    print("result: ${result.data?.verificationToken}");
     if (result.success) {
       if (result.data?.skipOtp == true) {
         if (!mounted) return;

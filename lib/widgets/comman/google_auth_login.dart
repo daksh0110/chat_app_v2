@@ -26,7 +26,6 @@ class GoogleAuthLogin extends ConsumerWidget {
             apiClient,
           ).googleAuth(auth.idToken);
           final data = response.data;
-
           if (data?.newUser == false && data?.accessToken != null) {
             await ref
                 .read(authProvider.notifier)
@@ -35,7 +34,6 @@ class GoogleAuthLogin extends ConsumerWidget {
           }
 
           if (data?.newUser == true && data?.accessToken == null) {
-            print("reached here");
             Navigator.pushNamed(
               context,
               AppRoutes.googlePasswordSetup,
