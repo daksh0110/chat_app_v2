@@ -23,10 +23,10 @@ class _MainScreenState extends State<MainScreen> {
     super.initState();
     screens = [
       Homescreen(data: data),
-      const Center(
-        child: Text("Calls Screen", style: TextStyle(color: Colors.white)),
-      ),
-      const SettingsMain(),
+      // const Center(
+      //   child: Text("Calls Screen", style: TextStyle(color: Colors.white)),
+      // ),
+      // const SettingsMain(),
       const SettingsMain(),
     ];
   }

@@ -34,6 +34,7 @@ class SettingsUserNotifier extends Notifier<UserInfoSetting?> {
       name: profile.name,
       email: profile.subtitle,
       accessToken: token,
+      profilePictureUrl: profile.profilePicUrl,
     );
 
     state = user;

@@ -120,7 +120,12 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: Header(id: receiverId, name: name, isOnline: _isOnline),
+      appBar: Header(
+        id: receiverId,
+        name: name,
+        isOnline: _isOnline,
+        profilePic: args.profilePic,
+      ),
       body: SafeArea(
         child: Column(
           children: [

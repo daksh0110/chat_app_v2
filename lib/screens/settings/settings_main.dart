@@ -14,7 +14,6 @@ class SettingsMain extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(settingsUserProvider);
-
     if (user == null) {
       return const SizedBox.shrink();
     }
@@ -28,8 +27,9 @@ class SettingsMain extends ConsumerWidget {
               item: SearchItem(
                 id: user.id,
                 name: user.name,
-                profilePic: "assets/no-image-icon.jpg",
+                profilePic: user.profilePictureUrl ?? "",
                 subtitle: user.email,
+                profilePicUrl: user.profilePictureUrl,
               ),
               actionWidget: [
                 const Spacer(),

@@ -28,7 +28,7 @@ class _HomeScreenState extends ConsumerState<Homescreen> {
       data: (chats) {
         return Column(
           children: [
-            StatusBar(),
+            // StatusBar(),
             Expanded(
               child: PrimaryContainer(
                 children: ListView.separated(
