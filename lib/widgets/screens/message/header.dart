@@ -10,11 +10,13 @@ class Header extends StatefulWidget implements PreferredSizeWidget {
     required this.name,
     required this.id,
     required this.isOnline,
+    this.profilePic,
   });
 
   final String name;
   final String id;
   final bool isOnline;
+  final String? profilePic;
 
   @override
   Size get preferredSize {
@@ -57,6 +59,7 @@ class _HeaderState extends State<Header> {
           name: widget.name,
           profilePic: "assets/no-image-icon.jpg",
           subtitle: widget.isOnline ? "active now" : "",
+          profilePicUrl: widget.profilePic,
         ),
       ),
       actionsPadding: const EdgeInsets.only(right: 15),

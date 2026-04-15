@@ -31,9 +31,10 @@ class SearchGroupItem extends StatelessWidget {
         child: Row(
           children: [
             UserBubble(
-              profilePic: item.profilePic,
-              size: 52,
+              profilePic: item.profilePicUrl ?? item.profilePic,
+              size: 46,
               needActiveIndicator: needActiveIndicator,
+              name: item.name,
             ),
             const SizedBox(width: 10),
             Column(

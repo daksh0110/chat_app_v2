@@ -25,7 +25,7 @@ class ChatListModal {
       id: data.userId.toString(),
       chatId: data.chatId.toString(),
       name: data.name,
-      profilePic: "assets/no-image-icon.jpg",
+      profilePic: data.profilePic ?? "",
       lastMessage: data.lastMessage ?? "",
       lastMessageTime: DateFormat(
         "HH:mm",

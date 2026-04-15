@@ -3,7 +3,11 @@ class AppRoutes {
   static const String onboarding = '/onboarding';
   static const String logIn = "/login";
   static const String signUp = "/signup";
+  static const String googlePasswordSetup = "/google-password-setup";
   static const String search = "/search";
   static const String message = "/message";
   static const String settingsMain = "/settings";
+  static const String changePassword = "/change-password";
+  static const String verifyEmail = "/verify-email";
+  static const String profileSetup = "/profile-setup";
 }

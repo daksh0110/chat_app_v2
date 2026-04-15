@@ -36,10 +36,12 @@ class GoogleAuthLogin extends ConsumerWidget {
           if (data?.newUser == true && data?.accessToken == null) {
             Navigator.pushNamed(
               context,
-              AppRoutes.signUp,
+              AppRoutes.googlePasswordSetup,
               arguments: RegisterUserArgument(
                 name: data?.name,
                 email: data?.email,
+                id: data?.id,
+                token: auth.idToken,
               ),
             );
           }

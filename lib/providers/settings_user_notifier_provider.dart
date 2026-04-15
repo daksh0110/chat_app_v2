@@ -19,12 +19,12 @@ class SettingsUserNotifier extends Notifier<UserInfoSetting?> {
 
   Future<void> _loadFromDb() async {
     final database = ref.read(databaseProvider);
-    final user = await database.managers.userInfoSettings.getSingleOrNull();
-    state = user;
+    final users = await database.managers.userInfoSettings.get();
+    state = users.isNotEmpty ? users.first : null;
   }
 
   Future<void> setUser(String token) async {
-    final database = ref.read(databaseProvider);
+    final database = ref.watch(databaseProvider);
 
     final apiClient = ApiClient();
     final userInfo = await UserApiService(apiClient).getMyProfile(token: token);
@@ -34,6 +34,7 @@ class SettingsUserNotifier extends Notifier<UserInfoSetting?> {
       name: profile.name,
       email: profile.subtitle,
       accessToken: token,
+      profilePictureUrl: profile.profilePicUrl,
     );
 
     state = user;

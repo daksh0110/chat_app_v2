@@ -3,6 +3,9 @@ import 'package:my_app/core/network/api_constant.dart';
 import 'package:my_app/modal/api_response.dart';
 import 'package:my_app/modal/google_auth_response.dart';
 import 'package:my_app/modal/screens/search/search_item.dart';
+import 'package:my_app/modal/send_email_verification_otp.dart';
+import 'package:my_app/modal/send_otp_response.dart';
+import 'package:my_app/modal/succesfull_authentication_after_verification.dart';
 import 'package:my_app/modal/sucessfull_authentication.dart';
 
 class UserApiService {
@@ -53,13 +56,38 @@ class UserApiService {
   Future<ApiResponse<GoogleAuthResponse>> googleAuth(data) async {
     try {
       final response = await apiClient.post(
-        "${ApiConstants.baseUrl}${ApiConstants.users}/google/auth",
+        "${ApiConstants.baseUrl}${ApiConstants.users}/google/verify-auth-token",
         {"token": data},
       );
       final apiResponse = ApiResponse<GoogleAuthResponse>.fromJson(
         response,
         (json) => GoogleAuthResponse.fromJson(json as Map<String, dynamic>),
       );
+      return apiResponse;
+    } catch (e) {
+      throw Exception("Create user failed: $e");
+    }
+  }
+
+  Future<ApiResponse<SuccesfullAuthenticationAfterVerification>>
+  googleAuthSetPassword({
+    required String token,
+    required String password,
+    required String id,
+  }) async {
+    try {
+      final response = await apiClient.post(
+        "${ApiConstants.baseUrl}${ApiConstants.users}/google/auth/set-password",
+        {"token": token, "password": password, "id": id},
+      );
+      final apiResponse =
+          ApiResponse<SuccesfullAuthenticationAfterVerification>.fromJson(
+            response,
+            (json) => SuccesfullAuthenticationAfterVerification.fromJson(
+              json as Map<String, dynamic>,
+            ),
+          );
+
       return apiResponse;
     } catch (e) {
       throw Exception("Create user failed: $e");
@@ -116,6 +144,121 @@ class UserApiService {
       );
     } catch (e) {
       throw Exception("Get user by id failed: $e");
+    }
+  }
+
+  Future<ApiResponse<SendOtpResponse>> sendOtp({required String email}) async {
+    try {
+      final response = await apiClient.post(
+        "${ApiConstants.baseUrl}${ApiConstants.users}/send-otp",
+        {"email": email},
+      );
+      final apiResponse = ApiResponse<SendOtpResponse>.fromJson(
+        response,
+        (json) => SendOtpResponse.fromJson(json as Map<String, dynamic>),
+      );
+      return apiResponse;
+    } catch (e) {
+      throw Exception("Send Otp Failed");
+    }
+  }
+
+  Future<ApiResponse<void>> verifyOtp({
+    required String resetToken,
+    required String otp,
+  }) async {
+    try {
+      final response = await apiClient.post(
+        "${ApiConstants.baseUrl}${ApiConstants.users}/verify-otp",
+        {"reset_token": resetToken, "otp": otp},
+      );
+      final apiResponse = ApiResponse<void>.fromJson(response, (_) => {});
+
+      return apiResponse;
+    } catch (e) {
+      throw Exception("Send Otp Failed");
+    }
+  }
+
+  Future<ApiResponse<void>> changePassword({
+    required String resetToken,
+    required String newpassword,
+  }) async {
+    try {
+      final response = await apiClient.patch(
+        "${ApiConstants.baseUrl}${ApiConstants.users}/change-password",
+        {"reset_token": resetToken, "new_password": newpassword},
+      );
+      final apiResponse = ApiResponse<void>.fromJson(response, (_) => {});
+
+      return apiResponse;
+    } catch (e) {
+      throw Exception("Send Otp Failed");
+    }
+  }
+
+  Future<ApiResponse<SuccesfullAuthenticationAfterVerification>>
+  verifyEmailVerificationOtp({
+    required String verificationToken,
+    required String otp,
+  }) async {
+    try {
+      final response = await apiClient.post(
+        "${ApiConstants.baseUrl}${ApiConstants.users}/verify-email-otp",
+        {"verification_token": verificationToken, "otp": otp},
+      );
+      final apiResponse =
+          ApiResponse<SuccesfullAuthenticationAfterVerification>.fromJson(
+            response,
+            (json) => SuccesfullAuthenticationAfterVerification.fromJson(
+              json as Map<String, dynamic>,
+            ),
+          );
+
+      return apiResponse;
+    } catch (e) {
+      throw Exception("Create user failed: $e");
+    }
+  }
+
+  Future<ApiResponse<SendEmailVerificationOtp>> sendEmailVerificationOtp({
+    required String email,
+  }) async {
+    try {
+      final response = await apiClient.post(
+        "${ApiConstants.baseUrl}${ApiConstants.users}/send-email-verification-otp",
+        {"email": email},
+      );
+      final apiResponse = ApiResponse<SendEmailVerificationOtp>.fromJson(
+        response,
+        (json) =>
+            SendEmailVerificationOtp.fromJson(json as Map<String, dynamic>),
+      );
+      return apiResponse;
+    } catch (e) {
+      throw Exception("Send Otp Failed");
+    }
+  }
+
+  Future<ApiResponse<void>> updateProfile({
+    required String token,
+    String? bio,
+    String? profilePicPath,
+  }) async {
+    try {
+      final response = await apiClient.patch(
+        "${ApiConstants.baseUrl}${ApiConstants.users}/update-profile",
+        {
+          if (bio != null) "bio": bio,
+          if (profilePicPath != null) "profile_picture": profilePicPath,
+          "token": token,
+        },
+      );
+      final apiResponse = ApiResponse<void>.fromJson(response, (_) => {});
+
+      return apiResponse;
+    } catch (e) {
+      throw Exception("Update profile failed: $e");
     }
   }
 }

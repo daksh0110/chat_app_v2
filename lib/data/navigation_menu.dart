@@ -13,7 +13,6 @@ final List<NavigationMenuModal> menu = [
     appBar: (context) => AppBar(
       toolbarHeight: 90,
       actionsPadding: const EdgeInsets.all(24),
-      actions: [Image.asset("assets/screens/home/user1.png", height: 44)],
       backgroundColor: Colors.black,
       leading: Builder(
         builder: (context) {
@@ -29,50 +28,50 @@ final List<NavigationMenuModal> menu = [
       title: PrimaryText("Home", fontSize: 20, color: Colors.white),
     ),
   ),
-  NavigationMenuModal(
-    label: "Calls",
-    icon: LucideIcons.phone,
-    screen: ({data}) => const Center(),
-    appBar: (context) => AppBar(
-      toolbarHeight: 90,
-      actionsPadding: const EdgeInsets.all(24),
-      backgroundColor: Colors.black,
-      leading: Builder(
-        builder: (context) {
-          return IconButton(
-            onPressed: () {
-              Navigator.pushNamed(context, "/search");
-            },
-            icon: const Icon(Icons.search, color: Colors.white),
-          );
-        },
-      ),
-      centerTitle: true,
-      title: PrimaryText("Calls", fontSize: 20, color: Colors.white),
-    ),
-  ),
-  NavigationMenuModal(
-    label: "Contacts",
-    icon: LucideIcons.circleUserRound,
-    screen: ({data}) => const SettingsMain(),
-    appBar: (context) => AppBar(
-      toolbarHeight: 90,
-      actionsPadding: const EdgeInsets.all(24),
-      backgroundColor: Colors.black,
-      leading: Builder(
-        builder: (context) {
-          return IconButton(
-            onPressed: () {
-              Navigator.pushNamed(context, "/search");
-            },
-            icon: const Icon(Icons.search, color: Colors.white),
-          );
-        },
-      ),
-      centerTitle: true,
-      title: PrimaryText("Contacts", fontSize: 20, color: Colors.white),
-    ),
-  ),
+  // NavigationMenuModal(
+  //   label: "Calls",
+  //   icon: LucideIcons.phone,
+  //   screen: ({data}) => const Center(),
+  //   appBar: (context) => AppBar(
+  //     toolbarHeight: 90,
+  //     actionsPadding: const EdgeInsets.all(24),
+  //     backgroundColor: Colors.black,
+  //     leading: Builder(
+  //       builder: (context) {
+  //         return IconButton(
+  //           onPressed: () {
+  //             Navigator.pushNamed(context, "/search");
+  //           },
+  //           icon: const Icon(Icons.search, color: Colors.white),
+  //         );
+  //       },
+  //     ),
+  //     centerTitle: true,
+  //     title: PrimaryText("Calls", fontSize: 20, color: Colors.white),
+  //   ),
+  // ),
+  // NavigationMenuModal(
+  //   label: "Contacts",
+  //   icon: LucideIcons.circleUserRound,
+  //   screen: ({data}) => const SettingsMain(),
+  //   appBar: (context) => AppBar(
+  //     toolbarHeight: 90,
+  //     actionsPadding: const EdgeInsets.all(24),
+  //     backgroundColor: Colors.black,
+  //     leading: Builder(
+  //       builder: (context) {
+  //         return IconButton(
+  //           onPressed: () {
+  //             Navigator.pushNamed(context, "/search");
+  //           },
+  //           icon: const Icon(Icons.search, color: Colors.white),
+  //         );
+  //       },
+  //     ),
+  //     centerTitle: true,
+  //     title: PrimaryText("Contacts", fontSize: 20, color: Colors.white),
+  //   ),
+  // ),
   NavigationMenuModal(
     label: "Settings",
     icon: LucideIcons.settings,

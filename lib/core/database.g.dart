@@ -25,7 +25,7 @@ class $UserInfoSettingsTable extends UserInfoSettings
     aliasedName,
     false,
     additionalChecks: GeneratedColumn.checkTextLength(
-      minTextLength: 6,
+      minTextLength: 4,
       maxTextLength: 32,
     ),
     type: DriftSqlType.string,
@@ -51,8 +51,26 @@ class $UserInfoSettingsTable extends UserInfoSettings
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _profilePictureUrlMeta = const VerificationMeta(
+    'profilePictureUrl',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, name, email, accessToken];
+  late final GeneratedColumn<String> profilePictureUrl =
+      GeneratedColumn<String>(
+        'profile_picture_url',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    email,
+    accessToken,
+    profilePictureUrl,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -97,6 +115,15 @@ class $UserInfoSettingsTable extends UserInfoSettings
     } else if (isInserting) {
       context.missing(_accessTokenMeta);
     }
+    if (data.containsKey('profile_picture_url')) {
+      context.handle(
+        _profilePictureUrlMeta,
+        profilePictureUrl.isAcceptableOrUnknown(
+          data['profile_picture_url']!,
+          _profilePictureUrlMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -122,6 +149,10 @@ class $UserInfoSettingsTable extends UserInfoSettings
         DriftSqlType.string,
         data['${effectivePrefix}access_token'],
       )!,
+      profilePictureUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}profile_picture_url'],
+      ),
     );
   }
 
@@ -136,11 +167,13 @@ class UserInfoSetting extends DataClass implements Insertable<UserInfoSetting> {
   final String name;
   final String email;
   final String accessToken;
+  final String? profilePictureUrl;
   const UserInfoSetting({
     required this.id,
     required this.name,
     required this.email,
     required this.accessToken,
+    this.profilePictureUrl,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -149,6 +182,9 @@ class UserInfoSetting extends DataClass implements Insertable<UserInfoSetting> {
     map['name'] = Variable<String>(name);
     map['email'] = Variable<String>(email);
     map['access_token'] = Variable<String>(accessToken);
+    if (!nullToAbsent || profilePictureUrl != null) {
+      map['profile_picture_url'] = Variable<String>(profilePictureUrl);
+    }
     return map;
   }
 
@@ -158,6 +194,9 @@ class UserInfoSetting extends DataClass implements Insertable<UserInfoSetting> {
       name: Value(name),
       email: Value(email),
       accessToken: Value(accessToken),
+      profilePictureUrl: profilePictureUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(profilePictureUrl),
     );
   }
 
@@ -171,6 +210,9 @@ class UserInfoSetting extends DataClass implements Insertable<UserInfoSetting> {
       name: serializer.fromJson<String>(json['name']),
       email: serializer.fromJson<String>(json['email']),
       accessToken: serializer.fromJson<String>(json['accessToken']),
+      profilePictureUrl: serializer.fromJson<String?>(
+        json['profilePictureUrl'],
+      ),
     );
   }
   @override
@@ -181,6 +223,7 @@ class UserInfoSetting extends DataClass implements Insertable<UserInfoSetting> {
       'name': serializer.toJson<String>(name),
       'email': serializer.toJson<String>(email),
       'accessToken': serializer.toJson<String>(accessToken),
+      'profilePictureUrl': serializer.toJson<String?>(profilePictureUrl),
     };
   }
 
@@ -189,11 +232,15 @@ class UserInfoSetting extends DataClass implements Insertable<UserInfoSetting> {
     String? name,
     String? email,
     String? accessToken,
+    Value<String?> profilePictureUrl = const Value.absent(),
   }) => UserInfoSetting(
     id: id ?? this.id,
     name: name ?? this.name,
     email: email ?? this.email,
     accessToken: accessToken ?? this.accessToken,
+    profilePictureUrl: profilePictureUrl.present
+        ? profilePictureUrl.value
+        : this.profilePictureUrl,
   );
   UserInfoSetting copyWithCompanion(UserInfoSettingsCompanion data) {
     return UserInfoSetting(
@@ -203,6 +250,9 @@ class UserInfoSetting extends DataClass implements Insertable<UserInfoSetting> {
       accessToken: data.accessToken.present
           ? data.accessToken.value
           : this.accessToken,
+      profilePictureUrl: data.profilePictureUrl.present
+          ? data.profilePictureUrl.value
+          : this.profilePictureUrl,
     );
   }
 
@@ -212,13 +262,15 @@ class UserInfoSetting extends DataClass implements Insertable<UserInfoSetting> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('email: $email, ')
-          ..write('accessToken: $accessToken')
+          ..write('accessToken: $accessToken, ')
+          ..write('profilePictureUrl: $profilePictureUrl')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, email, accessToken);
+  int get hashCode =>
+      Object.hash(id, name, email, accessToken, profilePictureUrl);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -226,7 +278,8 @@ class UserInfoSetting extends DataClass implements Insertable<UserInfoSetting> {
           other.id == this.id &&
           other.name == this.name &&
           other.email == this.email &&
-          other.accessToken == this.accessToken);
+          other.accessToken == this.accessToken &&
+          other.profilePictureUrl == this.profilePictureUrl);
 }
 
 class UserInfoSettingsCompanion extends UpdateCompanion<UserInfoSetting> {
@@ -234,12 +287,14 @@ class UserInfoSettingsCompanion extends UpdateCompanion<UserInfoSetting> {
   final Value<String> name;
   final Value<String> email;
   final Value<String> accessToken;
+  final Value<String?> profilePictureUrl;
   final Value<int> rowid;
   const UserInfoSettingsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.email = const Value.absent(),
     this.accessToken = const Value.absent(),
+    this.profilePictureUrl = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   UserInfoSettingsCompanion.insert({
@@ -247,6 +302,7 @@ class UserInfoSettingsCompanion extends UpdateCompanion<UserInfoSetting> {
     required String name,
     required String email,
     required String accessToken,
+    this.profilePictureUrl = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -257,6 +313,7 @@ class UserInfoSettingsCompanion extends UpdateCompanion<UserInfoSetting> {
     Expression<String>? name,
     Expression<String>? email,
     Expression<String>? accessToken,
+    Expression<String>? profilePictureUrl,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -264,6 +321,7 @@ class UserInfoSettingsCompanion extends UpdateCompanion<UserInfoSetting> {
       if (name != null) 'name': name,
       if (email != null) 'email': email,
       if (accessToken != null) 'access_token': accessToken,
+      if (profilePictureUrl != null) 'profile_picture_url': profilePictureUrl,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -273,6 +331,7 @@ class UserInfoSettingsCompanion extends UpdateCompanion<UserInfoSetting> {
     Value<String>? name,
     Value<String>? email,
     Value<String>? accessToken,
+    Value<String?>? profilePictureUrl,
     Value<int>? rowid,
   }) {
     return UserInfoSettingsCompanion(
@@ -280,6 +339,7 @@ class UserInfoSettingsCompanion extends UpdateCompanion<UserInfoSetting> {
       name: name ?? this.name,
       email: email ?? this.email,
       accessToken: accessToken ?? this.accessToken,
+      profilePictureUrl: profilePictureUrl ?? this.profilePictureUrl,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -299,6 +359,9 @@ class UserInfoSettingsCompanion extends UpdateCompanion<UserInfoSetting> {
     if (accessToken.present) {
       map['access_token'] = Variable<String>(accessToken.value);
     }
+    if (profilePictureUrl.present) {
+      map['profile_picture_url'] = Variable<String>(profilePictureUrl.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -312,6 +375,7 @@ class UserInfoSettingsCompanion extends UpdateCompanion<UserInfoSetting> {
           ..write('name: $name, ')
           ..write('email: $email, ')
           ..write('accessToken: $accessToken, ')
+          ..write('profilePictureUrl: $profilePictureUrl, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -912,6 +976,17 @@ class $ChatListTableTable extends ChatListTable
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _profilePicMeta = const VerificationMeta(
+    'profilePic',
+  );
+  @override
+  late final GeneratedColumn<String> profilePic = GeneratedColumn<String>(
+    'profile_pic',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -921,6 +996,7 @@ class $ChatListTableTable extends ChatListTable
     lastMessage,
     lastMessageTime,
     unReadCount,
+    profilePic,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -988,6 +1064,12 @@ class $ChatListTableTable extends ChatListTable
         ),
       );
     }
+    if (data.containsKey('profile_pic')) {
+      context.handle(
+        _profilePicMeta,
+        profilePic.isAcceptableOrUnknown(data['profile_pic']!, _profilePicMeta),
+      );
+    }
     return context;
   }
 
@@ -1025,6 +1107,10 @@ class $ChatListTableTable extends ChatListTable
         DriftSqlType.int,
         data['${effectivePrefix}un_read_count'],
       )!,
+      profilePic: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}profile_pic'],
+      ),
     );
   }
 
@@ -1043,6 +1129,7 @@ class ChatListTableData extends DataClass
   final String? lastMessage;
   final int? lastMessageTime;
   final int unReadCount;
+  final String? profilePic;
   const ChatListTableData({
     required this.id,
     required this.chatId,
@@ -1051,6 +1138,7 @@ class ChatListTableData extends DataClass
     this.lastMessage,
     this.lastMessageTime,
     required this.unReadCount,
+    this.profilePic,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1066,6 +1154,9 @@ class ChatListTableData extends DataClass
       map['last_message_time'] = Variable<int>(lastMessageTime);
     }
     map['un_read_count'] = Variable<int>(unReadCount);
+    if (!nullToAbsent || profilePic != null) {
+      map['profile_pic'] = Variable<String>(profilePic);
+    }
     return map;
   }
 
@@ -1082,6 +1173,9 @@ class ChatListTableData extends DataClass
           ? const Value.absent()
           : Value(lastMessageTime),
       unReadCount: Value(unReadCount),
+      profilePic: profilePic == null && nullToAbsent
+          ? const Value.absent()
+          : Value(profilePic),
     );
   }
 
@@ -1098,6 +1192,7 @@ class ChatListTableData extends DataClass
       lastMessage: serializer.fromJson<String?>(json['lastMessage']),
       lastMessageTime: serializer.fromJson<int?>(json['lastMessageTime']),
       unReadCount: serializer.fromJson<int>(json['unReadCount']),
+      profilePic: serializer.fromJson<String?>(json['profilePic']),
     );
   }
   @override
@@ -1111,6 +1206,7 @@ class ChatListTableData extends DataClass
       'lastMessage': serializer.toJson<String?>(lastMessage),
       'lastMessageTime': serializer.toJson<int?>(lastMessageTime),
       'unReadCount': serializer.toJson<int>(unReadCount),
+      'profilePic': serializer.toJson<String?>(profilePic),
     };
   }
 
@@ -1122,6 +1218,7 @@ class ChatListTableData extends DataClass
     Value<String?> lastMessage = const Value.absent(),
     Value<int?> lastMessageTime = const Value.absent(),
     int? unReadCount,
+    Value<String?> profilePic = const Value.absent(),
   }) => ChatListTableData(
     id: id ?? this.id,
     chatId: chatId ?? this.chatId,
@@ -1132,6 +1229,7 @@ class ChatListTableData extends DataClass
         ? lastMessageTime.value
         : this.lastMessageTime,
     unReadCount: unReadCount ?? this.unReadCount,
+    profilePic: profilePic.present ? profilePic.value : this.profilePic,
   );
   ChatListTableData copyWithCompanion(ChatListTableCompanion data) {
     return ChatListTableData(
@@ -1148,6 +1246,9 @@ class ChatListTableData extends DataClass
       unReadCount: data.unReadCount.present
           ? data.unReadCount.value
           : this.unReadCount,
+      profilePic: data.profilePic.present
+          ? data.profilePic.value
+          : this.profilePic,
     );
   }
 
@@ -1160,7 +1261,8 @@ class ChatListTableData extends DataClass
           ..write('name: $name, ')
           ..write('lastMessage: $lastMessage, ')
           ..write('lastMessageTime: $lastMessageTime, ')
-          ..write('unReadCount: $unReadCount')
+          ..write('unReadCount: $unReadCount, ')
+          ..write('profilePic: $profilePic')
           ..write(')'))
         .toString();
   }
@@ -1174,6 +1276,7 @@ class ChatListTableData extends DataClass
     lastMessage,
     lastMessageTime,
     unReadCount,
+    profilePic,
   );
   @override
   bool operator ==(Object other) =>
@@ -1185,7 +1288,8 @@ class ChatListTableData extends DataClass
           other.name == this.name &&
           other.lastMessage == this.lastMessage &&
           other.lastMessageTime == this.lastMessageTime &&
-          other.unReadCount == this.unReadCount);
+          other.unReadCount == this.unReadCount &&
+          other.profilePic == this.profilePic);
 }
 
 class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
@@ -1196,6 +1300,7 @@ class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
   final Value<String?> lastMessage;
   final Value<int?> lastMessageTime;
   final Value<int> unReadCount;
+  final Value<String?> profilePic;
   const ChatListTableCompanion({
     this.id = const Value.absent(),
     this.chatId = const Value.absent(),
@@ -1204,6 +1309,7 @@ class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
     this.lastMessage = const Value.absent(),
     this.lastMessageTime = const Value.absent(),
     this.unReadCount = const Value.absent(),
+    this.profilePic = const Value.absent(),
   });
   ChatListTableCompanion.insert({
     this.id = const Value.absent(),
@@ -1213,6 +1319,7 @@ class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
     this.lastMessage = const Value.absent(),
     this.lastMessageTime = const Value.absent(),
     this.unReadCount = const Value.absent(),
+    this.profilePic = const Value.absent(),
   }) : chatId = Value(chatId),
        userId = Value(userId),
        name = Value(name);
@@ -1224,6 +1331,7 @@ class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
     Expression<String>? lastMessage,
     Expression<int>? lastMessageTime,
     Expression<int>? unReadCount,
+    Expression<String>? profilePic,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1233,6 +1341,7 @@ class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
       if (lastMessage != null) 'last_message': lastMessage,
       if (lastMessageTime != null) 'last_message_time': lastMessageTime,
       if (unReadCount != null) 'un_read_count': unReadCount,
+      if (profilePic != null) 'profile_pic': profilePic,
     });
   }
 
@@ -1244,6 +1353,7 @@ class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
     Value<String?>? lastMessage,
     Value<int?>? lastMessageTime,
     Value<int>? unReadCount,
+    Value<String?>? profilePic,
   }) {
     return ChatListTableCompanion(
       id: id ?? this.id,
@@ -1253,6 +1363,7 @@ class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
       lastMessage: lastMessage ?? this.lastMessage,
       lastMessageTime: lastMessageTime ?? this.lastMessageTime,
       unReadCount: unReadCount ?? this.unReadCount,
+      profilePic: profilePic ?? this.profilePic,
     );
   }
 
@@ -1280,6 +1391,9 @@ class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
     if (unReadCount.present) {
       map['un_read_count'] = Variable<int>(unReadCount.value);
     }
+    if (profilePic.present) {
+      map['profile_pic'] = Variable<String>(profilePic.value);
+    }
     return map;
   }
 
@@ -1292,7 +1406,8 @@ class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
           ..write('name: $name, ')
           ..write('lastMessage: $lastMessage, ')
           ..write('lastMessageTime: $lastMessageTime, ')
-          ..write('unReadCount: $unReadCount')
+          ..write('unReadCount: $unReadCount, ')
+          ..write('profilePic: $profilePic')
           ..write(')'))
         .toString();
   }
@@ -1323,6 +1438,7 @@ typedef $$UserInfoSettingsTableCreateCompanionBuilder =
       required String name,
       required String email,
       required String accessToken,
+      Value<String?> profilePictureUrl,
       Value<int> rowid,
     });
 typedef $$UserInfoSettingsTableUpdateCompanionBuilder =
@@ -1331,6 +1447,7 @@ typedef $$UserInfoSettingsTableUpdateCompanionBuilder =
       Value<String> name,
       Value<String> email,
       Value<String> accessToken,
+      Value<String?> profilePictureUrl,
       Value<int> rowid,
     });
 
@@ -1360,6 +1477,11 @@ class $$UserInfoSettingsTableFilterComposer
 
   ColumnFilters<String> get accessToken => $composableBuilder(
     column: $table.accessToken,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get profilePictureUrl => $composableBuilder(
+    column: $table.profilePictureUrl,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -1392,6 +1514,11 @@ class $$UserInfoSettingsTableOrderingComposer
     column: $table.accessToken,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get profilePictureUrl => $composableBuilder(
+    column: $table.profilePictureUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$UserInfoSettingsTableAnnotationComposer
@@ -1414,6 +1541,11 @@ class $$UserInfoSettingsTableAnnotationComposer
 
   GeneratedColumn<String> get accessToken => $composableBuilder(
     column: $table.accessToken,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get profilePictureUrl => $composableBuilder(
+    column: $table.profilePictureUrl,
     builder: (column) => column,
   );
 }
@@ -1459,12 +1591,14 @@ class $$UserInfoSettingsTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<String> email = const Value.absent(),
                 Value<String> accessToken = const Value.absent(),
+                Value<String?> profilePictureUrl = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UserInfoSettingsCompanion(
                 id: id,
                 name: name,
                 email: email,
                 accessToken: accessToken,
+                profilePictureUrl: profilePictureUrl,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -1473,12 +1607,14 @@ class $$UserInfoSettingsTableTableManager
                 required String name,
                 required String email,
                 required String accessToken,
+                Value<String?> profilePictureUrl = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UserInfoSettingsCompanion.insert(
                 id: id,
                 name: name,
                 email: email,
                 accessToken: accessToken,
+                profilePictureUrl: profilePictureUrl,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -1768,6 +1904,7 @@ typedef $$ChatListTableTableCreateCompanionBuilder =
       Value<String?> lastMessage,
       Value<int?> lastMessageTime,
       Value<int> unReadCount,
+      Value<String?> profilePic,
     });
 typedef $$ChatListTableTableUpdateCompanionBuilder =
     ChatListTableCompanion Function({
@@ -1778,6 +1915,7 @@ typedef $$ChatListTableTableUpdateCompanionBuilder =
       Value<String?> lastMessage,
       Value<int?> lastMessageTime,
       Value<int> unReadCount,
+      Value<String?> profilePic,
     });
 
 class $$ChatListTableTableFilterComposer
@@ -1821,6 +1959,11 @@ class $$ChatListTableTableFilterComposer
 
   ColumnFilters<int> get unReadCount => $composableBuilder(
     column: $table.unReadCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get profilePic => $composableBuilder(
+    column: $table.profilePic,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -1868,6 +2011,11 @@ class $$ChatListTableTableOrderingComposer
     column: $table.unReadCount,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get profilePic => $composableBuilder(
+    column: $table.profilePic,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ChatListTableTableAnnotationComposer
@@ -1903,6 +2051,11 @@ class $$ChatListTableTableAnnotationComposer
 
   GeneratedColumn<int> get unReadCount => $composableBuilder(
     column: $table.unReadCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get profilePic => $composableBuilder(
+    column: $table.profilePic,
     builder: (column) => column,
   );
 }
@@ -1949,6 +2102,7 @@ class $$ChatListTableTableTableManager
                 Value<String?> lastMessage = const Value.absent(),
                 Value<int?> lastMessageTime = const Value.absent(),
                 Value<int> unReadCount = const Value.absent(),
+                Value<String?> profilePic = const Value.absent(),
               }) => ChatListTableCompanion(
                 id: id,
                 chatId: chatId,
@@ -1957,6 +2111,7 @@ class $$ChatListTableTableTableManager
                 lastMessage: lastMessage,
                 lastMessageTime: lastMessageTime,
                 unReadCount: unReadCount,
+                profilePic: profilePic,
               ),
           createCompanionCallback:
               ({
@@ -1967,6 +2122,7 @@ class $$ChatListTableTableTableManager
                 Value<String?> lastMessage = const Value.absent(),
                 Value<int?> lastMessageTime = const Value.absent(),
                 Value<int> unReadCount = const Value.absent(),
+                Value<String?> profilePic = const Value.absent(),
               }) => ChatListTableCompanion.insert(
                 id: id,
                 chatId: chatId,
@@ -1975,6 +2131,7 @@ class $$ChatListTableTableTableManager
                 lastMessage: lastMessage,
                 lastMessageTime: lastMessageTime,
                 unReadCount: unReadCount,
+                profilePic: profilePic,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
