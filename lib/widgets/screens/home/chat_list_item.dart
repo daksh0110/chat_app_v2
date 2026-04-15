@@ -15,6 +15,7 @@ class ChatListItem extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final typingMap = ref.watch(messageTypingProvider);
     final isTyping = typingMap[chat.chatId] ?? false;
+    final isProfilePicValid = chat.profilePic.isNotEmpty;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -27,12 +28,29 @@ class ChatListItem extends ConsumerWidget {
             children: [
               // Profile Image
               ClipOval(
-                child: Image.asset(
-                  chat.profilePic,
-                  width: 52,
-                  height: 52,
-                  fit: BoxFit.cover,
-                ),
+                child: isProfilePicValid
+                    ? Image.network(
+                        chat.profilePic,
+                        width: 46,
+                        height: 46,
+                        fit: BoxFit.cover,
+                      )
+                    : Container(
+                        decoration: BoxDecoration(
+                          color: Color(0xFF075E54),
+                          shape: BoxShape.circle,
+                        ),
+                        width: 46,
+                        height: 46,
+                        alignment: Alignment.center,
+                        child: PrimaryText(
+                          chat.name.isNotEmpty
+                              ? chat.name[0].toUpperCase()
+                              : "",
+                          color: Colors.white,
+                          fontSize: 26,
+                        ),
+                      ),
               ),
 
               const SizedBox(width: 12),

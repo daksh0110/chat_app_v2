@@ -24,7 +24,7 @@ class SettingsUserNotifier extends Notifier<UserInfoSetting?> {
   }
 
   Future<void> setUser(String token) async {
-    final database = ref.read(databaseProvider);
+    final database = ref.watch(databaseProvider);
 
     final apiClient = ApiClient();
     final userInfo = await UserApiService(apiClient).getMyProfile(token: token);

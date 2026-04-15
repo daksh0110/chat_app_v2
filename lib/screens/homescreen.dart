@@ -46,6 +46,7 @@ class _HomeScreenState extends ConsumerState<Homescreen> {
                           arguments: MessageScreenArguments(
                             id: chat.id,
                             name: chat.name,
+                            profilePic: chat.profilePic,
                           ),
                         );
                       },

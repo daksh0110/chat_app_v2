@@ -24,9 +24,6 @@ class SearchGroupItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print(
-      "SearchGroupItem build: ${item.name}, profilePic: ${item.profilePic}",
-    );
     return InkWell(
       onTap: onTap,
       child: SizedBox(
@@ -35,7 +32,7 @@ class SearchGroupItem extends StatelessWidget {
           children: [
             UserBubble(
               profilePic: item.profilePicUrl ?? item.profilePic,
-              size: 52,
+              size: 46,
               needActiveIndicator: needActiveIndicator,
               name: item.name,
             ),

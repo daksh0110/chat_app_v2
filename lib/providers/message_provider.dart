@@ -125,6 +125,7 @@ class MessageNotifer extends Notifier {
               lastMessage: Value(data["message"]),
               lastMessageTime: Value(createdAt),
               unReadCount: Value(shouldAutoRead ? 0 : 1),
+              profilePic: Value(user.profilePicUrl ?? ""),
             ),
           );
     } else {
@@ -186,6 +187,10 @@ class MessageNotifer extends Notifier {
     final currentChatId = existingChat?.chatId ?? localChatId;
 
     if (existingChat == null) {
+      final response = await UserApiService(
+        ApiClient(),
+      ).getUserById(receiverId);
+      final user = response.data!;
       await database.managers.chatListTable.create(
         (o) => o(
           chatId: localChatId,
@@ -194,6 +199,7 @@ class MessageNotifer extends Notifier {
           lastMessage: const Value(null),
           lastMessageTime: const Value(null),
           unReadCount: const Value(0),
+          profilePic: Value(user.profilePicUrl ?? ""),
         ),
       );
     }
@@ -234,6 +240,9 @@ class MessageNotifer extends Notifier {
             .getSingleOrNull();
 
         if (chat == null) {
+          final response = await UserApiService(
+            ApiClient(),
+          ).getUserById(receiverId);
           await database.managers.chatListTable.create(
             (o) => o(
               chatId: realChatId,
@@ -241,6 +250,7 @@ class MessageNotifer extends Notifier {
               name: receiverName,
               lastMessage: Value(message),
               lastMessageTime: Value(serverCreatedAt),
+              profilePic: Value(response.data?.profilePicUrl ?? ""),
             ),
           );
         } else {
@@ -435,9 +445,7 @@ class MessageNotifer extends Notifier {
     final chatId = existingChat?.chatId;
 
     if (chatId != null && !chatId.startsWith("local_")) {
-      ref.read(socketProvider).sendMessage("is_typing", {
-        "chat_id": chatId,
-      });
+      ref.read(socketProvider).sendMessage("is_typing", {"chat_id": chatId});
     }
   }
 
@@ -459,9 +467,7 @@ class MessageNotifer extends Notifier {
     final chatId = existingChat?.chatId;
 
     if (chatId != null && !chatId.startsWith("local_")) {
-      ref.read(socketProvider).sendMessage("stop_typing", {
-        "chat_id": chatId,
-      });
+      ref.read(socketProvider).sendMessage("stop_typing", {"chat_id": chatId});
     }
   }
 

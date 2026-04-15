@@ -12,4 +12,5 @@ class ChatListTable extends Table {
   IntColumn get lastMessageTime => integer().nullable()();
 
   IntColumn get unReadCount => integer().withDefault(const Constant(0))();
+  TextColumn get profilePic => text().nullable()();
 }

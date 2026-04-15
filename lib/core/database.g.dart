@@ -976,6 +976,17 @@ class $ChatListTableTable extends ChatListTable
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _profilePicMeta = const VerificationMeta(
+    'profilePic',
+  );
+  @override
+  late final GeneratedColumn<String> profilePic = GeneratedColumn<String>(
+    'profile_pic',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -985,6 +996,7 @@ class $ChatListTableTable extends ChatListTable
     lastMessage,
     lastMessageTime,
     unReadCount,
+    profilePic,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1052,6 +1064,12 @@ class $ChatListTableTable extends ChatListTable
         ),
       );
     }
+    if (data.containsKey('profile_pic')) {
+      context.handle(
+        _profilePicMeta,
+        profilePic.isAcceptableOrUnknown(data['profile_pic']!, _profilePicMeta),
+      );
+    }
     return context;
   }
 
@@ -1089,6 +1107,10 @@ class $ChatListTableTable extends ChatListTable
         DriftSqlType.int,
         data['${effectivePrefix}un_read_count'],
       )!,
+      profilePic: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}profile_pic'],
+      ),
     );
   }
 
@@ -1107,6 +1129,7 @@ class ChatListTableData extends DataClass
   final String? lastMessage;
   final int? lastMessageTime;
   final int unReadCount;
+  final String? profilePic;
   const ChatListTableData({
     required this.id,
     required this.chatId,
@@ -1115,6 +1138,7 @@ class ChatListTableData extends DataClass
     this.lastMessage,
     this.lastMessageTime,
     required this.unReadCount,
+    this.profilePic,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1130,6 +1154,9 @@ class ChatListTableData extends DataClass
       map['last_message_time'] = Variable<int>(lastMessageTime);
     }
     map['un_read_count'] = Variable<int>(unReadCount);
+    if (!nullToAbsent || profilePic != null) {
+      map['profile_pic'] = Variable<String>(profilePic);
+    }
     return map;
   }
 
@@ -1146,6 +1173,9 @@ class ChatListTableData extends DataClass
           ? const Value.absent()
           : Value(lastMessageTime),
       unReadCount: Value(unReadCount),
+      profilePic: profilePic == null && nullToAbsent
+          ? const Value.absent()
+          : Value(profilePic),
     );
   }
 
@@ -1162,6 +1192,7 @@ class ChatListTableData extends DataClass
       lastMessage: serializer.fromJson<String?>(json['lastMessage']),
       lastMessageTime: serializer.fromJson<int?>(json['lastMessageTime']),
       unReadCount: serializer.fromJson<int>(json['unReadCount']),
+      profilePic: serializer.fromJson<String?>(json['profilePic']),
     );
   }
   @override
@@ -1175,6 +1206,7 @@ class ChatListTableData extends DataClass
       'lastMessage': serializer.toJson<String?>(lastMessage),
       'lastMessageTime': serializer.toJson<int?>(lastMessageTime),
       'unReadCount': serializer.toJson<int>(unReadCount),
+      'profilePic': serializer.toJson<String?>(profilePic),
     };
   }
 
@@ -1186,6 +1218,7 @@ class ChatListTableData extends DataClass
     Value<String?> lastMessage = const Value.absent(),
     Value<int?> lastMessageTime = const Value.absent(),
     int? unReadCount,
+    Value<String?> profilePic = const Value.absent(),
   }) => ChatListTableData(
     id: id ?? this.id,
     chatId: chatId ?? this.chatId,
@@ -1196,6 +1229,7 @@ class ChatListTableData extends DataClass
         ? lastMessageTime.value
         : this.lastMessageTime,
     unReadCount: unReadCount ?? this.unReadCount,
+    profilePic: profilePic.present ? profilePic.value : this.profilePic,
   );
   ChatListTableData copyWithCompanion(ChatListTableCompanion data) {
     return ChatListTableData(
@@ -1212,6 +1246,9 @@ class ChatListTableData extends DataClass
       unReadCount: data.unReadCount.present
           ? data.unReadCount.value
           : this.unReadCount,
+      profilePic: data.profilePic.present
+          ? data.profilePic.value
+          : this.profilePic,
     );
   }
 
@@ -1224,7 +1261,8 @@ class ChatListTableData extends DataClass
           ..write('name: $name, ')
           ..write('lastMessage: $lastMessage, ')
           ..write('lastMessageTime: $lastMessageTime, ')
-          ..write('unReadCount: $unReadCount')
+          ..write('unReadCount: $unReadCount, ')
+          ..write('profilePic: $profilePic')
           ..write(')'))
         .toString();
   }
@@ -1238,6 +1276,7 @@ class ChatListTableData extends DataClass
     lastMessage,
     lastMessageTime,
     unReadCount,
+    profilePic,
   );
   @override
   bool operator ==(Object other) =>
@@ -1249,7 +1288,8 @@ class ChatListTableData extends DataClass
           other.name == this.name &&
           other.lastMessage == this.lastMessage &&
           other.lastMessageTime == this.lastMessageTime &&
-          other.unReadCount == this.unReadCount);
+          other.unReadCount == this.unReadCount &&
+          other.profilePic == this.profilePic);
 }
 
 class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
@@ -1260,6 +1300,7 @@ class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
   final Value<String?> lastMessage;
   final Value<int?> lastMessageTime;
   final Value<int> unReadCount;
+  final Value<String?> profilePic;
   const ChatListTableCompanion({
     this.id = const Value.absent(),
     this.chatId = const Value.absent(),
@@ -1268,6 +1309,7 @@ class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
     this.lastMessage = const Value.absent(),
     this.lastMessageTime = const Value.absent(),
     this.unReadCount = const Value.absent(),
+    this.profilePic = const Value.absent(),
   });
   ChatListTableCompanion.insert({
     this.id = const Value.absent(),
@@ -1277,6 +1319,7 @@ class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
     this.lastMessage = const Value.absent(),
     this.lastMessageTime = const Value.absent(),
     this.unReadCount = const Value.absent(),
+    this.profilePic = const Value.absent(),
   }) : chatId = Value(chatId),
        userId = Value(userId),
        name = Value(name);
@@ -1288,6 +1331,7 @@ class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
     Expression<String>? lastMessage,
     Expression<int>? lastMessageTime,
     Expression<int>? unReadCount,
+    Expression<String>? profilePic,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1297,6 +1341,7 @@ class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
       if (lastMessage != null) 'last_message': lastMessage,
       if (lastMessageTime != null) 'last_message_time': lastMessageTime,
       if (unReadCount != null) 'un_read_count': unReadCount,
+      if (profilePic != null) 'profile_pic': profilePic,
     });
   }
 
@@ -1308,6 +1353,7 @@ class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
     Value<String?>? lastMessage,
     Value<int?>? lastMessageTime,
     Value<int>? unReadCount,
+    Value<String?>? profilePic,
   }) {
     return ChatListTableCompanion(
       id: id ?? this.id,
@@ -1317,6 +1363,7 @@ class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
       lastMessage: lastMessage ?? this.lastMessage,
       lastMessageTime: lastMessageTime ?? this.lastMessageTime,
       unReadCount: unReadCount ?? this.unReadCount,
+      profilePic: profilePic ?? this.profilePic,
     );
   }
 
@@ -1344,6 +1391,9 @@ class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
     if (unReadCount.present) {
       map['un_read_count'] = Variable<int>(unReadCount.value);
     }
+    if (profilePic.present) {
+      map['profile_pic'] = Variable<String>(profilePic.value);
+    }
     return map;
   }
 
@@ -1356,7 +1406,8 @@ class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
           ..write('name: $name, ')
           ..write('lastMessage: $lastMessage, ')
           ..write('lastMessageTime: $lastMessageTime, ')
-          ..write('unReadCount: $unReadCount')
+          ..write('unReadCount: $unReadCount, ')
+          ..write('profilePic: $profilePic')
           ..write(')'))
         .toString();
   }
@@ -1853,6 +1904,7 @@ typedef $$ChatListTableTableCreateCompanionBuilder =
       Value<String?> lastMessage,
       Value<int?> lastMessageTime,
       Value<int> unReadCount,
+      Value<String?> profilePic,
     });
 typedef $$ChatListTableTableUpdateCompanionBuilder =
     ChatListTableCompanion Function({
@@ -1863,6 +1915,7 @@ typedef $$ChatListTableTableUpdateCompanionBuilder =
       Value<String?> lastMessage,
       Value<int?> lastMessageTime,
       Value<int> unReadCount,
+      Value<String?> profilePic,
     });
 
 class $$ChatListTableTableFilterComposer
@@ -1906,6 +1959,11 @@ class $$ChatListTableTableFilterComposer
 
   ColumnFilters<int> get unReadCount => $composableBuilder(
     column: $table.unReadCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get profilePic => $composableBuilder(
+    column: $table.profilePic,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -1953,6 +2011,11 @@ class $$ChatListTableTableOrderingComposer
     column: $table.unReadCount,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get profilePic => $composableBuilder(
+    column: $table.profilePic,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ChatListTableTableAnnotationComposer
@@ -1988,6 +2051,11 @@ class $$ChatListTableTableAnnotationComposer
 
   GeneratedColumn<int> get unReadCount => $composableBuilder(
     column: $table.unReadCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get profilePic => $composableBuilder(
+    column: $table.profilePic,
     builder: (column) => column,
   );
 }
@@ -2034,6 +2102,7 @@ class $$ChatListTableTableTableManager
                 Value<String?> lastMessage = const Value.absent(),
                 Value<int?> lastMessageTime = const Value.absent(),
                 Value<int> unReadCount = const Value.absent(),
+                Value<String?> profilePic = const Value.absent(),
               }) => ChatListTableCompanion(
                 id: id,
                 chatId: chatId,
@@ -2042,6 +2111,7 @@ class $$ChatListTableTableTableManager
                 lastMessage: lastMessage,
                 lastMessageTime: lastMessageTime,
                 unReadCount: unReadCount,
+                profilePic: profilePic,
               ),
           createCompanionCallback:
               ({
@@ -2052,6 +2122,7 @@ class $$ChatListTableTableTableManager
                 Value<String?> lastMessage = const Value.absent(),
                 Value<int?> lastMessageTime = const Value.absent(),
                 Value<int> unReadCount = const Value.absent(),
+                Value<String?> profilePic = const Value.absent(),
               }) => ChatListTableCompanion.insert(
                 id: id,
                 chatId: chatId,
@@ -2060,6 +2131,7 @@ class $$ChatListTableTableTableManager
                 lastMessage: lastMessage,
                 lastMessageTime: lastMessageTime,
                 unReadCount: unReadCount,
+                profilePic: profilePic,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
