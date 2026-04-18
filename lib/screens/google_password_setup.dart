@@ -25,7 +25,7 @@ class _GooglePasswordSetupState extends ConsumerState<GooglePasswordSetup> {
 
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
-
+  bool loading = false;
   bool get isFormFilled =>
       passwordController.text.isNotEmpty &&
       confirmPasswordController.text.isNotEmpty &&
@@ -55,30 +55,45 @@ class _GooglePasswordSetupState extends ConsumerState<GooglePasswordSetup> {
   void onSubmit() async {
     final password = passwordController.text;
     final ApiClient apiClient = ApiClient();
-    final result = await UserApiService(apiClient).googleAuthSetPassword(
-      token: args?.token ?? '',
-      password: password,
-      id: args?.id ?? '',
-    );
-    if (result.success) {
-      await ref
-          .read(authProvider.notifier)
-          .login(result.data?.accessToken ?? '');
-      final profile = await UserApiService(
-        apiClient,
-      ).getMyProfile(token: result.data?.accessToken ?? '');
+    try {
+      setState(() {
+        loading = true;
+      });
+      final result = await UserApiService(apiClient).googleAuthSetPassword(
+        token: args?.token ?? '',
+        password: password,
+        id: args?.id ?? '',
+      );
+      if (result.success) {
+        await ref
+            .read(authProvider.notifier)
+            .login(result.data?.accessToken ?? '');
+        final profile = await UserApiService(
+          apiClient,
+        ).getMyProfile(token: result.data?.accessToken ?? '');
 
-      if (!mounted) return;
+        if (!mounted) return;
 
-      Navigator.of(
-        context,
-      ).pushNamed(AppRoutes.profileSetup, arguments: profile.data);
-    } else {
+        Navigator.of(
+          context,
+        ).pushNamed(AppRoutes.profileSetup, arguments: profile.data);
+      } else {
+        ToastHelper.show(
+          context: context,
+          message: result.message,
+          type: ToastificationType.error,
+        );
+      }
+    } catch (e) {
       ToastHelper.show(
         context: context,
-        message: result.message,
+        message: "Something went wrong. Please try again.",
         type: ToastificationType.error,
       );
+    } finally {
+      setState(() {
+        loading = false;
+      });
     }
   }
 
@@ -192,15 +207,15 @@ class _GooglePasswordSetupState extends ConsumerState<GooglePasswordSetup> {
                 ),
                 const SizedBox(height: 40),
                 PrimaryButton(
-                  text: "Complete Setup",
-                  onPressed: isDisabled ? () {} : onSubmit,
-                  backgroundColor: isDisabled
+                  text: loading ? "Completing Setup..." : "Complete Setup",
+                  onPressed: isDisabled || loading ? () {} : onSubmit,
+                  backgroundColor: (isDisabled || loading)
                       ? DefaultColorSheet.disbaledButton
                       : DefaultColorSheet.primary,
-                  borderColor: isDisabled
+                  borderColor: (isDisabled || loading)
                       ? DefaultColorSheet.disbaledButton
                       : DefaultColorSheet.primary,
-                  textColor: isDisabled
+                  textColor: (isDisabled || loading)
                       ? DefaultColorSheet.grey500
                       : Colors.white,
                 ),

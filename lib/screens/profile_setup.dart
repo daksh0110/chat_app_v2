@@ -113,12 +113,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       );
 
       if (result.success) {
-        ToastHelper.show(
-          context: context,
-          message: 'Profile updated successfully',
-        );
         if (!mounted) return;
-        Navigator.of(context).pushNamed(AppRoutes.home);
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
       } else {
         ToastHelper.show(
           context: context,
@@ -302,7 +300,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 const SizedBox(height: 12),
                 TextButton(
                   onPressed: () {
-                    Navigator.of(context).pushNamed(AppRoutes.home);
+                    Navigator.of(
+                      context,
+                    ).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
                   },
                   child: const PrimaryText(
                     'Skip for now',
@@ -310,10 +310,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     color: DefaultColorSheet.grey500,
                   ),
                 ),
-                if (_isPickingPhoto || _isUploading) ...[
-                  const SizedBox(height: 24),
-                  const CircularProgressIndicator(),
-                ],
               ],
             ),
           ),

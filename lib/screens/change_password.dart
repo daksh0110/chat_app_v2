@@ -53,6 +53,7 @@ class _ChangePasswordState extends State<ChangePassword> {
   final Map<String, TextEditingController> controllers = {};
   int currentIndex = 0;
   String resetToken = "";
+  bool loading = false;
 
   @override
   void initState() {
@@ -95,13 +96,81 @@ class _ChangePasswordState extends State<ChangePassword> {
   }
 
   void _sendOtp({required bool resend}) async {
-    final response = await UserApiService(
-      apiClient,
-    ).sendOtp(email: controllers["email"]!.text);
-    if (response.success) {
-      resetToken = response.data?.resetToken ?? "";
-      ToastHelper.show(context: context, message: response.message);
-      if (!resend) {
+    if (loading) return;
+
+    setState(() => loading = true);
+
+    try {
+      final response = await UserApiService(
+        apiClient,
+      ).sendOtp(email: controllers["email"]!.text);
+
+      if (response.success) {
+        resetToken = response.data?.resetToken ?? "";
+
+        if (!mounted) return;
+
+        ToastHelper.show(context: context, message: response.message);
+
+        if (!resend) {
+          setState(() {
+            if (currentIndex < data.length - 1) {
+              data[currentIndex] = data[currentIndex].copyWith(
+                status: ChangePasswordStatus.success,
+              );
+              currentIndex++;
+            }
+          });
+        }
+
+        startTimer();
+      } else {
+        if (!mounted) return;
+
+        ToastHelper.show(
+          context: context,
+          message: response.message,
+          type: ToastificationType.error,
+        );
+      }
+    } catch (e, stackTrace) {
+      debugPrint("Send OTP error: $e");
+      debugPrintStack(stackTrace: stackTrace);
+
+      if (!mounted) return;
+
+      ToastHelper.show(
+        context: context,
+        message: "Failed to send OTP. Try again.",
+        type: ToastificationType.error,
+      );
+    } finally {
+      if (mounted) {
+        setState(() => loading = false);
+      }
+    }
+  }
+
+  void _changePassword() async {
+    if (loading) return;
+
+    setState(() => loading = true);
+
+    try {
+      final response = await UserApiService(apiClient).changePassword(
+        resetToken: resetToken,
+        newpassword: controllers["changePassword"]!.text,
+      );
+
+      if (response.success) {
+        if (!mounted) return;
+
+        ToastHelper.show(context: context, message: response.message);
+
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil(AppRoutes.onboarding, (route) => false);
+
         setState(() {
           if (currentIndex < data.length - 1) {
             data[currentIndex] = data[currentIndex].copyWith(
@@ -110,68 +179,80 @@ class _ChangePasswordState extends State<ChangePassword> {
             currentIndex++;
           }
         });
+      } else {
+        if (!mounted) return;
+
+        ToastHelper.show(
+          context: context,
+          message: response.message,
+          type: ToastificationType.error,
+        );
       }
-      startTimer();
-    } else {
+    } catch (e, stackTrace) {
+      debugPrint("Error changing password: $e");
+      debugPrintStack(stackTrace: stackTrace);
+
+      if (!mounted) return;
+
       ToastHelper.show(
         context: context,
-        message: response.message,
+        message: "Something went wrong. Please try again.",
         type: ToastificationType.error,
       );
-      return;
-    }
-  }
-
-  void _changePassword() async {
-    final response = await UserApiService(apiClient).changePassword(
-      resetToken: resetToken,
-      newpassword: controllers["changePassword"]!.text,
-    );
-    if (response.success) {
-      Navigator.of(
-        context,
-      ).pushNamedAndRemoveUntil(AppRoutes.onboarding, (route) => false);
-      ToastHelper.show(context: context, message: response.message);
-      setState(() {
-        if (currentIndex < data.length - 1) {
-          data[currentIndex] = data[currentIndex].copyWith(
-            status: ChangePasswordStatus.success,
-          );
-          currentIndex++;
-        }
-      });
-    } else {
-      ToastHelper.show(
-        context: context,
-        message: response.message,
-        type: ToastificationType.error,
-      );
-
-      return;
+    } finally {
+      if (mounted) {
+        setState(() => loading = false);
+      }
     }
   }
 
   void _verifyOtp() async {
-    final response = await UserApiService(
-      apiClient,
-    ).verifyOtp(resetToken: resetToken, otp: controllers["otp"]!.text);
-    if (response.success) {
-      ToastHelper.show(context: context, message: response.message);
-      setState(() {
-        if (currentIndex < data.length - 1) {
-          data[currentIndex] = data[currentIndex].copyWith(
-            status: ChangePasswordStatus.success,
-          );
-          currentIndex++;
-        }
-      });
-    } else {
+    if (loading) return;
+
+    setState(() => loading = true);
+
+    try {
+      final response = await UserApiService(
+        apiClient,
+      ).verifyOtp(resetToken: resetToken, otp: controllers["otp"]!.text);
+
+      if (response.success) {
+        if (!mounted) return;
+
+        ToastHelper.show(context: context, message: response.message);
+
+        setState(() {
+          if (currentIndex < data.length - 1) {
+            data[currentIndex] = data[currentIndex].copyWith(
+              status: ChangePasswordStatus.success,
+            );
+            currentIndex++;
+          }
+        });
+      } else {
+        if (!mounted) return;
+
+        ToastHelper.show(
+          context: context,
+          message: response.message,
+          type: ToastificationType.error,
+        );
+      }
+    } catch (e, stackTrace) {
+      debugPrint("Verify OTP error: $e");
+      debugPrintStack(stackTrace: stackTrace);
+
+      if (!mounted) return;
+
       ToastHelper.show(
         context: context,
-        message: response.message,
+        message: "OTP verification failed.",
         type: ToastificationType.error,
       );
-      return;
+    } finally {
+      if (mounted) {
+        setState(() => loading = false);
+      }
     }
   }
 
@@ -243,18 +324,18 @@ class _ChangePasswordState extends State<ChangePassword> {
 
                 PrimaryButton(
                   text: currentState.buttonMessage,
-                  onPressed: isDisabled
+                  onPressed: (isDisabled || loading)
                       ? () {}
                       : () {
                           _nextStep();
                         },
-                  backgroundColor: isDisabled
+                  backgroundColor: (isDisabled || loading)
                       ? DefaultColorSheet.disbaledButton
                       : DefaultColorSheet.primary,
-                  borderColor: isDisabled
+                  borderColor: (isDisabled || loading)
                       ? DefaultColorSheet.disbaledButton
                       : DefaultColorSheet.primary,
-                  textColor: isDisabled
+                  textColor: (isDisabled || loading)
                       ? DefaultColorSheet.grey500
                       : Colors.white,
                 ),

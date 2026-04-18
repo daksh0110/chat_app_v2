@@ -13,6 +13,7 @@ class PrimaryButton extends StatelessWidget {
   final FontWeight fontWeight;
   final String? fontFamily;
   final EdgeInsetsGeometry padding;
+  final bool loading;
 
   const PrimaryButton({
     super.key,
@@ -27,6 +28,7 @@ class PrimaryButton extends StatelessWidget {
     this.fontWeight = FontWeight.w600,
     this.fontFamily,
     this.padding = const EdgeInsets.symmetric(horizontal: 16),
+    this.loading = false,
   });
 
   @override
@@ -44,15 +46,21 @@ class PrimaryButton extends StatelessWidget {
           ),
           padding: padding,
         ),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: textColor,
-            fontSize: fontSize,
-            fontWeight: fontWeight,
-            fontFamily: fontFamily,
-          ),
-        ),
+        child: loading
+            ? const CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 2,
+                constraints: BoxConstraints(minHeight: 24, minWidth: 24),
+              )
+            : Text(
+                text,
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: fontSize,
+                  fontWeight: fontWeight,
+                  fontFamily: fontFamily,
+                ),
+              ),
       ),
     );
   }
