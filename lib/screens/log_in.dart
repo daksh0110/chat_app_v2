@@ -26,7 +26,7 @@ class _LogInState extends ConsumerState<LogIn> {
   final _formKey = GlobalKey<FormState>();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-
+  bool loading = false;
   bool get isFormFilled =>
       emailController.text.isNotEmpty && passwordController.text.isNotEmpty;
 
@@ -52,35 +52,57 @@ class _LogInState extends ConsumerState<LogIn> {
     final String email = emailController.text;
     final String password = passwordController.text;
     final ApiClient apiClient = ApiClient();
-    final result = await UserApiService(
-      apiClient,
-    ).loginUser(LoginUser(email: email, password: password).toJson());
-    if (result.success) {
-      if (result.data?.skipOtp == true) {
-        if (!mounted) return;
-        toastification.show(
-          context: context,
-          title: PrimaryText(result.message, color: Colors.white, fontSize: 18),
-          type: ToastificationType.success,
-          autoCloseDuration: Duration(seconds: 5),
-          style: ToastificationStyle.fillColored,
-        );
-        final data = result.data;
-        await ref.read(authProvider.notifier).login(data?.accessToken ?? "");
-        Navigator.of(
-          context,
-        ).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
-      } else {
-        Navigator.of(context).pushNamed(
-          AppRoutes.verifyEmail,
-          arguments: VerifyScreenArguments(
-            email: result.data?.email ?? "",
-            verificationToken: result.data?.verificationToken ?? "",
-          ),
-        );
-      }
+    try {
+      setState(() {
+        loading = true;
+      });
+      final result = await UserApiService(
+        apiClient,
+      ).loginUser(LoginUser(email: email, password: password).toJson());
+      if (result.success) {
+        if (result.data?.skipOtp == true) {
+          if (!mounted) return;
+          toastification.show(
+            context: context,
+            title: PrimaryText(
+              result.message,
+              color: Colors.white,
+              fontSize: 18,
+            ),
+            type: ToastificationType.success,
+            autoCloseDuration: Duration(seconds: 5),
+            style: ToastificationStyle.fillColored,
+          );
+          final data = result.data;
+          await ref.read(authProvider.notifier).login(data?.accessToken ?? "");
+          Navigator.of(
+            context,
+          ).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
+        } else {
+          Navigator.of(context).pushNamed(
+            AppRoutes.verifyEmail,
+            arguments: VerifyScreenArguments(
+              email: result.data?.email ?? "",
+              verificationToken: result.data?.verificationToken ?? "",
+            ),
+          );
+        }
 
-      return;
+        return;
+      }
+    } catch (e, stackTrace) {
+      debugPrint("Login error: $e");
+      debugPrintStack(stackTrace: stackTrace);
+      if (!mounted) return;
+      ToastHelper.show(
+        context: context,
+        message: "Something went wrong. Please try again.",
+        type: ToastificationType.error,
+      );
+    } finally {
+      setState(() {
+        loading = false;
+      });
     }
   }
 

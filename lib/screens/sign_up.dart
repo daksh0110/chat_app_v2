@@ -7,7 +7,6 @@ import 'package:my_app/data/services/user_api_service.dart';
 import 'package:my_app/modal/screens/signup/register_user.dart';
 import 'package:my_app/modal/screens/signup/register_user_argument.dart';
 import 'package:my_app/modal/screens/verifyEmail/verify_screen_arguments.dart';
-import 'package:my_app/providers/auth_notifier_provider.dart';
 import 'package:my_app/widgets/comman/divider_text.dart';
 import 'package:my_app/widgets/comman/google_auth_login.dart';
 import 'package:my_app/widgets/comman/primary_button.dart';
@@ -30,6 +29,7 @@ class _SignUpState extends ConsumerState<SignUp> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
+  bool loading = false;
 
   bool get isFormFilled =>
       nameController.text.isNotEmpty &&
@@ -68,33 +68,52 @@ class _SignUpState extends ConsumerState<SignUp> {
     final name = nameController.text;
     final email = emailController.text;
     final password = passwordController.text;
+
     final ApiClient apiClient = ApiClient();
-    final result = await UserApiService(apiClient).createUser(
-      RegisterUser(name: name, email: email, password: password).toJson(),
-    );
-    if (result.success) {
-      ToastHelper.show(
-        context: context,
-        message: result.data?.message ?? result.message,
-      );
-      if (!mounted) return;
-      Navigator.of(context).pushNamed(
-        AppRoutes.verifyEmail,
-        arguments: VerifyScreenArguments(
-          email: result.data?.email ?? "",
-          verificationToken: result.data?.verificationToken ?? "",
-        ),
+
+    try {
+      setState(() {
+        loading = true;
+      });
+      final result = await UserApiService(apiClient).createUser(
+        RegisterUser(name: name, email: email, password: password).toJson(),
       );
 
-      // await ref.watch(authProvider.notifier).login(data?.accessToken ?? "");
-    } else {
+      if (result.success) {
+        if (!mounted) return;
+
+        Navigator.of(context).pushNamed(
+          AppRoutes.verifyEmail,
+          arguments: VerifyScreenArguments(
+            email: result.data?.email ?? "",
+            verificationToken: result.data?.verificationToken ?? "",
+          ),
+        );
+
+        // await ref.watch(authProvider.notifier).login(data?.accessToken ?? "");
+      } else {
+        ToastHelper.show(
+          context: context,
+          message: result.message,
+          type: ToastificationType.error,
+        );
+      }
+    } catch (e, stackTrace) {
+      debugPrint("Error during registration: $e");
+      debugPrintStack(stackTrace: stackTrace);
+
+      if (!mounted) return;
+
       ToastHelper.show(
         context: context,
-        message: result.message,
+        message: "Something went wrong. Please try again.",
         type: ToastificationType.error,
       );
+    } finally {
+      setState(() {
+        loading = false;
+      });
     }
-    return;
   }
 
   @override
@@ -215,15 +234,15 @@ class _SignUpState extends ConsumerState<SignUp> {
 
                 const SizedBox(height: 40),
                 PrimaryButton(
-                  text: "Create Account",
-                  onPressed: isDisabled ? () {} : onSubmit,
-                  backgroundColor: isDisabled
+                  text: loading ? "Creating Account..." : "Create Account",
+                  onPressed: isDisabled || loading ? () {} : onSubmit,
+                  backgroundColor: isDisabled || loading
                       ? DefaultColorSheet.disbaledButton
                       : DefaultColorSheet.primary,
-                  borderColor: isDisabled
+                  borderColor: isDisabled || loading
                       ? DefaultColorSheet.disbaledButton
                       : DefaultColorSheet.primary,
-                  textColor: isDisabled
+                  textColor: isDisabled || loading
                       ? DefaultColorSheet.grey500
                       : Colors.white,
                 ),

@@ -27,6 +27,7 @@ class _VerifyEmailState extends ConsumerState<VerifyEmailScreen> {
   bool get isDisabled => otpController.text.length != 4;
   late String email;
   late String verificationToken;
+  bool loading = false;
 
   Timer? _timer;
   int _start = 60;
@@ -75,63 +76,113 @@ class _VerifyEmailState extends ConsumerState<VerifyEmailScreen> {
     });
 
     final apiClient = ApiClient();
-    final result = await UserApiService(
-      apiClient,
-    ).sendEmailVerificationOtp(email: email);
 
-    setState(() {
-      isResending = false;
-    });
-
-    if (result.success) {
-      verificationToken =
-          result.data?.newVerificationToken ?? verificationToken;
-
-      ToastHelper.show(context: context, message: result.message);
-
-      startTimer();
-    } else {
+    try {
       setState(() {
-        resendOtpDisable = false;
+        loading = true;
       });
+      final result = await UserApiService(
+        apiClient,
+      ).sendEmailVerificationOtp(email: email);
+
+      if (result.success) {
+        verificationToken =
+            result.data?.newVerificationToken ?? verificationToken;
+
+        startTimer();
+      } else {
+        setState(() {
+          resendOtpDisable = false;
+        });
+
+        ToastHelper.show(
+          context: context,
+          message: result.message,
+          type: ToastificationType.error,
+        );
+      }
+    } catch (e, stackTrace) {
+      debugPrint("Resend OTP error: $e");
+      debugPrintStack(stackTrace: stackTrace);
+
+      if (!mounted) return;
 
       ToastHelper.show(
         context: context,
-        message: result.message,
+        message: "Failed to resend OTP. Try again.",
         type: ToastificationType.error,
       );
+
+      setState(() {
+        resendOtpDisable = false;
+      });
+    } finally {
+      setState(() {
+        loading = false;
+      });
+      if (mounted) {
+        setState(() {
+          isResending = false;
+        });
+      }
     }
   }
 
   void onSubmit() async {
     final apiClient = ApiClient();
 
-    final result = await UserApiService(apiClient).verifyEmailVerificationOtp(
-      otp: otpController.text,
-      verificationToken: verificationToken,
-    );
+    try {
+      setState(() {
+        loading = true;
+      });
+      final result = await UserApiService(apiClient).verifyEmailVerificationOtp(
+        otp: otpController.text,
+        verificationToken: verificationToken,
+      );
 
-    if (result.success) {
+      if (!result.success) {
+        if (!mounted) return;
+
+        ToastHelper.show(
+          context: context,
+          message: result.message,
+          type: ToastificationType.error,
+        );
+        return;
+      }
+
       ToastHelper.show(context: context, message: result.message);
+
       await ref
           .read(authProvider.notifier)
           .login(result.data?.accessToken ?? "");
+
       final profile = await UserApiService(
         apiClient,
       ).getMyProfile(token: result.data?.accessToken ?? "");
 
       if (!mounted) return;
+
       Navigator.of(context).pushNamedAndRemoveUntil(
         AppRoutes.profileSetup,
         (route) => false,
         arguments: profile.data,
       );
-    } else {
+    } catch (e, stackTrace) {
+      debugPrint("Verify OTP error: $e");
+      debugPrintStack(stackTrace: stackTrace);
+
+      if (!mounted) return;
+
       ToastHelper.show(
         context: context,
-        message: result.message,
+        message: "Something went wrong. Please try again.",
         type: ToastificationType.error,
       );
+    } finally {
+      setState(() {
+        loading = false;
+      });
     }
   }
 
@@ -202,15 +253,15 @@ class _VerifyEmailState extends ConsumerState<VerifyEmailScreen> {
               const Spacer(),
 
               PrimaryButton(
-                text: "Verify",
-                onPressed: isDisabled ? () {} : onSubmit,
-                backgroundColor: isDisabled
+                text: loading ? "Verifying..." : "Verify",
+                onPressed: isDisabled || loading ? () {} : onSubmit,
+                backgroundColor: isDisabled || loading
                     ? DefaultColorSheet.disbaledButton
                     : DefaultColorSheet.primary,
-                borderColor: isDisabled
+                borderColor: isDisabled || loading
                     ? DefaultColorSheet.disbaledButton
                     : DefaultColorSheet.primary,
-                textColor: isDisabled
+                textColor: isDisabled || loading
                     ? DefaultColorSheet.grey500
                     : Colors.white,
               ),
