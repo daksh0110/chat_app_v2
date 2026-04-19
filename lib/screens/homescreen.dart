@@ -6,7 +6,6 @@ import 'package:my_app/modal/screens/search/message_screen_arguments.dart';
 import 'package:my_app/providers/chat_list_provider.dart';
 import 'package:my_app/widgets/comman/primary_container.dart';
 import 'package:my_app/widgets/screens/home/chat_list_item.dart';
-import 'package:my_app/widgets/screens/home/status_bar.dart';
 
 class Homescreen extends ConsumerStatefulWidget {
   const Homescreen({super.key, required this.data});

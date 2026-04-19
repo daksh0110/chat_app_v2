@@ -19,6 +19,7 @@ import 'package:my_app/screens/google_password_setup.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:my_app/screens/profile_setup.dart';
+import 'package:my_app/screens/user_profile.dart';
 import 'package:my_app/screens/verify_email.dart';
 
 void main() async {
@@ -90,6 +91,7 @@ class MyApp extends ConsumerWidget {
         AppRoutes.changePassword: (context) => const ChangePassword(),
         AppRoutes.verifyEmail: (context) => const VerifyEmailScreen(),
         AppRoutes.profileSetup: (context) => const ProfileSetupScreen(),
+        AppRoutes.userProfile: (context) => UserProfile(),
       },
     );
   }

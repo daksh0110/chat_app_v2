@@ -183,6 +183,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           fontSize: 18,
           fontWeight: FontWeight.w600,
         ),
+        actions: [
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(Icons.more_vert, color: Colors.black),
+          ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
