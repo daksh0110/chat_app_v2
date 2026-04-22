@@ -40,16 +40,16 @@ class SettingsMain extends ConsumerWidget {
             Divider(color: DefaultColorSheet.grey600),
             const SizedBox(height: 30),
 
-            Expanded(
-              child: ListView.separated(
-                shrinkWrap: true,
-                itemBuilder: (context, index) {
-                  return SettingMenuItem(item: settingMenuData[index]);
-                },
-                separatorBuilder: (context, index) => SizedBox(height: 30),
-                itemCount: settingMenuData.length,
-              ),
-            ),
+            // Expanded(
+            //   child: ListView.separated(
+            //     shrinkWrap: true,
+            //     itemBuilder: (context, index) {
+            //       return SettingMenuItem(item: settingMenuData[index]);
+            //     },
+            //     separatorBuilder: (context, index) => SizedBox(height: 30),
+            //     itemCount: settingMenuData.length,
+            //   ),
+            // ),
           ],
         ),
       ),

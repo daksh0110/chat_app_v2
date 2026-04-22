@@ -6,10 +6,18 @@ import 'package:my_app/providers/message_typing_provider.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
 
 class ChatListItem extends ConsumerWidget {
-  const ChatListItem({super.key, required this.chat, this.onTap});
+  const ChatListItem({
+    super.key,
+    required this.chat,
+    this.onTap,
+    this.onHold,
+    this.isSelected = false,
+  });
 
   final ChatListModal chat;
   final VoidCallback? onTap;
+  final VoidCallback? onHold;
+  final bool isSelected;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -20,7 +28,16 @@ class ChatListItem extends ConsumerWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        child: Padding(
+        splashColor: isSelected
+            ? Colors.transparent
+            : DefaultColorSheet.blue200,
+        onLongPress: onHold,
+        highlightColor: DefaultColorSheet.blue200,
+        child: Ink(
+          decoration: BoxDecoration(
+            color: isSelected ? DefaultColorSheet.blue200 : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+          ),
           padding: const EdgeInsets.fromLTRB(24, 10, 24, 10),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,

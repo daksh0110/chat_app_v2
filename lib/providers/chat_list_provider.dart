@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/core/database.dart';
@@ -47,5 +49,29 @@ class ChatListController {
     await (db.update(db.messages)
           ..where((m) => m.chatId.equals(chat.chatId) & m.isRead.equals(false)))
         .write(const MessagesCompanion(isRead: Value(true)));
+  }
+}
+
+final selectedChatListProvider =
+    NotifierProvider<SelectedChatListNotifier, List<int>>(
+      () => SelectedChatListNotifier(),
+    );
+
+class SelectedChatListNotifier extends Notifier<List<int>> {
+  @override
+  List<int> build() {
+    return [];
+  }
+
+  void modifyList(int item) {
+    if (state.contains(item)) {
+      state = state.where((i) => i != item).toList();
+    } else {
+      state = [...state, item];
+    }
+  }
+
+  void clearList() {
+    state = [];
   }
 }

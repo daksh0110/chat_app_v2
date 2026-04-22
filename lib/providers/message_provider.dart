@@ -128,6 +128,17 @@ class MessageNotifer extends Notifier {
               profilePic: Value(user.profilePicUrl ?? ""),
             ),
           );
+      await database
+          .into(database.usersTable)
+          .insertOnConflictUpdate(
+            UsersTableCompanion(
+              id: Value(user.id),
+              name: Value(user.name),
+              email: Value(user.email ?? ""),
+              bio: Value(user.bio ?? ""),
+              profilePictureUrl: Value(user.profilePicUrl ?? ""),
+            ),
+          );
     } else {
       final isNewer =
           existingChat.lastMessageTime == null ||
@@ -202,6 +213,18 @@ class MessageNotifer extends Notifier {
           profilePic: Value(user.profilePicUrl ?? ""),
         ),
       );
+
+      await database
+          .into(database.usersTable)
+          .insertOnConflictUpdate(
+            UsersTableCompanion(
+              id: Value(user.id),
+              name: Value(user.name),
+              email: Value(user.email ?? ""),
+              bio: Value(user.bio ?? ""),
+              profilePictureUrl: Value(user.profilePicUrl ?? ""),
+            ),
+          );
     }
 
     await database.managers.messages.create(
