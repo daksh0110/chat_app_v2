@@ -126,6 +126,7 @@ class MessageNotifer extends Notifier {
               lastMessageTime: Value(createdAt),
               unReadCount: Value(shouldAutoRead ? 0 : 1),
               profilePic: Value(user.profilePicUrl ?? ""),
+              isDeleted: const Value(false),
             ),
           );
       await database
@@ -211,6 +212,7 @@ class MessageNotifer extends Notifier {
           lastMessageTime: const Value(null),
           unReadCount: const Value(0),
           profilePic: Value(user.profilePicUrl ?? ""),
+          isDeleted: const Value(false),
         ),
       );
 
@@ -274,6 +276,7 @@ class MessageNotifer extends Notifier {
               lastMessage: Value(message),
               lastMessageTime: Value(serverCreatedAt),
               profilePic: Value(response.data?.profilePicUrl ?? ""),
+              isDeleted: const Value(false),
             ),
           );
         } else {
@@ -284,6 +287,7 @@ class MessageNotifer extends Notifier {
                   chatId: Value(realChatId),
                   lastMessage: Value(message),
                   lastMessageTime: Value(serverCreatedAt),
+                  isDeleted: const Value(false),
                 ),
               );
         }

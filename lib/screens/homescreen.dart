@@ -84,11 +84,12 @@ class _HomeScreenState extends ConsumerState<Homescreen> with RouteAware {
                           );
                           return;
                         } else {
-                          selectedListNotifier.modifyList(index);
+                          selectedListNotifier.modifyList(chat.chatId);
                         }
                       },
-                      onHold: () => selectedListNotifier.modifyList(index),
-                      isSelected: selectedList.contains(index),
+                      onHold: () =>
+                          selectedListNotifier.modifyList(chat.chatId),
+                      isSelected: selectedList.contains(chat.chatId),
                     );
                   },
                   separatorBuilder: (_, __) => const SizedBox(height: 1),

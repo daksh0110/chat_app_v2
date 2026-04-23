@@ -11,6 +11,7 @@ final chatListProvider = StreamProvider<List<ChatListModal>>((ref) {
   final db = ref.watch(databaseProvider);
 
   return (db.select(db.chatListTable)
+        ..where((t) => t.isDeleted.equals(false))
         ..orderBy([(t) => OrderingTerm.desc(t.lastMessageTime)]))
       .watch()
       .map((rows) => rows.map(ChatListModal.fromDrift).toList());
@@ -53,17 +54,17 @@ class ChatListController {
 }
 
 final selectedChatListProvider =
-    NotifierProvider<SelectedChatListNotifier, List<int>>(
+    NotifierProvider<SelectedChatListNotifier, List<String>>(
       () => SelectedChatListNotifier(),
     );
 
-class SelectedChatListNotifier extends Notifier<List<int>> {
+class SelectedChatListNotifier extends Notifier<List<String>> {
   @override
-  List<int> build() {
+  List<String> build() {
     return [];
   }
 
-  void modifyList(int item) {
+  void modifyList(String item) {
     if (state.contains(item)) {
       state = state.where((i) => i != item).toList();
     } else {

@@ -13,4 +13,5 @@ class ChatListTable extends Table {
 
   IntColumn get unReadCount => integer().withDefault(const Constant(0))();
   TextColumn get profilePic => text().nullable()();
+  BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
 }
