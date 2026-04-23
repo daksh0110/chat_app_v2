@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/core/database.dart';
@@ -9,6 +11,7 @@ final chatListProvider = StreamProvider<List<ChatListModal>>((ref) {
   final db = ref.watch(databaseProvider);
 
   return (db.select(db.chatListTable)
+        ..where((t) => t.isDeleted.equals(false))
         ..orderBy([(t) => OrderingTerm.desc(t.lastMessageTime)]))
       .watch()
       .map((rows) => rows.map(ChatListModal.fromDrift).toList());
@@ -47,5 +50,29 @@ class ChatListController {
     await (db.update(db.messages)
           ..where((m) => m.chatId.equals(chat.chatId) & m.isRead.equals(false)))
         .write(const MessagesCompanion(isRead: Value(true)));
+  }
+}
+
+final selectedChatListProvider =
+    NotifierProvider<SelectedChatListNotifier, List<String>>(
+      () => SelectedChatListNotifier(),
+    );
+
+class SelectedChatListNotifier extends Notifier<List<String>> {
+  @override
+  List<String> build() {
+    return [];
+  }
+
+  void modifyList(String item) {
+    if (state.contains(item)) {
+      state = state.where((i) => i != item).toList();
+    } else {
+      state = [...state, item];
+    }
+  }
+
+  void clearList() {
+    state = [];
   }
 }

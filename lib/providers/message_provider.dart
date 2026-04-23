@@ -126,6 +126,18 @@ class MessageNotifer extends Notifier {
               lastMessageTime: Value(createdAt),
               unReadCount: Value(shouldAutoRead ? 0 : 1),
               profilePic: Value(user.profilePicUrl ?? ""),
+              isDeleted: const Value(false),
+            ),
+          );
+      await database
+          .into(database.usersTable)
+          .insertOnConflictUpdate(
+            UsersTableCompanion(
+              id: Value(user.id),
+              name: Value(user.name),
+              email: Value(user.email ?? ""),
+              bio: Value(user.bio ?? ""),
+              profilePictureUrl: Value(user.profilePicUrl ?? ""),
             ),
           );
     } else {
@@ -200,8 +212,21 @@ class MessageNotifer extends Notifier {
           lastMessageTime: const Value(null),
           unReadCount: const Value(0),
           profilePic: Value(user.profilePicUrl ?? ""),
+          isDeleted: const Value(false),
         ),
       );
+
+      await database
+          .into(database.usersTable)
+          .insertOnConflictUpdate(
+            UsersTableCompanion(
+              id: Value(user.id),
+              name: Value(user.name),
+              email: Value(user.email ?? ""),
+              bio: Value(user.bio ?? ""),
+              profilePictureUrl: Value(user.profilePicUrl ?? ""),
+            ),
+          );
     }
 
     await database.managers.messages.create(
@@ -251,6 +276,7 @@ class MessageNotifer extends Notifier {
               lastMessage: Value(message),
               lastMessageTime: Value(serverCreatedAt),
               profilePic: Value(response.data?.profilePicUrl ?? ""),
+              isDeleted: const Value(false),
             ),
           );
         } else {
@@ -261,6 +287,7 @@ class MessageNotifer extends Notifier {
                   chatId: Value(realChatId),
                   lastMessage: Value(message),
                   lastMessageTime: Value(serverCreatedAt),
+                  isDeleted: const Value(false),
                 ),
               );
         }

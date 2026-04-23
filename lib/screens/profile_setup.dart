@@ -183,6 +183,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           fontSize: 18,
           fontWeight: FontWeight.w600,
         ),
+        actions: [
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(Icons.more_vert, color: Colors.black),
+          ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -255,7 +261,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 TextFormField(
                   controller: bioController,
                   maxLines: 4,
-                  maxLength: 150,
+                  maxLength: 100,
                   textAlign: TextAlign.start,
                   decoration: InputDecoration(
                     alignLabelWithHint: true,
@@ -276,8 +282,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     ),
                   ),
                   validator: (value) {
-                    if (value != null && value.length > 150) {
-                      return 'Bio can be at most 150 characters.';
+                    if (value != null && value.length > 100) {
+                      return 'Bio can be at most 100 characters.';
                     }
                     return null;
                   },

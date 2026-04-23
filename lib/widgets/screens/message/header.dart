@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
+import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/modal/screens/search/search_item.dart';
 import 'package:my_app/widgets/screens/search/search_group_item.dart';
 
@@ -50,19 +51,30 @@ class _HeaderState extends State<Header> {
       shadowColor: const Color(0x05111222),
       backgroundColor: Colors.white,
       scrolledUnderElevation: 0.0,
-      title: SearchGroupItem(
-        height: toolbarHeight - 8,
-        chatBubbleSize: toolbarHeight - 12,
-        needActiveIndicator: widget.isOnline,
-        item: SearchItem(
-          id: widget.id,
-          name: widget.name,
-          profilePic: "assets/no-image-icon.jpg",
-          subtitle: widget.isOnline ? "active now" : "",
-          profilePicUrl: widget.profilePic,
+      titleSpacing: 1,
+      title: InkWell(
+        onTap: () {
+          Navigator.pushNamed(
+            context,
+            AppRoutes.userProfile,
+            arguments: widget.id,
+          );
+        },
+        borderRadius: BorderRadius.circular(8),
+        child: SearchGroupItem(
+          height: toolbarHeight - 8,
+          chatBubbleSize: toolbarHeight - 12,
+          needActiveIndicator: widget.isOnline,
+          item: SearchItem(
+            id: widget.id,
+            name: widget.name,
+            profilePic: "assets/no-image-icon.jpg",
+            subtitle: widget.isOnline ? "active now" : "",
+            profilePicUrl: widget.profilePic,
+          ),
         ),
       ),
-      actionsPadding: const EdgeInsets.only(right: 15),
+      actionsPadding: const EdgeInsets.only(right: 15, left: 10),
       actions: const [
         Icon(LucideIcons.phone, color: DefaultColorSheet.lightBlack, size: 20),
         SizedBox(width: 10),

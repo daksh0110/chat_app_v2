@@ -5,6 +5,7 @@ class SearchItem {
   final String subtitle;
   final String? bio;
   final String? profilePicUrl;
+  final String? email;
 
   SearchItem({
     required this.id,
@@ -13,6 +14,7 @@ class SearchItem {
     this.subtitle = "",
     this.bio,
     this.profilePicUrl,
+    this.email = "",
   });
 
   factory SearchItem.fromJson(Map<String, dynamic> json) {
@@ -22,6 +24,7 @@ class SearchItem {
       subtitle: json["subtitle"] ?? json["email"],
       bio: json['bio'],
       profilePicUrl: json['profile_picture'],
+      email: json["email"],
     );
   }
 }

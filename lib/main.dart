@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:my_app/core/app_routes.dart';
+import 'package:my_app/core/util/route_observer.dart';
 import 'package:my_app/providers/auth_notifier_provider.dart';
 import 'package:my_app/providers/database_provider.dart';
 import 'package:my_app/providers/message_provider.dart';
@@ -19,6 +20,7 @@ import 'package:my_app/screens/google_password_setup.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:my_app/screens/profile_setup.dart';
+import 'package:my_app/screens/user_profile.dart';
 import 'package:my_app/screens/verify_email.dart';
 
 void main() async {
@@ -58,6 +60,7 @@ class MyApp extends ConsumerWidget {
     final authState = ref.watch(authProvider);
 
     return MaterialApp(
+      navigatorObservers: [routeObserver],
       title: 'Flutter Demo',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(fontFamily: "Caros"),
@@ -90,6 +93,7 @@ class MyApp extends ConsumerWidget {
         AppRoutes.changePassword: (context) => const ChangePassword(),
         AppRoutes.verifyEmail: (context) => const VerifyEmailScreen(),
         AppRoutes.profileSetup: (context) => const ProfileSetupScreen(),
+        AppRoutes.userProfile: (context) => UserProfile(),
       },
     );
   }

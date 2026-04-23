@@ -63,6 +63,15 @@ class $UserInfoSettingsTable extends UserInfoSettings
         type: DriftSqlType.string,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _bioMeta = const VerificationMeta('bio');
+  @override
+  late final GeneratedColumn<String> bio = GeneratedColumn<String>(
+    'bio',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -70,6 +79,7 @@ class $UserInfoSettingsTable extends UserInfoSettings
     email,
     accessToken,
     profilePictureUrl,
+    bio,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -124,6 +134,12 @@ class $UserInfoSettingsTable extends UserInfoSettings
         ),
       );
     }
+    if (data.containsKey('bio')) {
+      context.handle(
+        _bioMeta,
+        bio.isAcceptableOrUnknown(data['bio']!, _bioMeta),
+      );
+    }
     return context;
   }
 
@@ -153,6 +169,10 @@ class $UserInfoSettingsTable extends UserInfoSettings
         DriftSqlType.string,
         data['${effectivePrefix}profile_picture_url'],
       ),
+      bio: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bio'],
+      ),
     );
   }
 
@@ -168,12 +188,14 @@ class UserInfoSetting extends DataClass implements Insertable<UserInfoSetting> {
   final String email;
   final String accessToken;
   final String? profilePictureUrl;
+  final String? bio;
   const UserInfoSetting({
     required this.id,
     required this.name,
     required this.email,
     required this.accessToken,
     this.profilePictureUrl,
+    this.bio,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -184,6 +206,9 @@ class UserInfoSetting extends DataClass implements Insertable<UserInfoSetting> {
     map['access_token'] = Variable<String>(accessToken);
     if (!nullToAbsent || profilePictureUrl != null) {
       map['profile_picture_url'] = Variable<String>(profilePictureUrl);
+    }
+    if (!nullToAbsent || bio != null) {
+      map['bio'] = Variable<String>(bio);
     }
     return map;
   }
@@ -197,6 +222,7 @@ class UserInfoSetting extends DataClass implements Insertable<UserInfoSetting> {
       profilePictureUrl: profilePictureUrl == null && nullToAbsent
           ? const Value.absent()
           : Value(profilePictureUrl),
+      bio: bio == null && nullToAbsent ? const Value.absent() : Value(bio),
     );
   }
 
@@ -213,6 +239,7 @@ class UserInfoSetting extends DataClass implements Insertable<UserInfoSetting> {
       profilePictureUrl: serializer.fromJson<String?>(
         json['profilePictureUrl'],
       ),
+      bio: serializer.fromJson<String?>(json['bio']),
     );
   }
   @override
@@ -224,6 +251,7 @@ class UserInfoSetting extends DataClass implements Insertable<UserInfoSetting> {
       'email': serializer.toJson<String>(email),
       'accessToken': serializer.toJson<String>(accessToken),
       'profilePictureUrl': serializer.toJson<String?>(profilePictureUrl),
+      'bio': serializer.toJson<String?>(bio),
     };
   }
 
@@ -233,6 +261,7 @@ class UserInfoSetting extends DataClass implements Insertable<UserInfoSetting> {
     String? email,
     String? accessToken,
     Value<String?> profilePictureUrl = const Value.absent(),
+    Value<String?> bio = const Value.absent(),
   }) => UserInfoSetting(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -241,6 +270,7 @@ class UserInfoSetting extends DataClass implements Insertable<UserInfoSetting> {
     profilePictureUrl: profilePictureUrl.present
         ? profilePictureUrl.value
         : this.profilePictureUrl,
+    bio: bio.present ? bio.value : this.bio,
   );
   UserInfoSetting copyWithCompanion(UserInfoSettingsCompanion data) {
     return UserInfoSetting(
@@ -253,6 +283,7 @@ class UserInfoSetting extends DataClass implements Insertable<UserInfoSetting> {
       profilePictureUrl: data.profilePictureUrl.present
           ? data.profilePictureUrl.value
           : this.profilePictureUrl,
+      bio: data.bio.present ? data.bio.value : this.bio,
     );
   }
 
@@ -263,14 +294,15 @@ class UserInfoSetting extends DataClass implements Insertable<UserInfoSetting> {
           ..write('name: $name, ')
           ..write('email: $email, ')
           ..write('accessToken: $accessToken, ')
-          ..write('profilePictureUrl: $profilePictureUrl')
+          ..write('profilePictureUrl: $profilePictureUrl, ')
+          ..write('bio: $bio')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode =>
-      Object.hash(id, name, email, accessToken, profilePictureUrl);
+      Object.hash(id, name, email, accessToken, profilePictureUrl, bio);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -279,7 +311,8 @@ class UserInfoSetting extends DataClass implements Insertable<UserInfoSetting> {
           other.name == this.name &&
           other.email == this.email &&
           other.accessToken == this.accessToken &&
-          other.profilePictureUrl == this.profilePictureUrl);
+          other.profilePictureUrl == this.profilePictureUrl &&
+          other.bio == this.bio);
 }
 
 class UserInfoSettingsCompanion extends UpdateCompanion<UserInfoSetting> {
@@ -288,6 +321,7 @@ class UserInfoSettingsCompanion extends UpdateCompanion<UserInfoSetting> {
   final Value<String> email;
   final Value<String> accessToken;
   final Value<String?> profilePictureUrl;
+  final Value<String?> bio;
   final Value<int> rowid;
   const UserInfoSettingsCompanion({
     this.id = const Value.absent(),
@@ -295,6 +329,7 @@ class UserInfoSettingsCompanion extends UpdateCompanion<UserInfoSetting> {
     this.email = const Value.absent(),
     this.accessToken = const Value.absent(),
     this.profilePictureUrl = const Value.absent(),
+    this.bio = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   UserInfoSettingsCompanion.insert({
@@ -303,6 +338,7 @@ class UserInfoSettingsCompanion extends UpdateCompanion<UserInfoSetting> {
     required String email,
     required String accessToken,
     this.profilePictureUrl = const Value.absent(),
+    this.bio = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -314,6 +350,7 @@ class UserInfoSettingsCompanion extends UpdateCompanion<UserInfoSetting> {
     Expression<String>? email,
     Expression<String>? accessToken,
     Expression<String>? profilePictureUrl,
+    Expression<String>? bio,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -322,6 +359,7 @@ class UserInfoSettingsCompanion extends UpdateCompanion<UserInfoSetting> {
       if (email != null) 'email': email,
       if (accessToken != null) 'access_token': accessToken,
       if (profilePictureUrl != null) 'profile_picture_url': profilePictureUrl,
+      if (bio != null) 'bio': bio,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -332,6 +370,7 @@ class UserInfoSettingsCompanion extends UpdateCompanion<UserInfoSetting> {
     Value<String>? email,
     Value<String>? accessToken,
     Value<String?>? profilePictureUrl,
+    Value<String?>? bio,
     Value<int>? rowid,
   }) {
     return UserInfoSettingsCompanion(
@@ -340,6 +379,7 @@ class UserInfoSettingsCompanion extends UpdateCompanion<UserInfoSetting> {
       email: email ?? this.email,
       accessToken: accessToken ?? this.accessToken,
       profilePictureUrl: profilePictureUrl ?? this.profilePictureUrl,
+      bio: bio ?? this.bio,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -362,6 +402,9 @@ class UserInfoSettingsCompanion extends UpdateCompanion<UserInfoSetting> {
     if (profilePictureUrl.present) {
       map['profile_picture_url'] = Variable<String>(profilePictureUrl.value);
     }
+    if (bio.present) {
+      map['bio'] = Variable<String>(bio.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -376,6 +419,7 @@ class UserInfoSettingsCompanion extends UpdateCompanion<UserInfoSetting> {
           ..write('email: $email, ')
           ..write('accessToken: $accessToken, ')
           ..write('profilePictureUrl: $profilePictureUrl, ')
+          ..write('bio: $bio, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -987,6 +1031,21 @@ class $ChatListTableTable extends ChatListTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
+    'isDeleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+    'is_deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -997,6 +1056,7 @@ class $ChatListTableTable extends ChatListTable
     lastMessageTime,
     unReadCount,
     profilePic,
+    isDeleted,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1070,6 +1130,12 @@ class $ChatListTableTable extends ChatListTable
         profilePic.isAcceptableOrUnknown(data['profile_pic']!, _profilePicMeta),
       );
     }
+    if (data.containsKey('is_deleted')) {
+      context.handle(
+        _isDeletedMeta,
+        isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
+      );
+    }
     return context;
   }
 
@@ -1111,6 +1177,10 @@ class $ChatListTableTable extends ChatListTable
         DriftSqlType.string,
         data['${effectivePrefix}profile_pic'],
       ),
+      isDeleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_deleted'],
+      )!,
     );
   }
 
@@ -1130,6 +1200,7 @@ class ChatListTableData extends DataClass
   final int? lastMessageTime;
   final int unReadCount;
   final String? profilePic;
+  final bool isDeleted;
   const ChatListTableData({
     required this.id,
     required this.chatId,
@@ -1139,6 +1210,7 @@ class ChatListTableData extends DataClass
     this.lastMessageTime,
     required this.unReadCount,
     this.profilePic,
+    required this.isDeleted,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1157,6 +1229,7 @@ class ChatListTableData extends DataClass
     if (!nullToAbsent || profilePic != null) {
       map['profile_pic'] = Variable<String>(profilePic);
     }
+    map['is_deleted'] = Variable<bool>(isDeleted);
     return map;
   }
 
@@ -1176,6 +1249,7 @@ class ChatListTableData extends DataClass
       profilePic: profilePic == null && nullToAbsent
           ? const Value.absent()
           : Value(profilePic),
+      isDeleted: Value(isDeleted),
     );
   }
 
@@ -1193,6 +1267,7 @@ class ChatListTableData extends DataClass
       lastMessageTime: serializer.fromJson<int?>(json['lastMessageTime']),
       unReadCount: serializer.fromJson<int>(json['unReadCount']),
       profilePic: serializer.fromJson<String?>(json['profilePic']),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
     );
   }
   @override
@@ -1207,6 +1282,7 @@ class ChatListTableData extends DataClass
       'lastMessageTime': serializer.toJson<int?>(lastMessageTime),
       'unReadCount': serializer.toJson<int>(unReadCount),
       'profilePic': serializer.toJson<String?>(profilePic),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
     };
   }
 
@@ -1219,6 +1295,7 @@ class ChatListTableData extends DataClass
     Value<int?> lastMessageTime = const Value.absent(),
     int? unReadCount,
     Value<String?> profilePic = const Value.absent(),
+    bool? isDeleted,
   }) => ChatListTableData(
     id: id ?? this.id,
     chatId: chatId ?? this.chatId,
@@ -1230,6 +1307,7 @@ class ChatListTableData extends DataClass
         : this.lastMessageTime,
     unReadCount: unReadCount ?? this.unReadCount,
     profilePic: profilePic.present ? profilePic.value : this.profilePic,
+    isDeleted: isDeleted ?? this.isDeleted,
   );
   ChatListTableData copyWithCompanion(ChatListTableCompanion data) {
     return ChatListTableData(
@@ -1249,6 +1327,7 @@ class ChatListTableData extends DataClass
       profilePic: data.profilePic.present
           ? data.profilePic.value
           : this.profilePic,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
     );
   }
 
@@ -1262,7 +1341,8 @@ class ChatListTableData extends DataClass
           ..write('lastMessage: $lastMessage, ')
           ..write('lastMessageTime: $lastMessageTime, ')
           ..write('unReadCount: $unReadCount, ')
-          ..write('profilePic: $profilePic')
+          ..write('profilePic: $profilePic, ')
+          ..write('isDeleted: $isDeleted')
           ..write(')'))
         .toString();
   }
@@ -1277,6 +1357,7 @@ class ChatListTableData extends DataClass
     lastMessageTime,
     unReadCount,
     profilePic,
+    isDeleted,
   );
   @override
   bool operator ==(Object other) =>
@@ -1289,7 +1370,8 @@ class ChatListTableData extends DataClass
           other.lastMessage == this.lastMessage &&
           other.lastMessageTime == this.lastMessageTime &&
           other.unReadCount == this.unReadCount &&
-          other.profilePic == this.profilePic);
+          other.profilePic == this.profilePic &&
+          other.isDeleted == this.isDeleted);
 }
 
 class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
@@ -1301,6 +1383,7 @@ class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
   final Value<int?> lastMessageTime;
   final Value<int> unReadCount;
   final Value<String?> profilePic;
+  final Value<bool> isDeleted;
   const ChatListTableCompanion({
     this.id = const Value.absent(),
     this.chatId = const Value.absent(),
@@ -1310,6 +1393,7 @@ class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
     this.lastMessageTime = const Value.absent(),
     this.unReadCount = const Value.absent(),
     this.profilePic = const Value.absent(),
+    this.isDeleted = const Value.absent(),
   });
   ChatListTableCompanion.insert({
     this.id = const Value.absent(),
@@ -1320,6 +1404,7 @@ class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
     this.lastMessageTime = const Value.absent(),
     this.unReadCount = const Value.absent(),
     this.profilePic = const Value.absent(),
+    this.isDeleted = const Value.absent(),
   }) : chatId = Value(chatId),
        userId = Value(userId),
        name = Value(name);
@@ -1332,6 +1417,7 @@ class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
     Expression<int>? lastMessageTime,
     Expression<int>? unReadCount,
     Expression<String>? profilePic,
+    Expression<bool>? isDeleted,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1342,6 +1428,7 @@ class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
       if (lastMessageTime != null) 'last_message_time': lastMessageTime,
       if (unReadCount != null) 'un_read_count': unReadCount,
       if (profilePic != null) 'profile_pic': profilePic,
+      if (isDeleted != null) 'is_deleted': isDeleted,
     });
   }
 
@@ -1354,6 +1441,7 @@ class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
     Value<int?>? lastMessageTime,
     Value<int>? unReadCount,
     Value<String?>? profilePic,
+    Value<bool>? isDeleted,
   }) {
     return ChatListTableCompanion(
       id: id ?? this.id,
@@ -1364,6 +1452,7 @@ class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
       lastMessageTime: lastMessageTime ?? this.lastMessageTime,
       unReadCount: unReadCount ?? this.unReadCount,
       profilePic: profilePic ?? this.profilePic,
+      isDeleted: isDeleted ?? this.isDeleted,
     );
   }
 
@@ -1394,6 +1483,9 @@ class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
     if (profilePic.present) {
       map['profile_pic'] = Variable<String>(profilePic.value);
     }
+    if (isDeleted.present) {
+      map['is_deleted'] = Variable<bool>(isDeleted.value);
+    }
     return map;
   }
 
@@ -1407,7 +1499,374 @@ class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
           ..write('lastMessage: $lastMessage, ')
           ..write('lastMessageTime: $lastMessageTime, ')
           ..write('unReadCount: $unReadCount, ')
-          ..write('profilePic: $profilePic')
+          ..write('profilePic: $profilePic, ')
+          ..write('isDeleted: $isDeleted')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $UsersTableTable extends UsersTable
+    with TableInfo<$UsersTableTable, UsersTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $UsersTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _emailMeta = const VerificationMeta('email');
+  @override
+  late final GeneratedColumn<String> email = GeneratedColumn<String>(
+    'email',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _profilePictureUrlMeta = const VerificationMeta(
+    'profilePictureUrl',
+  );
+  @override
+  late final GeneratedColumn<String> profilePictureUrl =
+      GeneratedColumn<String>(
+        'profile_picture_url',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _bioMeta = const VerificationMeta('bio');
+  @override
+  late final GeneratedColumn<String> bio = GeneratedColumn<String>(
+    'bio',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    email,
+    profilePictureUrl,
+    bio,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'users_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<UsersTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('email')) {
+      context.handle(
+        _emailMeta,
+        email.isAcceptableOrUnknown(data['email']!, _emailMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_emailMeta);
+    }
+    if (data.containsKey('profile_picture_url')) {
+      context.handle(
+        _profilePictureUrlMeta,
+        profilePictureUrl.isAcceptableOrUnknown(
+          data['profile_picture_url']!,
+          _profilePictureUrlMeta,
+        ),
+      );
+    }
+    if (data.containsKey('bio')) {
+      context.handle(
+        _bioMeta,
+        bio.isAcceptableOrUnknown(data['bio']!, _bioMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  UsersTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return UsersTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      email: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}email'],
+      )!,
+      profilePictureUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}profile_picture_url'],
+      ),
+      bio: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bio'],
+      ),
+    );
+  }
+
+  @override
+  $UsersTableTable createAlias(String alias) {
+    return $UsersTableTable(attachedDatabase, alias);
+  }
+}
+
+class UsersTableData extends DataClass implements Insertable<UsersTableData> {
+  final String id;
+  final String name;
+  final String email;
+  final String? profilePictureUrl;
+  final String? bio;
+  const UsersTableData({
+    required this.id,
+    required this.name,
+    required this.email,
+    this.profilePictureUrl,
+    this.bio,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['email'] = Variable<String>(email);
+    if (!nullToAbsent || profilePictureUrl != null) {
+      map['profile_picture_url'] = Variable<String>(profilePictureUrl);
+    }
+    if (!nullToAbsent || bio != null) {
+      map['bio'] = Variable<String>(bio);
+    }
+    return map;
+  }
+
+  UsersTableCompanion toCompanion(bool nullToAbsent) {
+    return UsersTableCompanion(
+      id: Value(id),
+      name: Value(name),
+      email: Value(email),
+      profilePictureUrl: profilePictureUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(profilePictureUrl),
+      bio: bio == null && nullToAbsent ? const Value.absent() : Value(bio),
+    );
+  }
+
+  factory UsersTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return UsersTableData(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      email: serializer.fromJson<String>(json['email']),
+      profilePictureUrl: serializer.fromJson<String?>(
+        json['profilePictureUrl'],
+      ),
+      bio: serializer.fromJson<String?>(json['bio']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'email': serializer.toJson<String>(email),
+      'profilePictureUrl': serializer.toJson<String?>(profilePictureUrl),
+      'bio': serializer.toJson<String?>(bio),
+    };
+  }
+
+  UsersTableData copyWith({
+    String? id,
+    String? name,
+    String? email,
+    Value<String?> profilePictureUrl = const Value.absent(),
+    Value<String?> bio = const Value.absent(),
+  }) => UsersTableData(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    email: email ?? this.email,
+    profilePictureUrl: profilePictureUrl.present
+        ? profilePictureUrl.value
+        : this.profilePictureUrl,
+    bio: bio.present ? bio.value : this.bio,
+  );
+  UsersTableData copyWithCompanion(UsersTableCompanion data) {
+    return UsersTableData(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      email: data.email.present ? data.email.value : this.email,
+      profilePictureUrl: data.profilePictureUrl.present
+          ? data.profilePictureUrl.value
+          : this.profilePictureUrl,
+      bio: data.bio.present ? data.bio.value : this.bio,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UsersTableData(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('email: $email, ')
+          ..write('profilePictureUrl: $profilePictureUrl, ')
+          ..write('bio: $bio')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, name, email, profilePictureUrl, bio);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is UsersTableData &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.email == this.email &&
+          other.profilePictureUrl == this.profilePictureUrl &&
+          other.bio == this.bio);
+}
+
+class UsersTableCompanion extends UpdateCompanion<UsersTableData> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String> email;
+  final Value<String?> profilePictureUrl;
+  final Value<String?> bio;
+  final Value<int> rowid;
+  const UsersTableCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.email = const Value.absent(),
+    this.profilePictureUrl = const Value.absent(),
+    this.bio = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  UsersTableCompanion.insert({
+    required String id,
+    required String name,
+    required String email,
+    this.profilePictureUrl = const Value.absent(),
+    this.bio = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       email = Value(email);
+  static Insertable<UsersTableData> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? email,
+    Expression<String>? profilePictureUrl,
+    Expression<String>? bio,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (email != null) 'email': email,
+      if (profilePictureUrl != null) 'profile_picture_url': profilePictureUrl,
+      if (bio != null) 'bio': bio,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  UsersTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String>? email,
+    Value<String?>? profilePictureUrl,
+    Value<String?>? bio,
+    Value<int>? rowid,
+  }) {
+    return UsersTableCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      profilePictureUrl: profilePictureUrl ?? this.profilePictureUrl,
+      bio: bio ?? this.bio,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (email.present) {
+      map['email'] = Variable<String>(email.value);
+    }
+    if (profilePictureUrl.present) {
+      map['profile_picture_url'] = Variable<String>(profilePictureUrl.value);
+    }
+    if (bio.present) {
+      map['bio'] = Variable<String>(bio.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UsersTableCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('email: $email, ')
+          ..write('profilePictureUrl: $profilePictureUrl, ')
+          ..write('bio: $bio, ')
+          ..write('rowid: $rowid')
           ..write(')'))
         .toString();
   }
@@ -1421,6 +1880,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $MessagesTable messages = $MessagesTable(this);
   late final $ChatListTableTable chatListTable = $ChatListTableTable(this);
+  late final $UsersTableTable usersTable = $UsersTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1429,6 +1889,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     userInfoSettings,
     messages,
     chatListTable,
+    usersTable,
   ];
 }
 
@@ -1439,6 +1900,7 @@ typedef $$UserInfoSettingsTableCreateCompanionBuilder =
       required String email,
       required String accessToken,
       Value<String?> profilePictureUrl,
+      Value<String?> bio,
       Value<int> rowid,
     });
 typedef $$UserInfoSettingsTableUpdateCompanionBuilder =
@@ -1448,6 +1910,7 @@ typedef $$UserInfoSettingsTableUpdateCompanionBuilder =
       Value<String> email,
       Value<String> accessToken,
       Value<String?> profilePictureUrl,
+      Value<String?> bio,
       Value<int> rowid,
     });
 
@@ -1482,6 +1945,11 @@ class $$UserInfoSettingsTableFilterComposer
 
   ColumnFilters<String> get profilePictureUrl => $composableBuilder(
     column: $table.profilePictureUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bio => $composableBuilder(
+    column: $table.bio,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -1519,6 +1987,11 @@ class $$UserInfoSettingsTableOrderingComposer
     column: $table.profilePictureUrl,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get bio => $composableBuilder(
+    column: $table.bio,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$UserInfoSettingsTableAnnotationComposer
@@ -1548,6 +2021,9 @@ class $$UserInfoSettingsTableAnnotationComposer
     column: $table.profilePictureUrl,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get bio =>
+      $composableBuilder(column: $table.bio, builder: (column) => column);
 }
 
 class $$UserInfoSettingsTableTableManager
@@ -1592,6 +2068,7 @@ class $$UserInfoSettingsTableTableManager
                 Value<String> email = const Value.absent(),
                 Value<String> accessToken = const Value.absent(),
                 Value<String?> profilePictureUrl = const Value.absent(),
+                Value<String?> bio = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UserInfoSettingsCompanion(
                 id: id,
@@ -1599,6 +2076,7 @@ class $$UserInfoSettingsTableTableManager
                 email: email,
                 accessToken: accessToken,
                 profilePictureUrl: profilePictureUrl,
+                bio: bio,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -1608,6 +2086,7 @@ class $$UserInfoSettingsTableTableManager
                 required String email,
                 required String accessToken,
                 Value<String?> profilePictureUrl = const Value.absent(),
+                Value<String?> bio = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UserInfoSettingsCompanion.insert(
                 id: id,
@@ -1615,6 +2094,7 @@ class $$UserInfoSettingsTableTableManager
                 email: email,
                 accessToken: accessToken,
                 profilePictureUrl: profilePictureUrl,
+                bio: bio,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -1905,6 +2385,7 @@ typedef $$ChatListTableTableCreateCompanionBuilder =
       Value<int?> lastMessageTime,
       Value<int> unReadCount,
       Value<String?> profilePic,
+      Value<bool> isDeleted,
     });
 typedef $$ChatListTableTableUpdateCompanionBuilder =
     ChatListTableCompanion Function({
@@ -1916,6 +2397,7 @@ typedef $$ChatListTableTableUpdateCompanionBuilder =
       Value<int?> lastMessageTime,
       Value<int> unReadCount,
       Value<String?> profilePic,
+      Value<bool> isDeleted,
     });
 
 class $$ChatListTableTableFilterComposer
@@ -1964,6 +2446,11 @@ class $$ChatListTableTableFilterComposer
 
   ColumnFilters<String> get profilePic => $composableBuilder(
     column: $table.profilePic,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -2016,6 +2503,11 @@ class $$ChatListTableTableOrderingComposer
     column: $table.profilePic,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ChatListTableTableAnnotationComposer
@@ -2058,6 +2550,9 @@ class $$ChatListTableTableAnnotationComposer
     column: $table.profilePic,
     builder: (column) => column,
   );
+
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
 }
 
 class $$ChatListTableTableTableManager
@@ -2103,6 +2598,7 @@ class $$ChatListTableTableTableManager
                 Value<int?> lastMessageTime = const Value.absent(),
                 Value<int> unReadCount = const Value.absent(),
                 Value<String?> profilePic = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
               }) => ChatListTableCompanion(
                 id: id,
                 chatId: chatId,
@@ -2112,6 +2608,7 @@ class $$ChatListTableTableTableManager
                 lastMessageTime: lastMessageTime,
                 unReadCount: unReadCount,
                 profilePic: profilePic,
+                isDeleted: isDeleted,
               ),
           createCompanionCallback:
               ({
@@ -2123,6 +2620,7 @@ class $$ChatListTableTableTableManager
                 Value<int?> lastMessageTime = const Value.absent(),
                 Value<int> unReadCount = const Value.absent(),
                 Value<String?> profilePic = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
               }) => ChatListTableCompanion.insert(
                 id: id,
                 chatId: chatId,
@@ -2132,6 +2630,7 @@ class $$ChatListTableTableTableManager
                 lastMessageTime: lastMessageTime,
                 unReadCount: unReadCount,
                 profilePic: profilePic,
+                isDeleted: isDeleted,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -2158,6 +2657,208 @@ typedef $$ChatListTableTableProcessedTableManager =
       ChatListTableData,
       PrefetchHooks Function()
     >;
+typedef $$UsersTableTableCreateCompanionBuilder =
+    UsersTableCompanion Function({
+      required String id,
+      required String name,
+      required String email,
+      Value<String?> profilePictureUrl,
+      Value<String?> bio,
+      Value<int> rowid,
+    });
+typedef $$UsersTableTableUpdateCompanionBuilder =
+    UsersTableCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String> email,
+      Value<String?> profilePictureUrl,
+      Value<String?> bio,
+      Value<int> rowid,
+    });
+
+class $$UsersTableTableFilterComposer
+    extends Composer<_$AppDatabase, $UsersTableTable> {
+  $$UsersTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get profilePictureUrl => $composableBuilder(
+    column: $table.profilePictureUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bio => $composableBuilder(
+    column: $table.bio,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$UsersTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $UsersTableTable> {
+  $$UsersTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get profilePictureUrl => $composableBuilder(
+    column: $table.profilePictureUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bio => $composableBuilder(
+    column: $table.bio,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$UsersTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $UsersTableTable> {
+  $$UsersTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get email =>
+      $composableBuilder(column: $table.email, builder: (column) => column);
+
+  GeneratedColumn<String> get profilePictureUrl => $composableBuilder(
+    column: $table.profilePictureUrl,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get bio =>
+      $composableBuilder(column: $table.bio, builder: (column) => column);
+}
+
+class $$UsersTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $UsersTableTable,
+          UsersTableData,
+          $$UsersTableTableFilterComposer,
+          $$UsersTableTableOrderingComposer,
+          $$UsersTableTableAnnotationComposer,
+          $$UsersTableTableCreateCompanionBuilder,
+          $$UsersTableTableUpdateCompanionBuilder,
+          (
+            UsersTableData,
+            BaseReferences<_$AppDatabase, $UsersTableTable, UsersTableData>,
+          ),
+          UsersTableData,
+          PrefetchHooks Function()
+        > {
+  $$UsersTableTableTableManager(_$AppDatabase db, $UsersTableTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$UsersTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$UsersTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$UsersTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> email = const Value.absent(),
+                Value<String?> profilePictureUrl = const Value.absent(),
+                Value<String?> bio = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => UsersTableCompanion(
+                id: id,
+                name: name,
+                email: email,
+                profilePictureUrl: profilePictureUrl,
+                bio: bio,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                required String email,
+                Value<String?> profilePictureUrl = const Value.absent(),
+                Value<String?> bio = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => UsersTableCompanion.insert(
+                id: id,
+                name: name,
+                email: email,
+                profilePictureUrl: profilePictureUrl,
+                bio: bio,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$UsersTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $UsersTableTable,
+      UsersTableData,
+      $$UsersTableTableFilterComposer,
+      $$UsersTableTableOrderingComposer,
+      $$UsersTableTableAnnotationComposer,
+      $$UsersTableTableCreateCompanionBuilder,
+      $$UsersTableTableUpdateCompanionBuilder,
+      (
+        UsersTableData,
+        BaseReferences<_$AppDatabase, $UsersTableTable, UsersTableData>,
+      ),
+      UsersTableData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2168,4 +2869,6 @@ class $AppDatabaseManager {
       $$MessagesTableTableManager(_db, _db.messages);
   $$ChatListTableTableTableManager get chatListTable =>
       $$ChatListTableTableTableManager(_db, _db.chatListTable);
+  $$UsersTableTableTableManager get usersTable =>
+      $$UsersTableTableTableManager(_db, _db.usersTable);
 }

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:my_app/modal/tables/chat_list_table.dart';
 import 'package:my_app/modal/tables/messages_table.dart';
 import 'package:my_app/modal/tables/user_table.dart';
+import 'package:my_app/modal/tables/users_table.dart';
 import 'package:path/path.dart' as p;
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
@@ -9,7 +10,7 @@ import 'package:path_provider/path_provider.dart';
 
 part 'database.g.dart';
 
-@DriftDatabase(tables: [UserInfoSettings, Messages, ChatListTable])
+@DriftDatabase(tables: [UserInfoSettings, Messages, ChatListTable, UsersTable])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
