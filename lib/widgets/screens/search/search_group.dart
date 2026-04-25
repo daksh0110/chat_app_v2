@@ -28,7 +28,7 @@ class SearchGroup extends StatelessWidget {
                   context,
                   AppRoutes.message,
                   arguments: MessageScreenArguments(
-                    id: list.items[index].id,
+                    receiverId: list.items[index].id,
                     name: list.items[index].name,
                     profilePic:
                         list.items[index].profilePicUrl ??

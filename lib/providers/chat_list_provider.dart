@@ -25,31 +25,30 @@ class ChatListController {
   ChatListController(this._ref);
   final Ref _ref;
 
-  String? activeChatUserId;
+  String? activeChatId;
 
-  Future<void> setActiveChatUserId(String? otherUserId) async {
-    activeChatUserId = otherUserId;
+  Future<void> setActiveChatId(String? otherUserId) async {
+    activeChatId = otherUserId;
     if (otherUserId == null) return;
     await markChatAsRead(otherUserId);
   }
 
-  Future<void> markChatAsRead(String otherUserId) async {
+  Future<void> markChatAsRead(String chatId) async {
     final db = _ref.read(databaseProvider);
     final me = _ref.read(settingsUserProvider);
     if (me == null) return;
 
-    final chat = await (db.select(
-      db.chatListTable,
-    )..where((t) => t.userId.equals(otherUserId))).getSingleOrNull();
-
-    if (chat == null) return;
-
-    await (db.update(db.chatListTable)..where((t) => t.id.equals(chat.id)))
+    await (db.update(db.chatListTable)..where((t) => t.chatId.equals(chatId)))
         .write(const ChatListTableCompanion(unReadCount: Value(0)));
 
-    await (db.update(db.messages)
-          ..where((m) => m.chatId.equals(chat.chatId) & m.isRead.equals(false)))
-        .write(const MessagesCompanion(isRead: Value(true)));
+    await (db.update(
+      db.messages,
+    )..where((m) => m.chatId.equals(chatId) & m.isRead.equals(false))).write(
+      const MessagesCompanion(
+        isRead: Value(true),
+        messageStatus: Value("read"),
+      ),
+    );
   }
 }
 

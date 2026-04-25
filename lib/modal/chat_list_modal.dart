@@ -22,7 +22,7 @@ class ChatListModal {
 
   factory ChatListModal.fromDrift(ChatListTableData data) {
     return ChatListModal(
-      id: data.userId.toString(),
+      id: data.id.toString(),
       chatId: data.chatId.toString(),
       name: data.name,
       profilePic: data.profilePic ?? "",

@@ -1,11 +1,13 @@
 class MessageScreenArguments {
-  final String id;
+  final String chatId;
+  final String receiverId;
   final String name;
-  final String? profilePic;
+  final String profilePic;
 
   MessageScreenArguments({
-    required this.id,
+    this.chatId = "",
     required this.name,
-    this.profilePic,
+    this.profilePic = "",
+    this.receiverId = "",
   });
 }
