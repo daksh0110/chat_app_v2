@@ -4,7 +4,7 @@ class ChatParticipants extends Table {
   TextColumn get chatId => text()();
   TextColumn get userId => text()();
   TextColumn get name => text()();
-  TextColumn get profilePic => text().nullable()();
+  TextColumn get profilePicUrl => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {chatId, userId};

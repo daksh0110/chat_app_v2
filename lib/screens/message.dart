@@ -155,7 +155,7 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
         id: receiverId,
         name: name,
         isOnline: _isOnline,
-        profilePic: args.profilePic,
+        profilePicUrl: args.profilePicUrl,
       ),
       body: SafeArea(
         child: Column(

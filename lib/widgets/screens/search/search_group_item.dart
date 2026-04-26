@@ -31,11 +31,12 @@ class SearchGroupItem extends StatelessWidget {
         child: Row(
           children: [
             UserBubble(
-              profilePic: item.profilePicUrl ?? item.profilePic,
+              profilePicUrl: item.profilePicUrl,
               size: 46,
               needActiveIndicator: needActiveIndicator,
               name: item.name,
             ),
+
             const SizedBox(width: 10),
             Column(
               mainAxisAlignment: MainAxisAlignment.start,

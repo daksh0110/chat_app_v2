@@ -79,8 +79,9 @@ class _HomeScreenState extends ConsumerState<Homescreen> with RouteAware {
                             arguments: MessageScreenArguments(
                               chatId: chat.chatId,
                               name: chat.name,
-                              profilePic: chat.profilePic,
+                              profilePicUrl: chat.profilePicUrl,
                             ),
+
                           );
                           return;
                         } else {

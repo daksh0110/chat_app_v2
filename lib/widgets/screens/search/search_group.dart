@@ -30,10 +30,9 @@ class SearchGroup extends StatelessWidget {
                   arguments: MessageScreenArguments(
                     receiverId: list.items[index].id,
                     name: list.items[index].name,
-                    profilePic:
-                        list.items[index].profilePicUrl ??
-                        list.items[index].profilePic,
+                    profilePicUrl: list.items[index].profilePicUrl,
                   ),
+
                 );
               },
             );

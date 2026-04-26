@@ -1,6 +1,5 @@
 class SearchItem {
   final String id;
-  final String profilePic;
   final String name;
   final String subtitle;
   final String? bio;
@@ -10,7 +9,6 @@ class SearchItem {
   SearchItem({
     required this.id,
     required this.name,
-    this.profilePic = "assets/screens/home/user1.png",
     this.subtitle = "",
     this.bio,
     this.profilePicUrl,
@@ -28,3 +26,4 @@ class SearchItem {
     );
   }
 }
+

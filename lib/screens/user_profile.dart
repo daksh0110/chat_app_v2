@@ -58,7 +58,7 @@ class UserProfileState extends ConsumerState<UserProfile> {
               children: [
                 const SizedBox(height: 10),
                 UserBubble(
-                  profilePic: info.profilePicUrl ?? "",
+                  profilePicUrl: info.profilePicUrl,
                   name: info.name,
                   size: 80,
                   needActiveIndicator: false,

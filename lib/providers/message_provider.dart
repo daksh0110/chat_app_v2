@@ -35,6 +35,7 @@ class MessageNotifer extends Notifier {
 
   final _messageQueue = Queue<dynamic>();
   bool _isProcessing = false;
+  int _serverTimeOffset = 0;
 
   Future<void> receiveMessage() async {
     ref.read(socketProvider).listen("receive_message", (dynamic data) {
@@ -71,6 +72,7 @@ class MessageNotifer extends Notifier {
     final tempId = data["temp_id"];
 
     final createdAt = _parseTimestamp(data["created_at"]);
+    _serverTimeOffset = createdAt - DateTime.now().millisecondsSinceEpoch;
 
     if (senderId == currentUser.id) return;
 
@@ -122,7 +124,7 @@ class MessageNotifer extends Notifier {
             isDeleted: const Value(false),
             lastMessage: Value(data["message"]),
             lastMessageTime: Value(createdAt),
-            profilePic: Value(user?.profilePicUrl ?? ""),
+            profilePicUrl: Value(user?.profilePicUrl ?? ""),
             unReadCount: Value(shouldAutoRead ? 0 : 1),
           ),
         );
@@ -192,7 +194,7 @@ class MessageNotifer extends Notifier {
       final user = ref.read(settingsUserProvider);
       if (user == null) return;
 
-      final now = DateTime.now().millisecondsSinceEpoch;
+      final now = DateTime.now().millisecondsSinceEpoch + _serverTimeOffset;
       final tempId = const Uuid().v4();
       late String currentChatId;
 
@@ -215,7 +217,7 @@ class MessageNotifer extends Notifier {
                 isDeleted: const Value(false),
                 lastMessage: Value(message),
                 lastMessageTime: Value(now),
-                profilePic: const Value(null),
+                profilePicUrl: const Value(null),
                 unReadCount: const Value(0),
               ),
             );
@@ -267,6 +269,8 @@ class MessageNotifer extends Notifier {
         (response) async {
           final realChatId = response["chat_id"];
           final messageId = response["message_id"];
+          final createdAt = _parseTimestamp(response["created_at"]);
+          _serverTimeOffset = createdAt - DateTime.now().millisecondsSinceEpoch;
 
           if (currentChatId.startsWith("local_")) {
             await database.managers.chatParticipants
@@ -280,7 +284,7 @@ class MessageNotifer extends Notifier {
               .update(
                 (o) => o(
                   chatId: Value(realChatId),
-                  lastMessageTime: Value(now),
+                  lastMessageTime: Value(createdAt),
                   lastMessage: Value(message),
                   isDeleted: const Value(false),
                 ),
@@ -291,12 +295,13 @@ class MessageNotifer extends Notifier {
                 (o) => o(
                   serverId: Value(messageId),
                   chatId: Value(realChatId),
-                  createdAt: Value(now),
+                  createdAt: Value(createdAt),
                   messageStatus: const Value("sent"),
                 ),
               );
           unawaited(_UpdateChatItem(receiverId, realChatId));
         },
+
       );
       unawaited(_cacheUser(receiverId));
     } catch (e) {
@@ -469,6 +474,7 @@ class MessageNotifer extends Notifier {
                 ),
               );
         },
+
       );
     }
   }
@@ -579,7 +585,7 @@ class MessageNotifer extends Notifier {
         )..where((tbl) => tbl.chatId.equals(chatId))).write(
           ChatListTableCompanion(
             name: Value(data.name),
-            profilePic: Value(data.profilePicUrl),
+            profilePicUrl: Value(data.profilePicUrl),
           ),
         );
       }
