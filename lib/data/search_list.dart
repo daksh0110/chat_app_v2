@@ -9,19 +9,19 @@ final List<SearchItemGroup> searchList = [
       SearchItem(
         id: "1",
         name: "Adil Adnan",
-        profilePic: "assets/screens/home/user1.png",
+        profilePicUrl: null,
         subtitle: "Be your own hero 💪",
       ),
       SearchItem(
         id: "2",
         name: "Bristy Haque",
-        profilePic: "assets/screens/home/user2.png",
+        profilePicUrl: null,
         subtitle: "Keep working ✍️",
       ),
       SearchItem(
         id: "3",
         name: "John Borino",
-        profilePic: "assets/screens/home/user3.png",
+        profilePicUrl: null,
         subtitle: "Make yourself proud 😍",
       ),
     ],
@@ -34,15 +34,16 @@ final List<SearchItemGroup> searchList = [
       SearchItem(
         id: "4",
         name: "Team Align-Practise",
-        profilePic: "assets/screens/home/user4.png",
+        profilePicUrl: null,
         subtitle: "4 participants",
       ),
       SearchItem(
         id: "5",
         name: "Team Align",
-        profilePic: "assets/screens/home/user5.png",
+        profilePicUrl: null,
         subtitle: "8 participants",
       ),
     ],
+
   ),
 ];

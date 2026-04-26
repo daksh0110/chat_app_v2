@@ -5,6 +5,7 @@ import 'package:my_app/core/util/status_map.dart';
 import 'package:my_app/modal/screens/search/message_screen_arguments.dart';
 import 'package:my_app/providers/chat_list_provider.dart';
 import 'package:my_app/providers/chat_message_provider.dart';
+import 'package:my_app/providers/database_provider.dart';
 import 'package:my_app/providers/message_provider.dart';
 import 'package:my_app/providers/message_typing_provider.dart';
 import 'package:my_app/providers/settings_user_notifier_provider.dart';
@@ -26,6 +27,7 @@ class MessageScreen extends ConsumerStatefulWidget {
 
 class _MessageScreen extends ConsumerState<MessageScreen> {
   final ScrollController _scrollController = ScrollController();
+  late String chatId;
   late String receiverId;
   late String name;
   String? _lastActiveUserId;
@@ -43,12 +45,13 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
     final args =
         ModalRoute.of(context)!.settings.arguments as MessageScreenArguments;
 
-    receiverId = args.id;
+    chatId = args.chatId;
+    receiverId = args.receiverId;
     name = args.name;
 
-    if (_lastActiveUserId != receiverId) {
-      _lastActiveUserId = receiverId;
-      _chatListController.setActiveChatUserId(receiverId);
+    if (_lastActiveUserId != chatId) {
+      _lastActiveUserId = chatId;
+      _chatListController.setActiveChatId(chatId);
     }
 
     final socketService = ref.watch(socketProvider);
@@ -71,20 +74,28 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
       }
     });
 
-    socketService.onConnect(() {
-      socketService.checkUserStatus(receiverId);
-    });
+    if (receiverId.isEmpty) {
+      _resolveReceiverId(chatId).then((id) {
+        if (id != null && mounted) {
+          setState(() {
+            receiverId = id;
+          });
 
-    socketService.checkUserStatus(receiverId);
+          socketService.checkUserStatus(receiverId);
+        }
+      });
+    } else {
+      socketService.checkUserStatus(receiverId);
+    }
 
     Future.microtask(() {
-      ref.read(messageProvider.notifier).markChatMessagesRead(receiverId);
+      ref.read(messageProvider.notifier).markChatMessagesRead(chatId);
     });
   }
 
   @override
   void dispose() {
-    _chatListController.setActiveChatUserId(null);
+    _chatListController.setActiveChatId(null);
     _scrollController.dispose();
     super.dispose();
   }
@@ -96,15 +107,37 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
           message: text,
           receiverId: receiverId,
           receiverName: name,
+          chatId: chatId,
+          onChatResolved: (realId) {
+            setState(() {
+              chatId = realId;
+            });
+          },
         );
   }
 
   void onTyping() {
-    ref.read(messageProvider.notifier).sendTypingEvent(receiverId);
+    ref.read(messageProvider.notifier).sendTypingEvent(chatId);
   }
 
   void onStopTyping() {
-    ref.read(messageProvider.notifier).sendStopTypingEvent(receiverId);
+    ref.read(messageProvider.notifier).sendStopTypingEvent(chatId);
+  }
+
+  Future<String?> _resolveReceiverId(String chatId) async {
+    final db = ref.read(databaseProvider);
+    final currentUser = ref.read(settingsUserProvider);
+    if (currentUser == null) return null;
+
+    final participants = await db.managers.chatParticipants
+        .filter((f) => f.chatId.equals(chatId))
+        .get();
+
+    try {
+      return participants.firstWhere((p) => p.userId != currentUser.id).userId;
+    } catch (_) {
+      return null;
+    }
   }
 
   @override
@@ -114,9 +147,7 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
         ModalRoute.of(context)!.settings.arguments as MessageScreenArguments;
     final String name = args.name;
     final currentUser = ref.watch(settingsUserProvider);
-    final chatIdAsync = ref.watch(chatIdProvider(receiverId));
-    final chatId = chatIdAsync.asData?.value;
-    final isTyping = (chatId != null && typingMap[chatId] == true);
+    final isTyping = typingMap[chatId] == true;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -124,14 +155,14 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
         id: receiverId,
         name: name,
         isOnline: _isOnline,
-        profilePic: args.profilePic,
+        profilePicUrl: args.profilePicUrl,
       ),
       body: SafeArea(
         child: Column(
           children: [
             Expanded(
-              child: chatIdAsync.when(
-                data: (chatId) {
+              child: Consumer(
+                builder: (context, ref, _) {
                   final messagesAsync = ref.watch(
                     chatMessagesProvider((
                       chatId: chatId,
@@ -156,7 +187,6 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
                           }
 
                           final msgIndex = isTyping ? index - 1 : index;
-
                           final msg = messages[messages.length - 1 - msgIndex];
 
                           final currentLabel = getDateLabel(msg.createdAt);
@@ -167,6 +197,7 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
                                 messages[messages.length - 1 - (msgIndex + 1)];
                             previousLabel = getDateLabel(prevMsg.createdAt);
                           }
+
                           final showBanner = currentLabel != previousLabel;
 
                           return Column(
@@ -191,8 +222,6 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
                     error: (e, _) => Center(child: Text(e.toString())),
                   );
                 },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Center(child: Text(e.toString())),
               ),
             ),
 

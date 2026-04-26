@@ -967,16 +967,6 @@ class $ChatListTableTable extends ChatListTable
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
   );
-  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
-  @override
-  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
-    'user_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
-  );
   static const VerificationMeta _nameMeta = const VerificationMeta('name');
   @override
   late final GeneratedColumn<String> name = GeneratedColumn<String>(
@@ -1020,12 +1010,12 @@ class $ChatListTableTable extends ChatListTable
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
-  static const VerificationMeta _profilePicMeta = const VerificationMeta(
-    'profilePic',
+  static const VerificationMeta _profilePicUrlMeta = const VerificationMeta(
+    'profilePicUrl',
   );
   @override
-  late final GeneratedColumn<String> profilePic = GeneratedColumn<String>(
-    'profile_pic',
+  late final GeneratedColumn<String> profilePicUrl = GeneratedColumn<String>(
+    'profile_pic_url',
     aliasedName,
     true,
     type: DriftSqlType.string,
@@ -1046,17 +1036,26 @@ class $ChatListTableTable extends ChatListTable
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+    'type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
     chatId,
-    userId,
     name,
     lastMessage,
     lastMessageTime,
     unReadCount,
-    profilePic,
+    profilePicUrl,
     isDeleted,
+    type,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1080,14 +1079,6 @@ class $ChatListTableTable extends ChatListTable
       );
     } else if (isInserting) {
       context.missing(_chatIdMeta);
-    }
-    if (data.containsKey('user_id')) {
-      context.handle(
-        _userIdMeta,
-        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_userIdMeta);
     }
     if (data.containsKey('name')) {
       context.handle(
@@ -1124,10 +1115,13 @@ class $ChatListTableTable extends ChatListTable
         ),
       );
     }
-    if (data.containsKey('profile_pic')) {
+    if (data.containsKey('profile_pic_url')) {
       context.handle(
-        _profilePicMeta,
-        profilePic.isAcceptableOrUnknown(data['profile_pic']!, _profilePicMeta),
+        _profilePicUrlMeta,
+        profilePicUrl.isAcceptableOrUnknown(
+          data['profile_pic_url']!,
+          _profilePicUrlMeta,
+        ),
       );
     }
     if (data.containsKey('is_deleted')) {
@@ -1135,6 +1129,14 @@ class $ChatListTableTable extends ChatListTable
         _isDeletedMeta,
         isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
       );
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+        _typeMeta,
+        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_typeMeta);
     }
     return context;
   }
@@ -1153,10 +1155,6 @@ class $ChatListTableTable extends ChatListTable
         DriftSqlType.string,
         data['${effectivePrefix}chat_id'],
       )!,
-      userId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}user_id'],
-      )!,
       name: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}name'],
@@ -1173,13 +1171,17 @@ class $ChatListTableTable extends ChatListTable
         DriftSqlType.int,
         data['${effectivePrefix}un_read_count'],
       )!,
-      profilePic: attachedDatabase.typeMapping.read(
+      profilePicUrl: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}profile_pic'],
+        data['${effectivePrefix}profile_pic_url'],
       ),
       isDeleted: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_deleted'],
+      )!,
+      type: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}type'],
       )!,
     );
   }
@@ -1194,30 +1196,29 @@ class ChatListTableData extends DataClass
     implements Insertable<ChatListTableData> {
   final int id;
   final String chatId;
-  final String userId;
   final String name;
   final String? lastMessage;
   final int? lastMessageTime;
   final int unReadCount;
-  final String? profilePic;
+  final String? profilePicUrl;
   final bool isDeleted;
+  final String type;
   const ChatListTableData({
     required this.id,
     required this.chatId,
-    required this.userId,
     required this.name,
     this.lastMessage,
     this.lastMessageTime,
     required this.unReadCount,
-    this.profilePic,
+    this.profilePicUrl,
     required this.isDeleted,
+    required this.type,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     map['chat_id'] = Variable<String>(chatId);
-    map['user_id'] = Variable<String>(userId);
     map['name'] = Variable<String>(name);
     if (!nullToAbsent || lastMessage != null) {
       map['last_message'] = Variable<String>(lastMessage);
@@ -1226,10 +1227,11 @@ class ChatListTableData extends DataClass
       map['last_message_time'] = Variable<int>(lastMessageTime);
     }
     map['un_read_count'] = Variable<int>(unReadCount);
-    if (!nullToAbsent || profilePic != null) {
-      map['profile_pic'] = Variable<String>(profilePic);
+    if (!nullToAbsent || profilePicUrl != null) {
+      map['profile_pic_url'] = Variable<String>(profilePicUrl);
     }
     map['is_deleted'] = Variable<bool>(isDeleted);
+    map['type'] = Variable<String>(type);
     return map;
   }
 
@@ -1237,7 +1239,6 @@ class ChatListTableData extends DataClass
     return ChatListTableCompanion(
       id: Value(id),
       chatId: Value(chatId),
-      userId: Value(userId),
       name: Value(name),
       lastMessage: lastMessage == null && nullToAbsent
           ? const Value.absent()
@@ -1246,10 +1247,11 @@ class ChatListTableData extends DataClass
           ? const Value.absent()
           : Value(lastMessageTime),
       unReadCount: Value(unReadCount),
-      profilePic: profilePic == null && nullToAbsent
+      profilePicUrl: profilePicUrl == null && nullToAbsent
           ? const Value.absent()
-          : Value(profilePic),
+          : Value(profilePicUrl),
       isDeleted: Value(isDeleted),
+      type: Value(type),
     );
   }
 
@@ -1261,13 +1263,13 @@ class ChatListTableData extends DataClass
     return ChatListTableData(
       id: serializer.fromJson<int>(json['id']),
       chatId: serializer.fromJson<String>(json['chatId']),
-      userId: serializer.fromJson<String>(json['userId']),
       name: serializer.fromJson<String>(json['name']),
       lastMessage: serializer.fromJson<String?>(json['lastMessage']),
       lastMessageTime: serializer.fromJson<int?>(json['lastMessageTime']),
       unReadCount: serializer.fromJson<int>(json['unReadCount']),
-      profilePic: serializer.fromJson<String?>(json['profilePic']),
+      profilePicUrl: serializer.fromJson<String?>(json['profilePicUrl']),
       isDeleted: serializer.fromJson<bool>(json['isDeleted']),
+      type: serializer.fromJson<String>(json['type']),
     );
   }
   @override
@@ -1276,44 +1278,45 @@ class ChatListTableData extends DataClass
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'chatId': serializer.toJson<String>(chatId),
-      'userId': serializer.toJson<String>(userId),
       'name': serializer.toJson<String>(name),
       'lastMessage': serializer.toJson<String?>(lastMessage),
       'lastMessageTime': serializer.toJson<int?>(lastMessageTime),
       'unReadCount': serializer.toJson<int>(unReadCount),
-      'profilePic': serializer.toJson<String?>(profilePic),
+      'profilePicUrl': serializer.toJson<String?>(profilePicUrl),
       'isDeleted': serializer.toJson<bool>(isDeleted),
+      'type': serializer.toJson<String>(type),
     };
   }
 
   ChatListTableData copyWith({
     int? id,
     String? chatId,
-    String? userId,
     String? name,
     Value<String?> lastMessage = const Value.absent(),
     Value<int?> lastMessageTime = const Value.absent(),
     int? unReadCount,
-    Value<String?> profilePic = const Value.absent(),
+    Value<String?> profilePicUrl = const Value.absent(),
     bool? isDeleted,
+    String? type,
   }) => ChatListTableData(
     id: id ?? this.id,
     chatId: chatId ?? this.chatId,
-    userId: userId ?? this.userId,
     name: name ?? this.name,
     lastMessage: lastMessage.present ? lastMessage.value : this.lastMessage,
     lastMessageTime: lastMessageTime.present
         ? lastMessageTime.value
         : this.lastMessageTime,
     unReadCount: unReadCount ?? this.unReadCount,
-    profilePic: profilePic.present ? profilePic.value : this.profilePic,
+    profilePicUrl: profilePicUrl.present
+        ? profilePicUrl.value
+        : this.profilePicUrl,
     isDeleted: isDeleted ?? this.isDeleted,
+    type: type ?? this.type,
   );
   ChatListTableData copyWithCompanion(ChatListTableCompanion data) {
     return ChatListTableData(
       id: data.id.present ? data.id.value : this.id,
       chatId: data.chatId.present ? data.chatId.value : this.chatId,
-      userId: data.userId.present ? data.userId.value : this.userId,
       name: data.name.present ? data.name.value : this.name,
       lastMessage: data.lastMessage.present
           ? data.lastMessage.value
@@ -1324,10 +1327,11 @@ class ChatListTableData extends DataClass
       unReadCount: data.unReadCount.present
           ? data.unReadCount.value
           : this.unReadCount,
-      profilePic: data.profilePic.present
-          ? data.profilePic.value
-          : this.profilePic,
+      profilePicUrl: data.profilePicUrl.present
+          ? data.profilePicUrl.value
+          : this.profilePicUrl,
       isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
+      type: data.type.present ? data.type.value : this.type,
     );
   }
 
@@ -1336,13 +1340,13 @@ class ChatListTableData extends DataClass
     return (StringBuffer('ChatListTableData(')
           ..write('id: $id, ')
           ..write('chatId: $chatId, ')
-          ..write('userId: $userId, ')
           ..write('name: $name, ')
           ..write('lastMessage: $lastMessage, ')
           ..write('lastMessageTime: $lastMessageTime, ')
           ..write('unReadCount: $unReadCount, ')
-          ..write('profilePic: $profilePic, ')
-          ..write('isDeleted: $isDeleted')
+          ..write('profilePicUrl: $profilePicUrl, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('type: $type')
           ..write(')'))
         .toString();
   }
@@ -1351,13 +1355,13 @@ class ChatListTableData extends DataClass
   int get hashCode => Object.hash(
     id,
     chatId,
-    userId,
     name,
     lastMessage,
     lastMessageTime,
     unReadCount,
-    profilePic,
+    profilePicUrl,
     isDeleted,
+    type,
   );
   @override
   bool operator ==(Object other) =>
@@ -1365,94 +1369,94 @@ class ChatListTableData extends DataClass
       (other is ChatListTableData &&
           other.id == this.id &&
           other.chatId == this.chatId &&
-          other.userId == this.userId &&
           other.name == this.name &&
           other.lastMessage == this.lastMessage &&
           other.lastMessageTime == this.lastMessageTime &&
           other.unReadCount == this.unReadCount &&
-          other.profilePic == this.profilePic &&
-          other.isDeleted == this.isDeleted);
+          other.profilePicUrl == this.profilePicUrl &&
+          other.isDeleted == this.isDeleted &&
+          other.type == this.type);
 }
 
 class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
   final Value<int> id;
   final Value<String> chatId;
-  final Value<String> userId;
   final Value<String> name;
   final Value<String?> lastMessage;
   final Value<int?> lastMessageTime;
   final Value<int> unReadCount;
-  final Value<String?> profilePic;
+  final Value<String?> profilePicUrl;
   final Value<bool> isDeleted;
+  final Value<String> type;
   const ChatListTableCompanion({
     this.id = const Value.absent(),
     this.chatId = const Value.absent(),
-    this.userId = const Value.absent(),
     this.name = const Value.absent(),
     this.lastMessage = const Value.absent(),
     this.lastMessageTime = const Value.absent(),
     this.unReadCount = const Value.absent(),
-    this.profilePic = const Value.absent(),
+    this.profilePicUrl = const Value.absent(),
     this.isDeleted = const Value.absent(),
+    this.type = const Value.absent(),
   });
   ChatListTableCompanion.insert({
     this.id = const Value.absent(),
     required String chatId,
-    required String userId,
     required String name,
     this.lastMessage = const Value.absent(),
     this.lastMessageTime = const Value.absent(),
     this.unReadCount = const Value.absent(),
-    this.profilePic = const Value.absent(),
+    this.profilePicUrl = const Value.absent(),
     this.isDeleted = const Value.absent(),
+    required String type,
   }) : chatId = Value(chatId),
-       userId = Value(userId),
-       name = Value(name);
+       name = Value(name),
+       type = Value(type);
   static Insertable<ChatListTableData> custom({
     Expression<int>? id,
     Expression<String>? chatId,
-    Expression<String>? userId,
     Expression<String>? name,
     Expression<String>? lastMessage,
     Expression<int>? lastMessageTime,
     Expression<int>? unReadCount,
-    Expression<String>? profilePic,
+    Expression<String>? profilePicUrl,
     Expression<bool>? isDeleted,
+    Expression<String>? type,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (chatId != null) 'chat_id': chatId,
-      if (userId != null) 'user_id': userId,
       if (name != null) 'name': name,
       if (lastMessage != null) 'last_message': lastMessage,
       if (lastMessageTime != null) 'last_message_time': lastMessageTime,
       if (unReadCount != null) 'un_read_count': unReadCount,
-      if (profilePic != null) 'profile_pic': profilePic,
+      if (profilePicUrl != null) 'profile_pic_url': profilePicUrl,
       if (isDeleted != null) 'is_deleted': isDeleted,
+      if (type != null) 'type': type,
     });
   }
 
   ChatListTableCompanion copyWith({
     Value<int>? id,
     Value<String>? chatId,
-    Value<String>? userId,
     Value<String>? name,
     Value<String?>? lastMessage,
     Value<int?>? lastMessageTime,
     Value<int>? unReadCount,
-    Value<String?>? profilePic,
+    Value<String?>? profilePicUrl,
     Value<bool>? isDeleted,
+    Value<String>? type,
   }) {
     return ChatListTableCompanion(
       id: id ?? this.id,
       chatId: chatId ?? this.chatId,
-      userId: userId ?? this.userId,
       name: name ?? this.name,
       lastMessage: lastMessage ?? this.lastMessage,
       lastMessageTime: lastMessageTime ?? this.lastMessageTime,
       unReadCount: unReadCount ?? this.unReadCount,
-      profilePic: profilePic ?? this.profilePic,
+      profilePicUrl: profilePicUrl ?? this.profilePicUrl,
       isDeleted: isDeleted ?? this.isDeleted,
+      type: type ?? this.type,
     );
   }
 
@@ -1464,9 +1468,6 @@ class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
     }
     if (chatId.present) {
       map['chat_id'] = Variable<String>(chatId.value);
-    }
-    if (userId.present) {
-      map['user_id'] = Variable<String>(userId.value);
     }
     if (name.present) {
       map['name'] = Variable<String>(name.value);
@@ -1480,11 +1481,14 @@ class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
     if (unReadCount.present) {
       map['un_read_count'] = Variable<int>(unReadCount.value);
     }
-    if (profilePic.present) {
-      map['profile_pic'] = Variable<String>(profilePic.value);
+    if (profilePicUrl.present) {
+      map['profile_pic_url'] = Variable<String>(profilePicUrl.value);
     }
     if (isDeleted.present) {
       map['is_deleted'] = Variable<bool>(isDeleted.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
     }
     return map;
   }
@@ -1494,13 +1498,13 @@ class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
     return (StringBuffer('ChatListTableCompanion(')
           ..write('id: $id, ')
           ..write('chatId: $chatId, ')
-          ..write('userId: $userId, ')
           ..write('name: $name, ')
           ..write('lastMessage: $lastMessage, ')
           ..write('lastMessageTime: $lastMessageTime, ')
           ..write('unReadCount: $unReadCount, ')
-          ..write('profilePic: $profilePic, ')
-          ..write('isDeleted: $isDeleted')
+          ..write('profilePicUrl: $profilePicUrl, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('type: $type')
           ..write(')'))
         .toString();
   }
@@ -1872,6 +1876,323 @@ class UsersTableCompanion extends UpdateCompanion<UsersTableData> {
   }
 }
 
+class $ChatParticipantsTable extends ChatParticipants
+    with TableInfo<$ChatParticipantsTable, ChatParticipant> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ChatParticipantsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _chatIdMeta = const VerificationMeta('chatId');
+  @override
+  late final GeneratedColumn<String> chatId = GeneratedColumn<String>(
+    'chat_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _profilePicUrlMeta = const VerificationMeta(
+    'profilePicUrl',
+  );
+  @override
+  late final GeneratedColumn<String> profilePicUrl = GeneratedColumn<String>(
+    'profile_pic_url',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [chatId, userId, name, profilePicUrl];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'chat_participants';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ChatParticipant> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('chat_id')) {
+      context.handle(
+        _chatIdMeta,
+        chatId.isAcceptableOrUnknown(data['chat_id']!, _chatIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_chatIdMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('profile_pic_url')) {
+      context.handle(
+        _profilePicUrlMeta,
+        profilePicUrl.isAcceptableOrUnknown(
+          data['profile_pic_url']!,
+          _profilePicUrlMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {chatId, userId};
+  @override
+  ChatParticipant map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ChatParticipant(
+      chatId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}chat_id'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      profilePicUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}profile_pic_url'],
+      ),
+    );
+  }
+
+  @override
+  $ChatParticipantsTable createAlias(String alias) {
+    return $ChatParticipantsTable(attachedDatabase, alias);
+  }
+}
+
+class ChatParticipant extends DataClass implements Insertable<ChatParticipant> {
+  final String chatId;
+  final String userId;
+  final String name;
+  final String? profilePicUrl;
+  const ChatParticipant({
+    required this.chatId,
+    required this.userId,
+    required this.name,
+    this.profilePicUrl,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['chat_id'] = Variable<String>(chatId);
+    map['user_id'] = Variable<String>(userId);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || profilePicUrl != null) {
+      map['profile_pic_url'] = Variable<String>(profilePicUrl);
+    }
+    return map;
+  }
+
+  ChatParticipantsCompanion toCompanion(bool nullToAbsent) {
+    return ChatParticipantsCompanion(
+      chatId: Value(chatId),
+      userId: Value(userId),
+      name: Value(name),
+      profilePicUrl: profilePicUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(profilePicUrl),
+    );
+  }
+
+  factory ChatParticipant.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ChatParticipant(
+      chatId: serializer.fromJson<String>(json['chatId']),
+      userId: serializer.fromJson<String>(json['userId']),
+      name: serializer.fromJson<String>(json['name']),
+      profilePicUrl: serializer.fromJson<String?>(json['profilePicUrl']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'chatId': serializer.toJson<String>(chatId),
+      'userId': serializer.toJson<String>(userId),
+      'name': serializer.toJson<String>(name),
+      'profilePicUrl': serializer.toJson<String?>(profilePicUrl),
+    };
+  }
+
+  ChatParticipant copyWith({
+    String? chatId,
+    String? userId,
+    String? name,
+    Value<String?> profilePicUrl = const Value.absent(),
+  }) => ChatParticipant(
+    chatId: chatId ?? this.chatId,
+    userId: userId ?? this.userId,
+    name: name ?? this.name,
+    profilePicUrl: profilePicUrl.present
+        ? profilePicUrl.value
+        : this.profilePicUrl,
+  );
+  ChatParticipant copyWithCompanion(ChatParticipantsCompanion data) {
+    return ChatParticipant(
+      chatId: data.chatId.present ? data.chatId.value : this.chatId,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      name: data.name.present ? data.name.value : this.name,
+      profilePicUrl: data.profilePicUrl.present
+          ? data.profilePicUrl.value
+          : this.profilePicUrl,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ChatParticipant(')
+          ..write('chatId: $chatId, ')
+          ..write('userId: $userId, ')
+          ..write('name: $name, ')
+          ..write('profilePicUrl: $profilePicUrl')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(chatId, userId, name, profilePicUrl);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ChatParticipant &&
+          other.chatId == this.chatId &&
+          other.userId == this.userId &&
+          other.name == this.name &&
+          other.profilePicUrl == this.profilePicUrl);
+}
+
+class ChatParticipantsCompanion extends UpdateCompanion<ChatParticipant> {
+  final Value<String> chatId;
+  final Value<String> userId;
+  final Value<String> name;
+  final Value<String?> profilePicUrl;
+  final Value<int> rowid;
+  const ChatParticipantsCompanion({
+    this.chatId = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.profilePicUrl = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ChatParticipantsCompanion.insert({
+    required String chatId,
+    required String userId,
+    required String name,
+    this.profilePicUrl = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : chatId = Value(chatId),
+       userId = Value(userId),
+       name = Value(name);
+  static Insertable<ChatParticipant> custom({
+    Expression<String>? chatId,
+    Expression<String>? userId,
+    Expression<String>? name,
+    Expression<String>? profilePicUrl,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (chatId != null) 'chat_id': chatId,
+      if (userId != null) 'user_id': userId,
+      if (name != null) 'name': name,
+      if (profilePicUrl != null) 'profile_pic_url': profilePicUrl,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ChatParticipantsCompanion copyWith({
+    Value<String>? chatId,
+    Value<String>? userId,
+    Value<String>? name,
+    Value<String?>? profilePicUrl,
+    Value<int>? rowid,
+  }) {
+    return ChatParticipantsCompanion(
+      chatId: chatId ?? this.chatId,
+      userId: userId ?? this.userId,
+      name: name ?? this.name,
+      profilePicUrl: profilePicUrl ?? this.profilePicUrl,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (chatId.present) {
+      map['chat_id'] = Variable<String>(chatId.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (profilePicUrl.present) {
+      map['profile_pic_url'] = Variable<String>(profilePicUrl.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ChatParticipantsCompanion(')
+          ..write('chatId: $chatId, ')
+          ..write('userId: $userId, ')
+          ..write('name: $name, ')
+          ..write('profilePicUrl: $profilePicUrl, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -1881,6 +2202,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $MessagesTable messages = $MessagesTable(this);
   late final $ChatListTableTable chatListTable = $ChatListTableTable(this);
   late final $UsersTableTable usersTable = $UsersTableTable(this);
+  late final $ChatParticipantsTable chatParticipants = $ChatParticipantsTable(
+    this,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1890,6 +2214,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     messages,
     chatListTable,
     usersTable,
+    chatParticipants,
   ];
 }
 
@@ -2379,25 +2704,25 @@ typedef $$ChatListTableTableCreateCompanionBuilder =
     ChatListTableCompanion Function({
       Value<int> id,
       required String chatId,
-      required String userId,
       required String name,
       Value<String?> lastMessage,
       Value<int?> lastMessageTime,
       Value<int> unReadCount,
-      Value<String?> profilePic,
+      Value<String?> profilePicUrl,
       Value<bool> isDeleted,
+      required String type,
     });
 typedef $$ChatListTableTableUpdateCompanionBuilder =
     ChatListTableCompanion Function({
       Value<int> id,
       Value<String> chatId,
-      Value<String> userId,
       Value<String> name,
       Value<String?> lastMessage,
       Value<int?> lastMessageTime,
       Value<int> unReadCount,
-      Value<String?> profilePic,
+      Value<String?> profilePicUrl,
       Value<bool> isDeleted,
+      Value<String> type,
     });
 
 class $$ChatListTableTableFilterComposer
@@ -2416,11 +2741,6 @@ class $$ChatListTableTableFilterComposer
 
   ColumnFilters<String> get chatId => $composableBuilder(
     column: $table.chatId,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get userId => $composableBuilder(
-    column: $table.userId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2444,13 +2764,18 @@ class $$ChatListTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get profilePic => $composableBuilder(
-    column: $table.profilePic,
+  ColumnFilters<String> get profilePicUrl => $composableBuilder(
+    column: $table.profilePicUrl,
     builder: (column) => ColumnFilters(column),
   );
 
   ColumnFilters<bool> get isDeleted => $composableBuilder(
     column: $table.isDeleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get type => $composableBuilder(
+    column: $table.type,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -2474,11 +2799,6 @@ class $$ChatListTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get userId => $composableBuilder(
-    column: $table.userId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<String> get name => $composableBuilder(
     column: $table.name,
     builder: (column) => ColumnOrderings(column),
@@ -2499,13 +2819,18 @@ class $$ChatListTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get profilePic => $composableBuilder(
-    column: $table.profilePic,
+  ColumnOrderings<String> get profilePicUrl => $composableBuilder(
+    column: $table.profilePicUrl,
     builder: (column) => ColumnOrderings(column),
   );
 
   ColumnOrderings<bool> get isDeleted => $composableBuilder(
     column: $table.isDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get type => $composableBuilder(
+    column: $table.type,
     builder: (column) => ColumnOrderings(column),
   );
 }
@@ -2525,9 +2850,6 @@ class $$ChatListTableTableAnnotationComposer
   GeneratedColumn<String> get chatId =>
       $composableBuilder(column: $table.chatId, builder: (column) => column);
 
-  GeneratedColumn<String> get userId =>
-      $composableBuilder(column: $table.userId, builder: (column) => column);
-
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
 
@@ -2546,13 +2868,16 @@ class $$ChatListTableTableAnnotationComposer
     builder: (column) => column,
   );
 
-  GeneratedColumn<String> get profilePic => $composableBuilder(
-    column: $table.profilePic,
+  GeneratedColumn<String> get profilePicUrl => $composableBuilder(
+    column: $table.profilePicUrl,
     builder: (column) => column,
   );
 
   GeneratedColumn<bool> get isDeleted =>
       $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
 }
 
 class $$ChatListTableTableTableManager
@@ -2592,45 +2917,45 @@ class $$ChatListTableTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 Value<String> chatId = const Value.absent(),
-                Value<String> userId = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<String?> lastMessage = const Value.absent(),
                 Value<int?> lastMessageTime = const Value.absent(),
                 Value<int> unReadCount = const Value.absent(),
-                Value<String?> profilePic = const Value.absent(),
+                Value<String?> profilePicUrl = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
+                Value<String> type = const Value.absent(),
               }) => ChatListTableCompanion(
                 id: id,
                 chatId: chatId,
-                userId: userId,
                 name: name,
                 lastMessage: lastMessage,
                 lastMessageTime: lastMessageTime,
                 unReadCount: unReadCount,
-                profilePic: profilePic,
+                profilePicUrl: profilePicUrl,
                 isDeleted: isDeleted,
+                type: type,
               ),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
                 required String chatId,
-                required String userId,
                 required String name,
                 Value<String?> lastMessage = const Value.absent(),
                 Value<int?> lastMessageTime = const Value.absent(),
                 Value<int> unReadCount = const Value.absent(),
-                Value<String?> profilePic = const Value.absent(),
+                Value<String?> profilePicUrl = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
+                required String type,
               }) => ChatListTableCompanion.insert(
                 id: id,
                 chatId: chatId,
-                userId: userId,
                 name: name,
                 lastMessage: lastMessage,
                 lastMessageTime: lastMessageTime,
                 unReadCount: unReadCount,
-                profilePic: profilePic,
+                profilePicUrl: profilePicUrl,
                 isDeleted: isDeleted,
+                type: type,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -2859,6 +3184,195 @@ typedef $$UsersTableTableProcessedTableManager =
       UsersTableData,
       PrefetchHooks Function()
     >;
+typedef $$ChatParticipantsTableCreateCompanionBuilder =
+    ChatParticipantsCompanion Function({
+      required String chatId,
+      required String userId,
+      required String name,
+      Value<String?> profilePicUrl,
+      Value<int> rowid,
+    });
+typedef $$ChatParticipantsTableUpdateCompanionBuilder =
+    ChatParticipantsCompanion Function({
+      Value<String> chatId,
+      Value<String> userId,
+      Value<String> name,
+      Value<String?> profilePicUrl,
+      Value<int> rowid,
+    });
+
+class $$ChatParticipantsTableFilterComposer
+    extends Composer<_$AppDatabase, $ChatParticipantsTable> {
+  $$ChatParticipantsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get chatId => $composableBuilder(
+    column: $table.chatId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get profilePicUrl => $composableBuilder(
+    column: $table.profilePicUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ChatParticipantsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ChatParticipantsTable> {
+  $$ChatParticipantsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get chatId => $composableBuilder(
+    column: $table.chatId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get profilePicUrl => $composableBuilder(
+    column: $table.profilePicUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ChatParticipantsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ChatParticipantsTable> {
+  $$ChatParticipantsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get chatId =>
+      $composableBuilder(column: $table.chatId, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get profilePicUrl => $composableBuilder(
+    column: $table.profilePicUrl,
+    builder: (column) => column,
+  );
+}
+
+class $$ChatParticipantsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ChatParticipantsTable,
+          ChatParticipant,
+          $$ChatParticipantsTableFilterComposer,
+          $$ChatParticipantsTableOrderingComposer,
+          $$ChatParticipantsTableAnnotationComposer,
+          $$ChatParticipantsTableCreateCompanionBuilder,
+          $$ChatParticipantsTableUpdateCompanionBuilder,
+          (
+            ChatParticipant,
+            BaseReferences<
+              _$AppDatabase,
+              $ChatParticipantsTable,
+              ChatParticipant
+            >,
+          ),
+          ChatParticipant,
+          PrefetchHooks Function()
+        > {
+  $$ChatParticipantsTableTableManager(
+    _$AppDatabase db,
+    $ChatParticipantsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ChatParticipantsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ChatParticipantsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ChatParticipantsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> chatId = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> profilePicUrl = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ChatParticipantsCompanion(
+                chatId: chatId,
+                userId: userId,
+                name: name,
+                profilePicUrl: profilePicUrl,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String chatId,
+                required String userId,
+                required String name,
+                Value<String?> profilePicUrl = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ChatParticipantsCompanion.insert(
+                chatId: chatId,
+                userId: userId,
+                name: name,
+                profilePicUrl: profilePicUrl,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ChatParticipantsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ChatParticipantsTable,
+      ChatParticipant,
+      $$ChatParticipantsTableFilterComposer,
+      $$ChatParticipantsTableOrderingComposer,
+      $$ChatParticipantsTableAnnotationComposer,
+      $$ChatParticipantsTableCreateCompanionBuilder,
+      $$ChatParticipantsTableUpdateCompanionBuilder,
+      (
+        ChatParticipant,
+        BaseReferences<_$AppDatabase, $ChatParticipantsTable, ChatParticipant>,
+      ),
+      ChatParticipant,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2871,4 +3385,6 @@ class $AppDatabaseManager {
       $$ChatListTableTableTableManager(_db, _db.chatListTable);
   $$UsersTableTableTableManager get usersTable =>
       $$UsersTableTableTableManager(_db, _db.usersTable);
+  $$ChatParticipantsTableTableManager get chatParticipants =>
+      $$ChatParticipantsTableTableManager(_db, _db.chatParticipants);
 }

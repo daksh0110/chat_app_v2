@@ -5,42 +5,38 @@ import 'package:my_app/widgets/comman/primary_text.dart';
 class UserBubble extends StatelessWidget {
   const UserBubble({
     super.key,
-    required this.profilePic,
+    this.profilePicUrl,
     this.size = 52,
     this.needActiveIndicator = false,
     this.name = "",
   });
 
-  final String profilePic;
+  final String? profilePicUrl;
   final double size;
   final bool needActiveIndicator;
   final String name;
 
   @override
   Widget build(BuildContext context) {
-    final bool isValidUrl = Uri.tryParse(profilePic)?.hasAbsolutePath ?? false;
-    final bool isAssetImage = !isValidUrl && profilePic.isNotEmpty;
+    final bool isValidUrl = (profilePicUrl != null &&
+            Uri.tryParse(profilePicUrl!)?.hasAbsolutePath == true)
+        ? true
+        : false;
+
     return Stack(
       clipBehavior: Clip.none,
       children: [
         ClipOval(
           child: isValidUrl
               ? Image.network(
-                  profilePic,
-                  width: size,
-                  height: size,
-                  fit: BoxFit.cover,
-                )
-              : isAssetImage
-              ? Image.asset(
-                  profilePic,
+                  profilePicUrl!,
                   width: size,
                   height: size,
                   fit: BoxFit.cover,
                 )
               : Container(
                   decoration: BoxDecoration(
-                    color: Color(0xFF075E54),
+                    color: const Color(0xFF075E54),
                     shape: BoxShape.circle,
                   ),
                   width: size,
@@ -53,6 +49,7 @@ class UserBubble extends StatelessWidget {
                   ),
                 ),
         ),
+
 
         if (needActiveIndicator)
           Positioned(

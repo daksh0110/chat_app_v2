@@ -11,13 +11,14 @@ class Header extends StatefulWidget implements PreferredSizeWidget {
     required this.name,
     required this.id,
     required this.isOnline,
-    this.profilePic,
+    this.profilePicUrl,
   });
 
   final String name;
   final String id;
   final bool isOnline;
-  final String? profilePic;
+  final String? profilePicUrl;
+
 
   @override
   Size get preferredSize {
@@ -68,9 +69,8 @@ class _HeaderState extends State<Header> {
           item: SearchItem(
             id: widget.id,
             name: widget.name,
-            profilePic: "assets/no-image-icon.jpg",
             subtitle: widget.isOnline ? "active now" : "",
-            profilePicUrl: widget.profilePic,
+            profilePicUrl: widget.profilePicUrl,
           ),
         ),
       ),

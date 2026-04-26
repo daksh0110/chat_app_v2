@@ -27,10 +27,10 @@ class SettingsMain extends ConsumerWidget {
               item: SearchItem(
                 id: user.id,
                 name: user.name,
-                profilePic: user.profilePictureUrl ?? "",
                 subtitle: user.email,
                 profilePicUrl: user.profilePictureUrl,
               ),
+
               actionWidget: [
                 const Spacer(),
                 Icon(Icons.qr_code_scanner, color: DefaultColorSheet.green400),
