@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:drift/drift.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/core/database.dart';
 import 'package:my_app/core/network/api_client.dart';
@@ -123,7 +122,7 @@ class MessageNotifer extends Notifier {
             isDeleted: const Value(false),
             lastMessage: Value(data["message"]),
             lastMessageTime: Value(createdAt),
-            profilePic: const Value(null),
+            profilePic: Value(user?.profilePicUrl ?? ""),
             unReadCount: Value(shouldAutoRead ? 0 : 1),
           ),
         );
@@ -137,7 +136,7 @@ class MessageNotifer extends Notifier {
             ChatParticipantsCompanion.insert(
               chatId: chatId,
               userId: senderId,
-              name: "Unknown",
+              name: user?.name ?? "Unknown",
             ),
           ], mode: InsertMode.insertOrIgnore);
         });
@@ -159,6 +158,7 @@ class MessageNotifer extends Notifier {
                     ? Value(createdAt)
                     : const Value.absent(),
                 unReadCount: Value(unread),
+                isDeleted: const Value(false),
               ),
             );
       }
@@ -177,6 +177,7 @@ class MessageNotifer extends Notifier {
     }
 
     unawaited(_cacheUser(senderId));
+    unawaited(_UpdateChatItem(senderId, chatId));
   }
 
   Future<void> sendMessagea({
@@ -186,11 +187,6 @@ class MessageNotifer extends Notifier {
     String chatId = "",
     void Function(String realChatId)? onChatResolved,
   }) async {
-    print("message: $message");
-    print("receiverId: $receiverId");
-    print("receivername: $receiverName");
-    debugPrint("chatId: $chatId");
-
     try {
       final database = ref.read(databaseProvider);
       final user = ref.read(settingsUserProvider);
@@ -242,6 +238,7 @@ class MessageNotifer extends Notifier {
             ChatListTableCompanion(
               lastMessage: Value(message),
               lastMessageTime: Value(now),
+              isDeleted: const Value(false),
             ),
           );
         }
@@ -270,7 +267,6 @@ class MessageNotifer extends Notifier {
         (response) async {
           final realChatId = response["chat_id"];
           final messageId = response["message_id"];
-          final serverCreatedAt = _parseTimestamp(response["created_at"]);
 
           if (currentChatId.startsWith("local_")) {
             await database.managers.chatParticipants
@@ -286,6 +282,7 @@ class MessageNotifer extends Notifier {
                   chatId: Value(realChatId),
                   lastMessageTime: Value(now),
                   lastMessage: Value(message),
+                  isDeleted: const Value(false),
                 ),
               );
           await database.managers.messages
@@ -298,6 +295,7 @@ class MessageNotifer extends Notifier {
                   messageStatus: const Value("sent"),
                 ),
               );
+          unawaited(_UpdateChatItem(receiverId, realChatId));
         },
       );
       unawaited(_cacheUser(receiverId));
@@ -357,7 +355,6 @@ class MessageNotifer extends Notifier {
         }
 
         if (message.messageStatus == "read") {
-          print("Already read");
           return;
         }
 
@@ -557,6 +554,34 @@ class MessageNotifer extends Notifier {
                 profilePictureUrl: Value(data.profilePicUrl ?? ""),
               ),
             );
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _UpdateChatItem(String userId, String chatId) async {
+    try {
+      final database = ref.read(databaseProvider);
+
+      final existing = await database.managers.chatListTable
+          .filter((f) => f.chatId.equals(chatId))
+          .getSingleOrNull();
+
+      if (existing == null) return;
+
+      if (existing.type != "dm") return;
+
+      final response = await UserApiService(ApiClient()).getUserById(userId);
+      final data = response.data;
+
+      if (data != null) {
+        await (database.update(
+          database.chatListTable,
+        )..where((tbl) => tbl.chatId.equals(chatId))).write(
+          ChatListTableCompanion(
+            name: Value(data.name),
+            profilePic: Value(data.profilePicUrl),
+          ),
+        );
       }
     } catch (_) {}
   }
