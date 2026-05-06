@@ -2,10 +2,13 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/core/database.dart';
 import 'package:my_app/core/network/api_client.dart';
+import 'package:my_app/data/services/chat_sync_service.dart';
 import 'package:my_app/data/services/user_api_service.dart';
+import 'package:my_app/modal/screens/createGroup/create_group_response.dart';
 import 'package:my_app/providers/chat_list_provider.dart';
 import 'package:my_app/providers/database_provider.dart';
 import 'package:my_app/providers/message_typing_provider.dart';
@@ -64,6 +67,10 @@ class MessageNotifer extends Notifier {
   Future<void> _handleMessage(dynamic data) async {
     final database = ref.read(databaseProvider);
     final currentUser = ref.read(settingsUserProvider);
+    final chatSyncService = ChatSyncService(
+      db: database,
+      apiClient: ApiClient(),
+    );
     if (currentUser == null) return;
 
     final senderId = data["sender_id"];
@@ -178,8 +185,10 @@ class MessageNotifer extends Notifier {
       });
     }
 
-    unawaited(_cacheUser(senderId));
-    unawaited(_UpdateChatItem(senderId, chatId));
+    unawaited(chatSyncService.cacheUserIfMissing(senderId));
+    unawaited(
+      chatSyncService.updateDmChatItem(userId: senderId, chatId: chatId),
+    );
   }
 
   Future<void> sendMessagea({
@@ -299,11 +308,23 @@ class MessageNotifer extends Notifier {
                   messageStatus: const Value("sent"),
                 ),
               );
-          unawaited(_UpdateChatItem(receiverId, realChatId));
+          final chatSyncService = ChatSyncService(
+            db: database,
+            apiClient: ApiClient(),
+          );
+          unawaited(
+            chatSyncService.updateDmChatItem(
+              userId: receiverId,
+              chatId: realChatId,
+            ),
+          );
         },
-
       );
-      unawaited(_cacheUser(receiverId));
+      final chatSyncService = ChatSyncService(
+        db: database,
+        apiClient: ApiClient(),
+      );
+      unawaited(chatSyncService.cacheUserIfMissing(receiverId));
     } catch (e) {
       // optionally log
     }
@@ -474,7 +495,6 @@ class MessageNotifer extends Notifier {
                 ),
               );
         },
-
       );
     }
   }
@@ -535,60 +555,31 @@ class MessageNotifer extends Notifier {
     });
   }
 
-  Future<void> _cacheUser(String userId) async {
+  Future<void> groupChatCreatedListener() async {
     try {
-      final database = ref.read(databaseProvider);
+      ref.read(socketProvider).listen("group-created", (dynamic data) async {
+        final db = ref.read(databaseProvider);
+        final currentUser = ref.read(settingsUserProvider);
+        if (currentUser == null || currentUser.accessToken.isEmpty) return;
 
-      final existing = await database.managers.usersTable
-          .filter((f) => f.id.equals(userId))
-          .getSingleOrNull();
+        if (data is Map) {
+          final payload = CreateGroupResponse.fromJson(
+            Map<String, dynamic>.from(data),
+          );
 
-      if (existing != null) return;
-
-      final response = await UserApiService(ApiClient()).getUserById(userId);
-      final data = response.data;
-
-      if (data != null) {
-        await database
-            .into(database.usersTable)
-            .insertOnConflictUpdate(
-              UsersTableCompanion(
-                id: Value(data.id),
-                name: Value(data.name),
-                email: Value(data.email ?? ""),
-                bio: Value(data.bio ?? ""),
-                profilePictureUrl: Value(data.profilePicUrl ?? ""),
-              ),
+          if (payload.data?.chatId.isEmpty ?? true) return;
+          {
+            await ChatSyncService(
+              db: db,
+              apiClient: ApiClient(),
+            ).syncCreatedGroupEventPayload(
+              rawPayload: payload,
+              currentUserId: currentUser.id,
             );
-      }
-    } catch (_) {}
-  }
-
-  Future<void> _UpdateChatItem(String userId, String chatId) async {
-    try {
-      final database = ref.read(databaseProvider);
-
-      final existing = await database.managers.chatListTable
-          .filter((f) => f.chatId.equals(chatId))
-          .getSingleOrNull();
-
-      if (existing == null) return;
-
-      if (existing.type != "dm") return;
-
-      final response = await UserApiService(ApiClient()).getUserById(userId);
-      final data = response.data;
-
-      if (data != null) {
-        await (database.update(
-          database.chatListTable,
-        )..where((tbl) => tbl.chatId.equals(chatId))).write(
-          ChatListTableCompanion(
-            name: Value(data.name),
-            profilePicUrl: Value(data.profilePicUrl),
-          ),
-        );
-      }
+            return;
+          }
+        }
+      });
     } catch (_) {}
   }
 }

@@ -1,3 +1,5 @@
+import 'package:flutter/rendering.dart';
+import 'package:my_app/modal/screens/createGroup/create_group_response.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -74,6 +76,35 @@ class SocketService {
   void getUserStatus(void Function(dynamic data) callback) {
     if (socket == null) return;
     socket!.on("user_status", callback);
+  }
+
+  void createGroup(
+    Map<String, dynamic> data, [
+    Function(CreateGroupResponse)? onAck,
+  ]) {
+    if (socket == null || !socket!.connected) return;
+
+    socket!.emitWithAck(
+      "create-group",
+      data,
+      ack: (response) {
+        if (onAck != null) {
+          try {
+            final parsed = CreateGroupResponse.fromJson(
+              Map<String, dynamic>.from(response),
+            );
+            onAck(parsed);
+          } catch (e) {
+            debugPrint("CreateGroup parse error: $e");
+          }
+        }
+      },
+    );
+  }
+
+  void listenGroupCreated(void Function(dynamic data) callback) {
+    if (socket == null) return;
+    socket!.on("group-created", callback);
   }
 
   void listenUserOnline(void Function(dynamic data) callback) {

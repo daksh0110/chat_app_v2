@@ -11,4 +11,5 @@ class AppRoutes {
   static const String verifyEmail = "/verify-email";
   static const String profileSetup = "/profile-setup";
   static const String userProfile = "/user-profile";
+  static const String createGroupChat = "/create-group";
 }

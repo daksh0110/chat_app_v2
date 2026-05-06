@@ -43,6 +43,11 @@ class AppDatabase extends _$AppDatabase {
       },
     );
   }
+
+  // --- Queries ---
+  Stream<List<UsersTableData>> getAllUsers() {
+    return select(usersTable).watch();
+  }
 }
 
 
