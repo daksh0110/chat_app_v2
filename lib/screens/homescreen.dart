@@ -80,8 +80,8 @@ class _HomeScreenState extends ConsumerState<Homescreen> with RouteAware {
                               chatId: chat.chatId,
                               name: chat.name,
                               profilePicUrl: chat.profilePicUrl,
+                              isGroupChat: chat.type,
                             ),
-
                           );
                           return;
                         } else {

@@ -9,6 +9,7 @@ class ChatListModal {
   final String lastMessage;
   final String lastMessageTime;
   final int unReadCount;
+  final String type;
 
   ChatListModal({
     required this.id,
@@ -18,6 +19,7 @@ class ChatListModal {
     required this.lastMessage,
     required this.lastMessageTime,
     this.unReadCount = 0,
+    this.type = "dm",
   });
 
   factory ChatListModal.fromDrift(ChatListTableData data) {
@@ -31,7 +33,7 @@ class ChatListModal {
         "HH:mm",
       ).format(DateTime.fromMillisecondsSinceEpoch(data.lastMessageTime!)),
       unReadCount: data.unReadCount,
+      type: data.type,
     );
   }
 }
-

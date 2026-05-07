@@ -146,6 +146,7 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
     final args =
         ModalRoute.of(context)!.settings.arguments as MessageScreenArguments;
     final String name = args.name;
+    final String isGroupChat = args.isGroupChat;
     final currentUser = ref.watch(settingsUserProvider);
     final isTyping = typingMap[chatId] == true;
 
@@ -187,15 +188,18 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
                           }
 
                           final msgIndex = isTyping ? index - 1 : index;
-                          final msg = messages[messages.length - 1 - msgIndex];
-
+                          final item = messages[messages.length - 1 - msgIndex];
+                          final msg = item.message;
+                          final sender = item.participant;
                           final currentLabel = getDateLabel(msg.createdAt);
 
                           String? previousLabel;
                           if (msgIndex < messages.length - 1) {
                             final prevMsg =
                                 messages[messages.length - 1 - (msgIndex + 1)];
-                            previousLabel = getDateLabel(prevMsg.createdAt);
+                            previousLabel = getDateLabel(
+                              prevMsg.message.createdAt,
+                            );
                           }
 
                           final showBanner = currentLabel != previousLabel;
@@ -211,6 +215,10 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
                                     ? statusMap(msg.messageStatus)
                                     : statusMap("sending"),
                                 timestamp: msg.createdAt,
+                                senderName: sender.userId == currentUser.id
+                                    ? "You"
+                                    : sender.name,
+                                isGroupChat: isGroupChat == "group",
                               ),
                             ],
                           );
