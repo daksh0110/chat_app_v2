@@ -40,6 +40,7 @@ class MyApp extends ConsumerWidget {
       // ref.read(databaseProvider).managers.userInfoSettings.delete();
       // ref.read(databaseProvider).managers.chatParticipants.delete();
       // ref.read(databaseProvider).managers.usersTable.delete();
+      // ref.read(databaseProvider).managers.messageStatusTable.delete();
       // ref.read(secureStorageProvider.notifier).clearToken();
       next.whenData((state) async {
         if (state == AuthState.authenticated) {

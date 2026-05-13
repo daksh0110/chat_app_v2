@@ -36,12 +36,13 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
   @override
   void initState() {
     super.initState();
+
+    _chatListController = ref.read(chatListControllerProvider);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _chatListController = ref.read(chatListControllerProvider);
     final args =
         ModalRoute.of(context)!.settings.arguments as MessageScreenArguments;
 
@@ -212,13 +213,13 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
                                 message: msg.message,
                                 isSender: msg.senderId == currentUser.id,
                                 status: msg.senderId == currentUser.id
-                                    ? statusMap(msg.messageStatus)
+                                    ? statusMap(item.overallStatus)
                                     : statusMap("sending"),
                                 timestamp: msg.createdAt,
                                 senderName: sender.userId == currentUser.id
                                     ? "You"
                                     : sender.name,
-                                isGroupChat: isGroupChat == "group",
+                                isGroupChat: isGroupChat == "GROUP",
                               ),
                             ],
                           );

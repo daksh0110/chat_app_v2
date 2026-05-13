@@ -32,9 +32,9 @@ class GroupData {
 
   GroupData({
     required this.chatId,
-    required this.name,
-    required this.profilePictureUrl,
-    required this.description,
+    this.name = "unknown",
+    this.profilePictureUrl = "",
+    this.description = "",
     required this.type,
     required this.participants,
   });
@@ -45,7 +45,7 @@ class GroupData {
       name: json['name'] ?? '',
       profilePictureUrl: json['profile_pic_url'] ?? '',
       description: json['description'] ?? '',
-      type: json['type'] ?? 'group',
+      type: json['type'] ?? 'GROUP',
       participants: (json['participants'] as List? ?? [])
           .map((e) => Participant.fromJson(e))
           .toList(),
@@ -62,8 +62,8 @@ class Participant {
 
   Participant({
     required this.userId,
-    required this.name,
-    required this.profilePictureUrl,
+    this.name = "unknown",
+    this.profilePictureUrl = "",
     required this.role,
     required this.chatId,
   });

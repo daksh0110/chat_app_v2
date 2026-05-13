@@ -15,9 +15,9 @@ class SucessfullAuthentication {
 
   factory SucessfullAuthentication.fromJson(Map<String, dynamic> json) {
     return SucessfullAuthentication(
-      email: json["email"],
-      skipOtp: json["skip_otp"],
-      verificationToken: json["verification_token"],
+      email: json["email"] ?? "",
+      skipOtp: json["skip_otp"] ?? false,
+      verificationToken: json["verification_token"] ?? "",
       message: json["message"] ?? "",
       accessToken: json["accessToken"],
     );

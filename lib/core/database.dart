@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:my_app/modal/tables/chat_list_table.dart';
 import 'package:my_app/modal/tables/chat_participant_table.dart';
+import 'package:my_app/modal/tables/message_status_table.dart';
 import 'package:my_app/modal/tables/messages_table.dart';
 import 'package:my_app/modal/tables/user_table.dart';
 import 'package:my_app/modal/tables/users_table.dart';
@@ -18,6 +19,7 @@ part 'database.g.dart';
     ChatListTable,
     UsersTable,
     ChatParticipants,
+    MessageStatusTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -49,7 +51,6 @@ class AppDatabase extends _$AppDatabase {
     return select(usersTable).watch();
   }
 }
-
 
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {

@@ -47,7 +47,7 @@ class ChatSyncService {
           .filter((f) => f.chatId.equals(chatId))
           .getSingleOrNull();
 
-      if (existing == null || existing.type != "dm") return;
+      if (existing == null || existing.type != "DIRECT") return;
 
       final response = await UserApiService(apiClient).getUserById(userId);
       final data = response.data;
@@ -102,7 +102,7 @@ class ChatSyncService {
       (o) => o(
         chatId: group.chatId,
         name: group.name,
-        type: "group",
+        type: "GROUP",
         isDeleted: const Value(false),
         lastMessage: const Value(null),
         lastMessageTime: Value(DateTime.now().millisecondsSinceEpoch),

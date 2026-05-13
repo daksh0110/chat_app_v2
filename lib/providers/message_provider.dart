@@ -6,9 +6,14 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/core/database.dart';
 import 'package:my_app/core/network/api_client.dart';
+import 'package:my_app/data/services/chat_api_service.dart';
 import 'package:my_app/data/services/chat_sync_service.dart';
 import 'package:my_app/data/services/user_api_service.dart';
 import 'package:my_app/modal/screens/createGroup/create_group_response.dart';
+import 'package:my_app/modal/screens/message/message_delivered_response.dart';
+import 'package:my_app/modal/screens/message/message_read_response.dart';
+import 'package:my_app/modal/screens/message/message_status.dart';
+import 'package:my_app/modal/screens/message/send_message_ack.dart';
 import 'package:my_app/providers/chat_list_provider.dart';
 import 'package:my_app/providers/database_provider.dart';
 import 'package:my_app/providers/message_typing_provider.dart';
@@ -46,7 +51,9 @@ class MessageNotifer extends Notifier {
       if (chatId != null) {
         ref.read(messageTypingProvider.notifier).clearTyping(chatId);
       }
-      _messageQueue.add(data);
+      final payload = SendMessageAck.fromJson(data);
+
+      _messageQueue.add(payload);
       _processQueue();
     });
   }
@@ -72,18 +79,17 @@ class MessageNotifer extends Notifier {
       apiClient: ApiClient(),
     );
     if (currentUser == null) return;
+    final senderId = data.senderId;
+    final messageId = data.messageId;
+    final chatId = data.chatId;
+    final tempId = data.tempId;
 
-    final senderId = data["sender_id"];
-    final messageId = data["message_id"];
-    final chatId = data["chat_id"];
-    final tempId = data["temp_id"];
-
-    final createdAt = _parseTimestamp(data["created_at"]);
+    final createdAt = _parseTimestamp(data.createdAt);
     _serverTimeOffset = createdAt - DateTime.now().millisecondsSinceEpoch;
 
     if (senderId == currentUser.id) return;
 
-    if (tempId != null) {
+    if (tempId.isNotEmpty) {
       final existingTemp = await database.managers.messages
           .filter((f) => f.id.equals(tempId))
           .getSingleOrNull();
@@ -104,10 +110,10 @@ class MessageNotifer extends Notifier {
     await database.transaction(() async {
       await database.managers.messages.create(
         (o) => o(
-          id: messageId,
+          id: tempId.isNotEmpty ? tempId : const Uuid().v4(),
           serverId: Value(messageId),
           chatId: chatId,
-          message: data["message"],
+          message: data.message,
           senderId: senderId,
           createdAt: createdAt,
           isRead: Value(shouldAutoRead),
@@ -116,39 +122,70 @@ class MessageNotifer extends Notifier {
         mode: InsertMode.insertOrIgnore,
       );
 
+      await database.managers.messageStatusTable.bulkCreate(
+        (o) => data.messageStatuses
+            .map<Insertable<MessageStatusTableData>>(
+              (status) => o(
+                messageId: messageId,
+                userId: status.userId,
+                status: Value(status.status),
+                createdAt: _parseTimestamp(status.createdAt),
+                updatedAt: _parseTimestamp(status.updatedAt),
+                deliveredAt: Value(
+                  status.deliveredAt != null
+                      ? _parseTimestamp(status.deliveredAt)
+                      : null,
+                ),
+                readAt: Value(
+                  status.readAt != null ? _parseTimestamp(status.readAt) : null,
+                ),
+              ),
+            )
+            .toList(),
+        mode: InsertMode.insertOrIgnore,
+      );
+
       final existingChat = await (database.select(
         database.chatListTable,
       )..where((c) => c.chatId.equals(chatId))).getSingleOrNull();
-      final ApiClient apiClient = ApiClient();
-      final response = await UserApiService(apiClient).getUserById(senderId);
-      final user = response.data;
       if (existingChat == null) {
+        final token = currentUser.accessToken;
+        final ApiClient apiClient = ApiClient();
+        final response = await ChatApiService(
+          apiClient,
+        ).getChat(token: token, chatId: chatId);
+
+        final user = response.data?.data;
+        debugPrint("Fetched chat details for new message: ${user}");
         await database.managers.chatListTable.create(
           (o) => o(
             chatId: chatId,
             name: user?.name ?? "Unknown",
-            type: "dm",
+            type: user?.type ?? "DIRECT",
             isDeleted: const Value(false),
-            lastMessage: Value(data["message"]),
+            lastMessage: Value(data.message),
             lastMessageTime: Value(createdAt),
-            profilePicUrl: Value(user?.profilePicUrl ?? ""),
+            profilePicUrl: Value(user?.profilePictureUrl ?? ""),
             unReadCount: Value(shouldAutoRead ? 0 : 1),
           ),
         );
-        await database.batch((batch) {
-          batch.insertAll(database.chatParticipants, [
-            ChatParticipantsCompanion.insert(
-              chatId: chatId,
-              userId: currentUser.id,
-              name: currentUser.name,
-            ),
-            ChatParticipantsCompanion.insert(
-              chatId: chatId,
-              userId: senderId,
-              name: user?.name ?? "Unknown",
-            ),
-          ], mode: InsertMode.insertOrIgnore);
-        });
+        final participants = user?.participants;
+        await database.managers.chatParticipants.bulkCreate(
+          (o) =>
+              participants
+                  ?.map(
+                    (p) => o(
+                      chatId: chatId,
+                      userId: p.userId,
+                      name: p.name,
+                      role: Value(p.role),
+                      profilePicUrl: Value(p.profilePictureUrl),
+                    ),
+                  )
+                  .toList() ??
+              [],
+          mode: InsertMode.insertOrIgnore,
+        );
       } else {
         final isNewer =
             existingChat.lastMessageTime == null ||
@@ -161,7 +198,7 @@ class MessageNotifer extends Notifier {
             .update(
               (o) => o(
                 lastMessage: isNewer
-                    ? Value(data["message"])
+                    ? Value(data.message)
                     : const Value.absent(),
                 lastMessageTime: isNewer
                     ? Value(createdAt)
@@ -198,6 +235,7 @@ class MessageNotifer extends Notifier {
     String chatId = "",
     void Function(String realChatId)? onChatResolved,
   }) async {
+    print(" Sending message: $message to $receiverId in chat $chatId");
     try {
       final database = ref.read(databaseProvider);
       final user = ref.read(settingsUserProvider);
@@ -222,7 +260,7 @@ class MessageNotifer extends Notifier {
               (o) => o(
                 chatId: currentChatId,
                 name: receiverName,
-                type: "dm",
+                type: "DIRECT",
                 isDeleted: const Value(false),
                 lastMessage: Value(message),
                 lastMessageTime: Value(now),
@@ -265,6 +303,30 @@ class MessageNotifer extends Notifier {
             createdAt: now,
           ),
         );
+
+        final participants = await database.managers.chatParticipants
+            .filter((f) => f.chatId.equals(currentChatId))
+            .get();
+
+        await database.managers.messageStatusTable.bulkCreate(
+          (o) => participants.map((p) {
+            final isMe = p.userId == user.id;
+
+            return o(
+              messageId: tempId,
+              userId: p.userId,
+
+              status: Value(isMe ? "sent" : "sending"),
+
+              createdAt: now,
+              updatedAt: now,
+
+              deliveredAt: Value(isMe ? now : null),
+
+              readAt: Value(isMe ? now : null),
+            );
+          }).toList(),
+        );
       });
       final isRealChat = !currentChatId.startsWith("local_");
       ref.read(socketProvider).sendMessageWithAck(
@@ -276,9 +338,10 @@ class MessageNotifer extends Notifier {
           if (isRealChat) "chat_id": currentChatId,
         },
         (response) async {
-          final realChatId = response["chat_id"];
-          final messageId = response["message_id"];
-          final createdAt = _parseTimestamp(response["created_at"]);
+          final payload = SendMessageAck.fromJson(response);
+          final realChatId = payload.chatId;
+          final messageId = payload.messageId;
+          final createdAt = _parseTimestamp(payload.createdAt);
           _serverTimeOffset = createdAt - DateTime.now().millisecondsSinceEpoch;
 
           if (currentChatId.startsWith("local_")) {
@@ -308,6 +371,29 @@ class MessageNotifer extends Notifier {
                   messageStatus: const Value("sent"),
                 ),
               );
+          await database.managers.messageStatusTable
+              .filter((f) => f.messageId.equals(tempId))
+              .delete();
+
+          await database.managers.messageStatusTable.bulkCreate(
+            (o) => payload.messageStatuses.map((status) {
+              return o(
+                messageId: messageId,
+                userId: status.userId,
+                status: Value(status.status),
+                createdAt: _parseTimestamp(status.createdAt),
+                updatedAt: _parseTimestamp(status.updatedAt),
+                deliveredAt: Value(
+                  status.deliveredAt != null
+                      ? _parseTimestamp(status.deliveredAt)
+                      : null,
+                ),
+                readAt: Value(
+                  status.readAt != null ? _parseTimestamp(status.readAt) : null,
+                ),
+              );
+            }).toList(),
+          );
           final chatSyncService = ChatSyncService(
             db: database,
             apiClient: ApiClient(),
@@ -326,7 +412,7 @@ class MessageNotifer extends Notifier {
       );
       unawaited(chatSyncService.cacheUserIfMissing(receiverId));
     } catch (e) {
-      // optionally log
+      debugPrint("Error sending message: $e");
     }
   }
 
@@ -334,27 +420,25 @@ class MessageNotifer extends Notifier {
     final db = ref.read(databaseProvider);
 
     ref.read(socketProvider).listen("message_delivered", (data) async {
-      final messageId = data["message_id"].toString();
+      await _retry(() async {
+        final payload = MessageDeliveredResponse.fromJson(data);
 
-      Future<void> _markDelivered([int attempt = 0]) async {
-        final message = await db.managers.messages
-            .filter((f) => f.serverId(messageId))
-            .getSingleOrNull();
-        if (message == null) {
-          if (attempt < 3) {
-            await Future.delayed(const Duration(milliseconds: 200));
-            await _markDelivered(attempt + 1);
-          }
-          return;
-        }
-        if (message.messageStatus == "read") return;
+        final status = payload.messageStatus;
 
-        await db.managers.messages
-            .filter((f) => f.serverId(messageId))
-            .update((o) => o(messageStatus: const Value("delivered")));
-      }
-
-      await _markDelivered();
+        await db.managers.messageStatusTable
+            .filter(
+              (f) =>
+                  f.messageId.equals(status.messageId) &
+                  f.userId.equals(status.userId),
+            )
+            .update(
+              (o) => o(
+                status: Value(status.status),
+                deliveredAt: Value(_parseTimestamp(status.deliveredAt)),
+                updatedAt: Value(_parseTimestamp(status.updatedAt)),
+              ),
+            );
+      });
     });
   }
 
@@ -362,60 +446,57 @@ class MessageNotifer extends Notifier {
     final db = ref.read(databaseProvider);
 
     ref.read(socketProvider).listen("message_read", (data) async {
-      final messageId = data["message_id"].toString();
+      await _retry(() async {
+        final payload = MessageReadResponse.fromJson(data);
 
-      Future<void> _markRead([int attempt = 0]) async {
-        final message = await db.managers.messages
-            .filter((f) => f.serverId(messageId))
-            .getSingleOrNull();
+        final status = payload.messageStatus;
 
-        if (message == null) {
-          print("Message not found (attempt $attempt)");
-
-          if (attempt < 5) {
-            await Future.delayed(const Duration(milliseconds: 200));
-            await _markRead(attempt + 1);
-          }
-
-          return;
-        }
-
-        if (message.messageStatus == "read") {
-          return;
-        }
-
-        await db.managers.messages
-            .filter((f) => f.serverId.equals(messageId))
-            .update((o) => o(messageStatus: const Value("read")));
-      }
-
-      await _markRead();
+        await db.managers.messageStatusTable
+            .filter(
+              (f) =>
+                  f.messageId.equals(status.messageId) &
+                  f.userId.equals(status.userId),
+            )
+            .update(
+              (o) => o(
+                status: Value(status.status),
+                readAt: Value(_parseTimestamp(status.readAt)),
+                updatedAt: Value(_parseTimestamp(status.updatedAt)),
+              ),
+            );
+      });
     });
   }
 
   Future<void> markChatMessagesRead(String chatId) async {
     final db = ref.read(databaseProvider);
+
     final currentUser = ref.read(settingsUserProvider);
 
     if (currentUser == null) return;
 
-    final unreadMessages = await db.managers.messages
-        .filter((f) => f.chatId.equals(chatId) & f.isRead.equals(false))
+    final now = DateTime.now().millisecondsSinceEpoch;
+
+    final unreadStatuses = await db.managers.messageStatusTable
+        .filter((f) => f.userId.equals(currentUser.id) & f.status.not("read"))
         .get();
 
-    if (unreadMessages.isEmpty) return;
+    if (unreadStatuses.isEmpty) return;
 
-    await db.managers.messages
-        .filter((f) => f.chatId.equals(chatId) & f.isRead.equals(false))
+    await db.managers.messageStatusTable
+        .filter((f) => f.userId.equals(currentUser.id) & f.status.not("read"))
         .update(
-          (o) =>
-              o(isRead: const Value(true), messageStatus: const Value("read")),
+          (o) => o(
+            status: const Value("read"),
+            readAt: Value(now),
+            updatedAt: Value(now),
+          ),
         );
 
-    for (final msg in unreadMessages) {
+    for (final status in unreadStatuses) {
       ref.read(socketProvider).sendMessage("message_read", {
-        "message_id": msg.serverId ?? msg.id,
-        "chat_id": msg.chatId,
+        "message_id": status.messageId,
+        "chat_id": chatId,
       });
     }
 
@@ -581,5 +662,28 @@ class MessageNotifer extends Notifier {
         }
       });
     } catch (_) {}
+  }
+
+  Future<void> _retry(
+    Future<void> Function() action, {
+    int maxRetries = 3,
+    Duration delay = const Duration(milliseconds: 500),
+  }) async {
+    int attempt = 0;
+
+    while (true) {
+      try {
+        await action();
+        return;
+      } catch (e) {
+        attempt++;
+
+        if (attempt >= maxRetries) {
+          rethrow;
+        }
+
+        await Future.delayed(delay * attempt);
+      }
+    }
   }
 }

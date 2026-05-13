@@ -19,7 +19,7 @@ class ChatListModal {
     required this.lastMessage,
     required this.lastMessageTime,
     this.unReadCount = 0,
-    this.type = "dm",
+    this.type = "DIRECT",
   });
 
   factory ChatListModal.fromDrift(ChatListTableData data) {

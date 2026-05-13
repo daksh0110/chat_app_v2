@@ -7,13 +7,40 @@ import 'package:drift/drift.dart';
 class MessageWithSender {
   final Message message;
   final ChatParticipant participant;
+  final List<MessageStatusTableData> statuses;
+
+  final String overallStatus;
   final bool isGroupChat;
 
   MessageWithSender({
     required this.message,
     required this.participant,
+    required this.statuses,
+    required this.overallStatus,
     this.isGroupChat = false,
   });
+}
+
+String getOverallStatus(List<MessageStatusTableData> statuses) {
+  if (statuses.isEmpty) {
+    return "sent";
+  }
+
+  final allRead = statuses.every((s) => s.status == "read");
+
+  if (allRead) {
+    return "read";
+  }
+
+  final allDelivered = statuses.every(
+    (s) => s.status == "delivered" || s.status == "read",
+  );
+
+  if (allDelivered) {
+    return "delivered";
+  }
+
+  return "sent";
 }
 
 final chatMessagesProvider =
@@ -22,8 +49,7 @@ final chatMessagesProvider =
       ({String chatId, String receiverId})
     >((ref, args) {
       final db = ref.watch(databaseProvider);
-      debugPrint("real Chat Id ${args.chatId}");
-      debugPrint("receiver Chat Id ${args.receiverId}");
+
       final localChatId = args.chatId.isNotEmpty
           ? args.chatId
           : "local_${args.receiverId}";
@@ -34,6 +60,11 @@ final chatMessagesProvider =
           db.chatParticipants.userId.equalsExp(db.messages.senderId) &
               db.chatParticipants.chatId.equalsExp(db.messages.chatId),
         ),
+
+        leftOuterJoin(
+          db.messageStatusTable,
+          db.messageStatusTable.messageId.equalsExp(db.messages.serverId),
+        ),
       ]);
 
       query.where(
@@ -42,12 +73,41 @@ final chatMessagesProvider =
       );
 
       query.orderBy([OrderingTerm.asc(db.messages.createdAt)]);
+
       return query.watch().map((rows) {
-        return rows.map((row) {
+        final Map<String, MessageWithSender> grouped = {};
+
+        for (final row in rows) {
+          final message = row.readTable(db.messages);
+
+          final participant = row.readTable(db.chatParticipants);
+
+          final status = row.readTableOrNull(db.messageStatusTable);
+
+          final key = message.serverId ?? message.id;
+
+          if (!grouped.containsKey(key)) {
+            grouped[key] = MessageWithSender(
+              message: message,
+              participant: participant,
+              statuses: [],
+              overallStatus: "sent",
+              isGroupChat: false,
+            );
+          }
+
+          if (status != null) {
+            grouped[key]!.statuses.add(status);
+          }
+        }
+
+        return grouped.values.map((item) {
           return MessageWithSender(
-            message: row.readTable(db.messages),
-            participant: row.readTable(db.chatParticipants),
-            isGroupChat: false,
+            message: item.message,
+            participant: item.participant,
+            statuses: item.statuses,
+            overallStatus: getOverallStatus(item.statuses),
+            isGroupChat: item.isGroupChat,
           );
         }).toList();
       });

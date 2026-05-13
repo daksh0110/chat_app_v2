@@ -10,6 +10,6 @@ class MessageScreenArguments {
     required this.name,
     this.profilePicUrl,
     this.receiverId = "",
-    this.isGroupChat = "dm",
+    this.isGroupChat = "DIRECT",
   });
 }
