@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/core/database.dart';
 import 'package:my_app/providers/database_provider.dart';
@@ -21,18 +20,36 @@ class MessageWithSender {
   });
 }
 
-String getOverallStatus(List<MessageStatusTableData> statuses) {
-  if (statuses.isEmpty) {
-    return "sent";
+String getOverallStatus(
+  List<MessageStatusTableData> statuses, {
+  String? senderId,
+  String fallback = "sending",
+}) {
+  final filteredStatuses = senderId == null
+      ? statuses
+      : statuses.where((s) => s.userId != senderId).toList();
+
+  final effectiveStatuses = filteredStatuses.isNotEmpty
+      ? filteredStatuses
+      : statuses;
+
+  if (effectiveStatuses.isEmpty) {
+    return fallback;
   }
 
-  final allRead = statuses.every((s) => s.status == "read");
+  if (effectiveStatuses.any((s) => s.status == "failed")) {
+    return "failed";
+  }
 
-  if (allRead) {
+  if (effectiveStatuses.every((s) => s.status == "read")) {
     return "read";
   }
 
-  final allDelivered = statuses.every(
+  if (effectiveStatuses.any((s) => s.status == "sending")) {
+    return "sending";
+  }
+
+  final allDelivered = effectiveStatuses.every(
     (s) => s.status == "delivered" || s.status == "read",
   );
 
@@ -40,7 +57,11 @@ String getOverallStatus(List<MessageStatusTableData> statuses) {
     return "delivered";
   }
 
-  return "sent";
+  if (effectiveStatuses.any((s) => s.status == "sent")) {
+    return "sent";
+  }
+
+  return fallback;
 }
 
 final chatMessagesProvider =
@@ -84,7 +105,7 @@ final chatMessagesProvider =
 
           final status = row.readTableOrNull(db.messageStatusTable);
 
-          final key = message.serverId ?? message.id;
+          final key = message.id;
 
           if (!grouped.containsKey(key)) {
             grouped[key] = MessageWithSender(
@@ -106,7 +127,11 @@ final chatMessagesProvider =
             message: item.message,
             participant: item.participant,
             statuses: item.statuses,
-            overallStatus: getOverallStatus(item.statuses),
+            overallStatus: getOverallStatus(
+              item.statuses,
+              senderId: item.message.senderId,
+              fallback: item.message.messageStatus,
+            ),
             isGroupChat: item.isGroupChat,
           );
         }).toList();

@@ -45,6 +45,40 @@ class MessageNotifer extends Notifier {
   bool _isProcessing = false;
   int _serverTimeOffset = 0;
 
+  final _statusQueue = Queue<Future<void> Function()>();
+  bool _isProcessingStatus = false;
+
+  Future<void> _processStatusQueue() async {
+    if (_isProcessingStatus) return;
+    _isProcessingStatus = true;
+
+    while (_statusQueue.isNotEmpty) {
+      final action = _statusQueue.removeFirst();
+      try {
+        await action();
+      } catch (e) {
+        debugPrint("Error in status queue: $e");
+      }
+    }
+
+    _isProcessingStatus = false;
+  }
+
+  int _statusRank(String status) {
+    switch (status) {
+      case "sending":
+        return 0;
+      case "sent":
+        return 1;
+      case "delivered":
+        return 2;
+      case "read":
+        return 3;
+      default:
+        return -1;
+    }
+  }
+
   Future<void> receiveMessage() async {
     ref.read(socketProvider).listen("receive_message", (dynamic data) {
       final chatId = data["chat_id"];
@@ -369,6 +403,7 @@ class MessageNotifer extends Notifier {
                   chatId: Value(realChatId),
                   createdAt: Value(createdAt),
                   messageStatus: const Value("sent"),
+                  id: Value(messageId),
                 ),
               );
           await database.managers.messageStatusTable
@@ -393,6 +428,7 @@ class MessageNotifer extends Notifier {
                 ),
               );
             }).toList(),
+            mode: InsertMode.insertOrReplace,
           );
           final chatSyncService = ChatSyncService(
             db: database,
@@ -420,25 +456,44 @@ class MessageNotifer extends Notifier {
     final db = ref.read(databaseProvider);
 
     ref.read(socketProvider).listen("message_delivered", (data) async {
-      await _retry(() async {
-        final payload = MessageDeliveredResponse.fromJson(data);
+      _statusQueue.add(() async {
+        await _retry(() async {
+          final payload = MessageDeliveredResponse.fromJson(data);
 
-        final status = payload.messageStatus;
+          final status = payload.messageStatus;
 
-        await db.managers.messageStatusTable
-            .filter(
-              (f) =>
-                  f.messageId.equals(status.messageId) &
-                  f.userId.equals(status.userId),
-            )
-            .update(
-              (o) => o(
-                status: Value(status.status),
-                deliveredAt: Value(_parseTimestamp(status.deliveredAt)),
-                updatedAt: Value(_parseTimestamp(status.updatedAt)),
-              ),
-            );
+          final existingRow = await db.managers.messageStatusTable
+              .filter(
+                (f) =>
+                    f.messageId.equals(status.messageId) &
+                    f.userId.equals(status.userId),
+              )
+              .getSingleOrNull();
+
+          if (existingRow == null) {
+            throw Exception("Status row not found yet, retrying...");
+          }
+
+          if (_statusRank(status.status) <= _statusRank(existingRow.status)) {
+            return;
+          }
+
+          await db.managers.messageStatusTable
+              .filter(
+                (f) =>
+                    f.messageId.equals(status.messageId) &
+                    f.userId.equals(status.userId),
+              )
+              .update(
+                (o) => o(
+                  status: Value(status.status),
+                  deliveredAt: Value(_parseTimestamp(status.deliveredAt)),
+                  updatedAt: Value(_parseTimestamp(status.updatedAt)),
+                ),
+              );
+        });
       });
+      _processStatusQueue();
     });
   }
 
@@ -446,25 +501,44 @@ class MessageNotifer extends Notifier {
     final db = ref.read(databaseProvider);
 
     ref.read(socketProvider).listen("message_read", (data) async {
-      await _retry(() async {
-        final payload = MessageReadResponse.fromJson(data);
+      _statusQueue.add(() async {
+        await _retry(() async {
+          final payload = MessageReadResponse.fromJson(data);
 
-        final status = payload.messageStatus;
+          final status = payload.messageStatus;
 
-        await db.managers.messageStatusTable
-            .filter(
-              (f) =>
-                  f.messageId.equals(status.messageId) &
-                  f.userId.equals(status.userId),
-            )
-            .update(
-              (o) => o(
-                status: Value(status.status),
-                readAt: Value(_parseTimestamp(status.readAt)),
-                updatedAt: Value(_parseTimestamp(status.updatedAt)),
-              ),
-            );
+          final existingRow = await db.managers.messageStatusTable
+              .filter(
+                (f) =>
+                    f.messageId.equals(status.messageId) &
+                    f.userId.equals(status.userId),
+              )
+              .getSingleOrNull();
+
+          if (existingRow == null) {
+            throw Exception("Status row not found yet, retrying...");
+          }
+
+          if (_statusRank(status.status) <= _statusRank(existingRow.status)) {
+            return;
+          }
+
+          await db.managers.messageStatusTable
+              .filter(
+                (f) =>
+                    f.messageId.equals(status.messageId) &
+                    f.userId.equals(status.userId),
+              )
+              .update(
+                (o) => o(
+                  status: Value(status.status),
+                  readAt: Value(_parseTimestamp(status.readAt)),
+                  updatedAt: Value(_parseTimestamp(status.updatedAt)),
+                ),
+              );
+        });
       });
+      _processStatusQueue();
     });
   }
 
@@ -573,6 +647,7 @@ class MessageNotifer extends Notifier {
                   chatId: Value(chatId),
                   createdAt: Value(createdAt),
                   messageStatus: const Value("sent"),
+                  id: Value(messageId),
                 ),
               );
         },
