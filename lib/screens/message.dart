@@ -15,6 +15,7 @@ import 'package:my_app/widgets/screens/message/date_banner.dart';
 import 'package:my_app/widgets/screens/message/header.dart';
 import 'package:my_app/widgets/screens/message/message_item.dart';
 import 'package:my_app/widgets/screens/message/typing_indicator.dart';
+import 'package:drift/drift.dart' hide Column;
 
 class MessageScreen extends ConsumerStatefulWidget {
   const MessageScreen({super.key});
@@ -40,9 +41,14 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
     _chatListController = ref.read(chatListControllerProvider);
   }
 
+  bool _initialized = false;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (_initialized) return;
+    _initialized = true;
+
     final args =
         ModalRoute.of(context)!.settings.arguments as MessageScreenArguments;
 
@@ -89,9 +95,13 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
       socketService.checkUserStatus(receiverId);
     }
 
-    Future.microtask(() {
-      ref.read(messageProvider.notifier).markChatMessagesRead(chatId);
-    });
+    if (chatId.isEmpty && receiverId.isNotEmpty) {
+      _resolveChatId();
+    } else {
+      Future.microtask(() {
+        ref.read(messageProvider.notifier).markChatMessagesRead(chatId);
+      });
+    }
   }
 
   @override
@@ -110,9 +120,15 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
           receiverName: name,
           chatId: chatId,
           onChatResolved: (realId) {
-            setState(() {
-              chatId = realId;
-            });
+            if (mounted) {
+              setState(() {
+                chatId = realId;
+              });
+              if (_lastActiveUserId != realId) {
+                _lastActiveUserId = realId;
+                _chatListController.setActiveChatId(realId);
+              }
+            }
           },
         );
   }
@@ -138,6 +154,38 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
       return participants.firstWhere((p) => p.userId != currentUser.id).userId;
     } catch (_) {
       return null;
+    }
+  }
+
+  Future<void> _resolveChatId() async {
+    final db = ref.read(databaseProvider);
+    final currentUser = ref.read(settingsUserProvider);
+    if (currentUser == null || receiverId.isEmpty) return;
+
+    final participantRows = await db.managers.chatParticipants
+        .filter((f) => f.userId.equals(receiverId))
+        .get();
+
+    for (final p in participantRows) {
+      final chat = await db.managers.chatListTable
+          .filter((f) => f.chatId.equals(p.chatId) & f.type.equals("DIRECT"))
+          .getSingleOrNull();
+
+      if (chat != null && mounted) {
+        setState(() {
+          chatId = chat.chatId;
+        });
+
+        if (_lastActiveUserId != chatId) {
+          _lastActiveUserId = chatId;
+          _chatListController.setActiveChatId(chatId);
+        }
+
+        Future.microtask(() {
+          ref.read(messageProvider.notifier).markChatMessagesRead(chatId);
+        });
+        break;
+      }
     }
   }
 
