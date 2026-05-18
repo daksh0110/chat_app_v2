@@ -79,8 +79,18 @@ class MessageNotifer extends Notifier {
     }
   }
 
+  void _acknowledgeEvent(dynamic data) {
+    if (data is Map && data.containsKey('sequence')) {
+      final sequence = data['sequence'];
+      if (sequence != null) {
+        ref.read(socketProvider).sendMessage('chat_event_ack', {'sequence': sequence});
+      }
+    }
+  }
+
   Future<void> receiveMessage() async {
     ref.read(socketProvider).listen("receive_message", (dynamic data) {
+      _acknowledgeEvent(data);
       final chatId = data["chat_id"];
       if (chatId != null) {
         ref.read(messageTypingProvider.notifier).clearTyping(chatId);
@@ -456,6 +466,7 @@ class MessageNotifer extends Notifier {
     final db = ref.read(databaseProvider);
 
     ref.read(socketProvider).listen("message_delivered", (data) async {
+      _acknowledgeEvent(data);
       _statusQueue.add(() async {
         await _retry(() async {
           final payload = MessageDeliveredResponse.fromJson(data);
@@ -501,6 +512,7 @@ class MessageNotifer extends Notifier {
     final db = ref.read(databaseProvider);
 
     ref.read(socketProvider).listen("message_read", (data) async {
+      _acknowledgeEvent(data);
       _statusQueue.add(() async {
         await _retry(() async {
           final payload = MessageReadResponse.fromJson(data);
@@ -714,6 +726,7 @@ class MessageNotifer extends Notifier {
   Future<void> groupChatCreatedListener() async {
     try {
       ref.read(socketProvider).listen("group-created", (dynamic data) async {
+        _acknowledgeEvent(data);
         final db = ref.read(databaseProvider);
         final currentUser = ref.read(settingsUserProvider);
         if (currentUser == null || currentUser.accessToken.isEmpty) return;
