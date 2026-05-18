@@ -202,10 +202,11 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: Header(
-        id: receiverId,
+        id: isGroupChat == "GROUP" ? chatId : receiverId,
         name: name,
         isOnline: _isOnline,
         profilePicUrl: args.profilePicUrl,
+        isGroupChat: isGroupChat == "GROUP",
       ),
       body: SafeArea(
         child: Column(
