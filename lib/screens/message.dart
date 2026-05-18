@@ -34,11 +34,25 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
   String? _lastActiveUserId;
   bool _isOnline = false;
   late final ChatListController _chatListController;
+  final Set<String> _onlineGroupMembers = {};
+  List<String> _groupParticipantIds = [];
   @override
   void initState() {
     super.initState();
 
     _chatListController = ref.read(chatListControllerProvider);
+  }
+
+  Future<void> _loadGroupParticipants() async {
+    final db = ref.read(databaseProvider);
+    final participants = await db.managers.chatParticipants
+        .filter((f) => f.chatId.equals(chatId))
+        .get();
+    if (mounted) {
+      setState(() {
+        _groupParticipantIds = participants.map((p) => p.userId).toList();
+      });
+    }
   }
 
   bool _initialized = false;
@@ -55,6 +69,7 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
     chatId = args.chatId;
     receiverId = args.receiverId;
     name = args.name;
+    final isGroup = args.isGroupChat == "GROUP";
 
     if (_lastActiveUserId != chatId) {
       _lastActiveUserId = chatId;
@@ -69,30 +84,65 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
       }
     });
 
+    socketService.getGroupStatus((data) {
+      if (data["chatId"] == chatId && mounted) {
+        setState(() {
+          _onlineGroupMembers.clear();
+          _onlineGroupMembers.addAll(List<String>.from(data["onlineMembers"]));
+        });
+      }
+    });
+
     socketService.listenUserOnline((data) {
-      if (data["userId"] == receiverId && mounted) {
-        setState(() => _isOnline = true);
+      final userId = data["userId"];
+      if (mounted) {
+        if (isGroup) {
+          if (_groupParticipantIds.contains(userId)) {
+            setState(() {
+              _onlineGroupMembers.add(userId);
+            });
+          }
+        } else {
+          if (userId == receiverId) {
+            setState(() => _isOnline = true);
+          }
+        }
       }
     });
 
     socketService.listenUserOffline((data) {
-      if (data["userId"] == receiverId && mounted) {
-        setState(() => _isOnline = false);
+      final userId = data["userId"];
+      if (mounted) {
+        if (isGroup) {
+          setState(() {
+            _onlineGroupMembers.remove(userId);
+          });
+        } else {
+          if (userId == receiverId) {
+            setState(() => _isOnline = false);
+          }
+        }
       }
     });
 
-    if (receiverId.isEmpty) {
-      _resolveReceiverId(chatId).then((id) {
-        if (id != null && mounted) {
-          setState(() {
-            receiverId = id;
-          });
-
-          socketService.checkUserStatus(receiverId);
-        }
+    if (isGroup) {
+      _loadGroupParticipants().then((_) {
+        socketService.checkGroupStatus(chatId);
       });
     } else {
-      socketService.checkUserStatus(receiverId);
+      if (receiverId.isEmpty) {
+        _resolveReceiverId(chatId).then((id) {
+          if (id != null && mounted) {
+            setState(() {
+              receiverId = id;
+            });
+
+            socketService.checkUserStatus(receiverId);
+          }
+        });
+      } else {
+        socketService.checkUserStatus(receiverId);
+      }
     }
 
     if (chatId.isEmpty && receiverId.isNotEmpty) {
@@ -196,8 +246,18 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
         ModalRoute.of(context)!.settings.arguments as MessageScreenArguments;
     final String name = args.name;
     final String isGroupChat = args.isGroupChat;
+    final isGroup = isGroupChat == "GROUP";
     final currentUser = ref.watch(settingsUserProvider);
     final isTyping = typingMap[chatId] == true;
+
+    final onlineCount = currentUser != null
+        ? _onlineGroupMembers.where((id) => id != currentUser.id).length
+        : _onlineGroupMembers.length;
+    final totalMembers = _groupParticipantIds.length;
+
+    final subtitle = isGroup
+        ? (onlineCount > 0 ? "$onlineCount online" : "$totalMembers members")
+        : null;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -207,6 +267,7 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
         isOnline: _isOnline,
         profilePicUrl: args.profilePicUrl,
         isGroupChat: isGroupChat == "GROUP",
+        subtitle: subtitle,
       ),
       body: SafeArea(
         child: Column(

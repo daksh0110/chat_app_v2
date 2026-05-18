@@ -78,6 +78,16 @@ class SocketService {
     socket!.on("user_status", callback);
   }
 
+  void checkGroupStatus(String chatId) {
+    if (socket == null || !socket!.connected) return;
+    socket!.emit("check_group_status", {"chatId": chatId});
+  }
+
+  void getGroupStatus(void Function(dynamic data) callback) {
+    if (socket == null) return;
+    socket!.on("group_status", callback);
+  }
+
   void createGroup(
     Map<String, dynamic> data, [
     Function(CreateGroupResponse)? onAck,

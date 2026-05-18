@@ -14,6 +14,7 @@ class Header extends StatefulWidget implements PreferredSizeWidget {
     required this.isOnline,
     this.profilePicUrl,
     this.isGroupChat = false,
+    this.subtitle,
   });
 
   final String name;
@@ -21,6 +22,7 @@ class Header extends StatefulWidget implements PreferredSizeWidget {
   final bool isOnline;
   final bool isGroupChat;
   final String? profilePicUrl;
+  final String? subtitle;
 
   @override
   Size get preferredSize {
@@ -72,11 +74,15 @@ class _HeaderState extends State<Header> {
         child: SearchGroupItem(
           height: toolbarHeight - 8,
           chatBubbleSize: toolbarHeight - 12,
-          needActiveIndicator: widget.isOnline,
+          needActiveIndicator: widget.isGroupChat
+              ? (widget.subtitle != null &&
+                  widget.subtitle!.isNotEmpty &&
+                  !widget.subtitle!.startsWith("0 "))
+              : widget.isOnline,
           item: SearchItem(
             id: widget.id,
             name: widget.name,
-            subtitle: widget.isOnline ? "active now" : "",
+            subtitle: widget.subtitle ?? (widget.isOnline ? "active now" : ""),
             profilePicUrl: widget.profilePicUrl,
           ),
         ),
