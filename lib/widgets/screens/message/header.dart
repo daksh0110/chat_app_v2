@@ -3,6 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/modal/screens/search/search_item.dart';
+import 'package:my_app/modal/screens/search/user_profile_arguments.dart';
 import 'package:my_app/widgets/screens/search/search_group_item.dart';
 
 class Header extends StatefulWidget implements PreferredSizeWidget {
@@ -12,13 +13,16 @@ class Header extends StatefulWidget implements PreferredSizeWidget {
     required this.id,
     required this.isOnline,
     this.profilePicUrl,
+    this.isGroupChat = false,
+    this.subtitle,
   });
 
   final String name;
   final String id;
   final bool isOnline;
+  final bool isGroupChat;
   final String? profilePicUrl;
-
+  final String? subtitle;
 
   @override
   Size get preferredSize {
@@ -58,18 +62,27 @@ class _HeaderState extends State<Header> {
           Navigator.pushNamed(
             context,
             AppRoutes.userProfile,
-            arguments: widget.id,
+            arguments: UserProfileArguments(
+              id: widget.id,
+              isGroupChat: widget.isGroupChat,
+              name: widget.name,
+              profilePicUrl: widget.profilePicUrl,
+            ),
           );
         },
         borderRadius: BorderRadius.circular(8),
         child: SearchGroupItem(
           height: toolbarHeight - 8,
           chatBubbleSize: toolbarHeight - 12,
-          needActiveIndicator: widget.isOnline,
+          needActiveIndicator: widget.isGroupChat
+              ? (widget.subtitle != null &&
+                  widget.subtitle!.isNotEmpty &&
+                  !widget.subtitle!.startsWith("0 "))
+              : widget.isOnline,
           item: SearchItem(
             id: widget.id,
             name: widget.name,
-            subtitle: widget.isOnline ? "active now" : "",
+            subtitle: widget.subtitle ?? (widget.isOnline ? "active now" : ""),
             profilePicUrl: widget.profilePicUrl,
           ),
         ),

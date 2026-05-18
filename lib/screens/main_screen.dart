@@ -1,7 +1,9 @@
 import 'package:flip_card/flip_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
+import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/data/navigation_menu.dart';
 import 'package:my_app/modal/chat_list_modal.dart';
 import 'package:my_app/providers/chat_list_provider.dart';
@@ -73,6 +75,14 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         }
       },
       child: Scaffold(
+        floatingActionButton: currentActive == 0
+            ? FloatingActionButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, AppRoutes.createGroupChat);
+                },
+                child: Icon(LucideIcons.plus),
+              )
+            : null,
         backgroundColor: Colors.black,
         appBar: currentItem.appBar(context),
         body: screens[currentActive],

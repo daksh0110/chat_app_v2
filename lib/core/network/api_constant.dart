@@ -3,4 +3,5 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class ApiConstants {
   static String baseUrl = "${dotenv.env['BASE_URL']}/api";
   static const String users = "/users";
+  static const String chats = "/chats";
 }

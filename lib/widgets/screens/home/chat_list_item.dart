@@ -23,7 +23,8 @@ class ChatListItem extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final typingMap = ref.watch(messageTypingProvider);
     final isTyping = typingMap[chat.chatId] ?? false;
-    final isProfilePicValid = (chat.profilePicUrl != null &&
+    final isProfilePicValid =
+        (chat.profilePicUrl != null &&
             Uri.tryParse(chat.profilePicUrl!)?.hasAbsolutePath == true)
         ? true
         : false;
@@ -31,7 +32,9 @@ class ChatListItem extends ConsumerWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        splashColor: isSelected ? Colors.transparent : DefaultColorSheet.blue200,
+        splashColor: isSelected
+            ? Colors.transparent
+            : DefaultColorSheet.blue200,
         onLongPress: onHold,
         highlightColor: DefaultColorSheet.blue200,
         child: Ink(
@@ -54,7 +57,6 @@ class ChatListItem extends ConsumerWidget {
                         fit: BoxFit.cover,
                       )
                     : Container(
-
                         decoration: BoxDecoration(
                           color: Color(0xFF075E54),
                           shape: BoxShape.circle,
@@ -92,7 +94,7 @@ class ChatListItem extends ConsumerWidget {
                             color: DefaultColorSheet.green500,
                           )
                         : PrimaryText(
-                            chat.lastMessage,
+                            chat.lastMessage ?? "",
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             fontSize: 12,
@@ -108,7 +110,7 @@ class ChatListItem extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   PrimaryText(
-                    chat.lastMessageTime,
+                    chat.lastMessageTime ?? "",
                     fontSize: 12,
                     color: DefaultColorSheet.grey500,
                   ),

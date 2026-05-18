@@ -25,11 +25,28 @@ Widget _statusIcon(MessageStatus status) {
   }
 }
 
+Color _getSenderColor(String name) {
+  final colors = [
+    Colors.deepPurple,
+    Colors.blue,
+    Colors.teal,
+    Colors.orange,
+    Colors.pink,
+    Colors.green,
+    Colors.indigo,
+    Colors.red,
+  ];
+
+  return colors[name.hashCode % colors.length];
+}
+
 class MessageItem extends ConsumerWidget {
   final String message;
   final bool isSender;
   final MessageStatus? status;
   final int timestamp;
+  final String senderName;
+  final bool isGroupChat;
 
   const MessageItem({
     super.key,
@@ -37,6 +54,8 @@ class MessageItem extends ConsumerWidget {
     required this.isSender,
     this.status,
     required this.timestamp,
+    required this.senderName,
+    this.isGroupChat = false,
   });
 
   @override
@@ -45,7 +64,7 @@ class MessageItem extends ConsumerWidget {
       alignment: isSender ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        padding: EdgeInsets.fromLTRB(10, 14, 10, isSender ? 20 : 14),
+        padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
         constraints: BoxConstraints(
           maxWidth: MediaQuery.of(context).size.width * 0.7,
         ),
@@ -61,18 +80,34 @@ class MessageItem extends ConsumerWidget {
           ),
         ),
         child: Stack(
-          clipBehavior: Clip.none,
           children: [
             Padding(
-              padding: const EdgeInsets.only(right: 50, bottom: 2),
-              child: PrimaryText(
-                message,
-                color: isSender ? Colors.white : Colors.black,
+              padding: const EdgeInsets.only(right: 45, bottom: 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (!isSender && isGroupChat) ...[
+                    PrimaryText(
+                      senderName,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: _getSenderColor(senderName),
+                    ),
+
+                    const SizedBox(height: 2),
+                  ],
+
+                  PrimaryText(
+                    message,
+                    color: isSender ? Colors.white : Colors.black,
+                  ),
+                ],
               ),
             ),
 
             Positioned(
-              bottom: -10,
+              bottom: 0,
               right: 0,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
