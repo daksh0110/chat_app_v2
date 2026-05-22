@@ -4,22 +4,28 @@ import 'dart:collection';
 import 'package:drift/drift.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:my_app/core/database.dart';
 import 'package:my_app/core/network/api_client.dart';
+import 'package:my_app/core/util/get_file_type.dart';
 import 'package:my_app/data/services/chat_api_service.dart';
 import 'package:my_app/data/services/chat_sync_service.dart';
+import 'package:my_app/data/services/upload_service.dart';
 import 'package:my_app/data/services/user_api_service.dart';
 import 'package:my_app/modal/screens/createGroup/create_group_response.dart';
 import 'package:my_app/modal/screens/message/message_delivered_response.dart';
 import 'package:my_app/modal/screens/message/message_read_response.dart';
 import 'package:my_app/modal/screens/message/message_status.dart';
 import 'package:my_app/modal/screens/message/send_message_ack.dart';
+import 'package:my_app/modal/upload_responses/presigned_url_response.dart';
+import 'package:my_app/modal/upload_responses/upload_attachment.dart';
 import 'package:my_app/providers/chat_list_provider.dart';
 import 'package:my_app/providers/database_provider.dart';
 import 'package:my_app/providers/message_typing_provider.dart';
 import 'package:my_app/providers/settings_user_notifier_provider.dart';
 import 'package:my_app/providers/socket_provider.dart';
 import 'package:uuid/uuid.dart';
+import 'package:mime/mime.dart';
 
 int _parseTimestamp(dynamic ts) {
   if (ts == null) return DateTime.now().millisecondsSinceEpoch;
@@ -83,7 +89,9 @@ class MessageNotifer extends Notifier {
     if (data is Map && data.containsKey('sequence')) {
       final sequence = data['sequence'];
       if (sequence != null) {
-        ref.read(socketProvider).sendMessage('chat_event_ack', {'sequence': sequence});
+        ref.read(socketProvider).sendMessage('chat_event_ack', {
+          'sequence': sequence,
+        });
       }
     }
   }
@@ -189,6 +197,22 @@ class MessageNotifer extends Notifier {
         mode: InsertMode.insertOrIgnore,
       );
 
+      if (data.attachments.isNotEmpty) {
+        await database.managers.mediaTable.bulkCreate(
+          (o) => data.attachments.map<Insertable<MediaTableData>>((attachment) => o(
+            createdAt: createdAt,
+            actorId: Value(messageId),
+            key: Value(attachment.key),
+            url: Value(attachment.url),
+            Type: Value(attachment.type),
+            contentType: Value(attachment.contentType),
+            name: Value(attachment.name),
+            location: const Value(null),
+          )).toList(),
+          mode: InsertMode.insertOrIgnore,
+        );
+      }
+
       final existingChat = await (database.select(
         database.chatListTable,
       )..where((c) => c.chatId.equals(chatId))).getSingleOrNull();
@@ -272,17 +296,19 @@ class MessageNotifer extends Notifier {
     );
   }
 
-  Future<void> sendMessagea({
-    required String message,
+  Future<void> sendMessage({
+    String message = "",
     required String receiverId,
     required String receiverName,
+    List<XFile> attachments = const [],
     String chatId = "",
     void Function(String realChatId)? onChatResolved,
   }) async {
-    print(" Sending message: $message to $receiverId in chat $chatId");
     try {
       final database = ref.read(databaseProvider);
       final user = ref.read(settingsUserProvider);
+      final List<UploadAttachment> uploadedAttachments = [];
+
       if (user == null) return;
 
       final now = DateTime.now().millisecondsSinceEpoch + _serverTimeOffset;
@@ -346,7 +372,23 @@ class MessageNotifer extends Notifier {
             messageStatus: const Value("sending"),
             createdAt: now,
           ),
+
+          mode: InsertMode.insertOrIgnore,
         );
+        for (final attachment in attachments) {
+          final mime =
+              lookupMimeType(attachment.path) ?? "application/octet-stream";
+          await database.managers.mediaTable.create(
+            (o) => o(
+              createdAt: now,
+              actorId: Value(tempId),
+              Type: Value(getMediaType(mime)),
+              contentType: Value(mime),
+              location: Value(attachment.path),
+              name: Value(attachment.name),
+            ),
+          );
+        }
 
         final participants = await database.managers.chatParticipants
             .filter((f) => f.chatId.equals(currentChatId))
@@ -373,12 +415,52 @@ class MessageNotifer extends Notifier {
         );
       });
       final isRealChat = !currentChatId.startsWith("local_");
+      if (attachments.isNotEmpty) {
+        final futures = attachments.map((attachment) async {
+          final mime =
+              lookupMimeType(attachment.path) ?? "application/octet-stream";
+
+          final presignedUrl = await UploadService(ApiClient()).getPresignedUrl(
+            assetType: "chat",
+            entityType: "attachments",
+            contentType: mime,
+            entityId: chatId,
+          );
+
+          if (!presignedUrl.success) {
+            return null;
+          }
+
+          final response = presignedUrl.data!;
+          final result = await UploadService(ApiClient()).uploadToSignedUrl(
+            await attachment.readAsBytes(),
+            response.url,
+            mime,
+          );
+
+          if (result == 200) {
+            return UploadAttachment(
+              contentType: mime,
+              key: response.key ?? "",
+              type: getMediaType(mime),
+              name: attachment.name,
+            );
+          }
+
+          return null;
+        }).toList();
+
+        final uploaded = await Future.wait(futures);
+
+        uploadedAttachments.addAll(uploaded.whereType<UploadAttachment>());
+      }
       ref.read(socketProvider).sendMessageWithAck(
         "send_message",
         {
           "message": message,
           "receiver_id": receiverId,
           "temp_id": tempId,
+          "attachments": uploadedAttachments.map((e) => e.toJson()).toList(),
           if (isRealChat) "chat_id": currentChatId,
         },
         (response) async {
@@ -416,6 +498,27 @@ class MessageNotifer extends Notifier {
                   id: Value(messageId),
                 ),
               );
+          await database.managers.mediaTable
+              .filter((f) => f.actorId.equals(tempId))
+              .update((o) => o(actorId: Value(messageId)));
+
+          final ackAttachments = payload.attachments;
+          if (ackAttachments.isNotEmpty) {
+            final localMedias = await database.managers.mediaTable
+                .filter((f) => f.actorId.equals(messageId))
+                .get();
+            for (int i = 0; i < localMedias.length; i++) {
+              if (i < ackAttachments.length) {
+                final att = ackAttachments[i];
+                await database.managers.mediaTable
+                    .filter((f) => f.id.equals(localMedias[i].id))
+                    .update((o) => o(
+                      key: Value(att.key),
+                      url: Value(att.url),
+                    ));
+              }
+            }
+          }
           await database.managers.messageStatusTable
               .filter((f) => f.messageId.equals(tempId))
               .delete();

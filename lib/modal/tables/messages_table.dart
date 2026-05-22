@@ -10,6 +10,7 @@ class Messages extends Table {
   IntColumn get createdAt => integer()();
   BoolColumn get isRead => boolean().withDefault(const Constant(false))();
   TextColumn get serverId => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }

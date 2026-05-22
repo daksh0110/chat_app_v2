@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/core/database.dart';
 import 'package:my_app/core/network/api_client.dart';
@@ -28,6 +29,7 @@ class SettingsUserNotifier extends Notifier<UserInfoSetting?> {
 
     final apiClient = ApiClient();
     final userInfo = await UserApiService(apiClient).getMyProfile(token: token);
+    debugPrint("User profile: ${token}");
     final profile = userInfo.data!;
     final user = UserInfoSetting(
       id: profile.id,

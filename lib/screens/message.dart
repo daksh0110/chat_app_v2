@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:my_app/core/util/getDatelabel.dart';
 import 'package:my_app/core/util/status_map.dart';
 import 'package:my_app/modal/screens/search/message_screen_arguments.dart';
@@ -161,14 +162,15 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
     super.dispose();
   }
 
-  void _handleSend(String text) async {
+  void _handleSend(String text, List<XFile> attachments) async {
     ref
         .read(messageProvider.notifier)
-        .sendMessagea(
+        .sendMessage(
           message: text,
           receiverId: receiverId,
           receiverName: name,
           chatId: chatId,
+          attachments: attachments,
           onChatResolved: (realId) {
             if (mounted) {
               setState(() {
@@ -320,6 +322,7 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
                               if (showBanner) DateBanner(label: currentLabel),
 
                               MessageItem(
+                                attachments: item.attachments,
                                 message: msg.message,
                                 isSender: msg.senderId == currentUser.id,
                                 status: msg.senderId == currentUser.id
