@@ -2,10 +2,19 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiClient {
-  Future<dynamic> post(String url, Map<String, dynamic> body) async {
+  Future<dynamic> post(
+    String url,
+    Map<String, dynamic> body, {
+    String? token,
+  }) async {
     final response = await http.post(
       Uri.parse(url),
-      headers: {"Content-Type": "application/json"},
+      headers: token != null
+          ? {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer $token",
+            }
+          : {"Content-Type": "application/json"},
       body: jsonEncode(body),
     );
 

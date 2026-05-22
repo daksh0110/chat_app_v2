@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:my_app/modal/tables/chat_list_table.dart';
 import 'package:my_app/modal/tables/chat_participant_table.dart';
+import 'package:my_app/modal/tables/media_modal.dart';
 import 'package:my_app/modal/tables/message_status_table.dart';
 import 'package:my_app/modal/tables/messages_table.dart';
 import 'package:my_app/modal/tables/user_table.dart';
@@ -20,13 +21,14 @@ part 'database.g.dart';
     UsersTable,
     ChatParticipants,
     MessageStatusTable,
+    MediaTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration {
@@ -35,7 +37,7 @@ class AppDatabase extends _$AppDatabase {
         await m.createAll();
       },
       onUpgrade: (m, from, to) async {
-        if (from < 2) {
+        if (from < 4) {
           // Simplest migration for dev: delete and recreate all tables
           for (final table in allTables) {
             await m.deleteTable(table.actualTableName);

@@ -1,4 +1,5 @@
 import 'package:my_app/modal/screens/message/message_status.dart';
+import 'package:my_app/modal/upload_responses/upload_attachment.dart';
 
 class SendMessageAck {
   final String tempId;
@@ -8,6 +9,7 @@ class SendMessageAck {
   final String senderId;
   final int createdAt;
   final List<MessageStatus> messageStatuses;
+  final List<UploadAttachment> attachments;
 
   SendMessageAck({
     required this.messageId,
@@ -16,6 +18,7 @@ class SendMessageAck {
     required this.senderId,
     required this.createdAt,
     required this.messageStatuses,
+    this.attachments = const [],
     this.tempId = "",
   });
 
@@ -27,6 +30,11 @@ class SendMessageAck {
       message: json['message'],
       senderId: json['sender_id'],
       createdAt: json['created_at'],
+      attachments: json['attachments'] != null
+          ? (json['attachments'] as List)
+              .map((att) => UploadAttachment.fromJson(Map<String, dynamic>.from(att)))
+              .toList()
+          : [],
       messageStatuses: (json['message_statuses'] as List)
           .map(
             (status) => MessageStatus(

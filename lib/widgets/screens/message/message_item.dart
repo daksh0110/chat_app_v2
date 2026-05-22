@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
+import 'package:my_app/core/database.dart';
 import 'package:my_app/modal/screens/message/message_modal.dart';
+import 'package:my_app/modal/tables/media_modal.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
+import 'package:my_app/widgets/screens/message/attachments_list_widget.dart';
 
 Widget _statusIcon(MessageStatus status) {
   switch (status) {
@@ -47,6 +50,7 @@ class MessageItem extends ConsumerWidget {
   final int timestamp;
   final String senderName;
   final bool isGroupChat;
+  final List<MediaTableData> attachments;
 
   const MessageItem({
     super.key,
@@ -56,6 +60,7 @@ class MessageItem extends ConsumerWidget {
     required this.timestamp,
     required this.senderName,
     this.isGroupChat = false,
+    this.attachments = const [],
   });
 
   @override
@@ -82,7 +87,7 @@ class MessageItem extends ConsumerWidget {
         child: Stack(
           children: [
             Padding(
-              padding: const EdgeInsets.only(right: 45, bottom: 14),
+              padding: const EdgeInsets.only(right: 0, bottom: 14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -98,10 +103,16 @@ class MessageItem extends ConsumerWidget {
                     const SizedBox(height: 2),
                   ],
 
-                  PrimaryText(
-                    message,
-                    color: isSender ? Colors.white : Colors.black,
-                  ),
+                  if (attachments.isNotEmpty) ...[
+                    AttachmentsListWidget(attachments: attachments),
+                    if (message.isNotEmpty) const SizedBox(height: 6),
+                  ],
+
+                  if (message.isNotEmpty)
+                    PrimaryText(
+                      message,
+                      color: isSender ? Colors.white : Colors.black,
+                    ),
                 ],
               ),
             ),

@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/core/database.dart';
+import 'package:my_app/modal/upload_responses/upload_attachment.dart';
 import 'package:my_app/providers/database_provider.dart';
 import 'package:drift/drift.dart';
 
@@ -7,7 +8,7 @@ class MessageWithSender {
   final Message message;
   final ChatParticipant participant;
   final List<MessageStatusTableData> statuses;
-
+  final List<MediaTableData> attachments;
   final String overallStatus;
   final bool isGroupChat;
 
@@ -15,6 +16,7 @@ class MessageWithSender {
     required this.message,
     required this.participant,
     required this.statuses,
+    required this.attachments,
     required this.overallStatus,
     this.isGroupChat = false,
   });
@@ -75,65 +77,90 @@ final chatMessagesProvider =
           ? args.chatId
           : "local_${args.receiverId}";
 
-      final query = db.select(db.messages).join([
-        innerJoin(
-          db.chatParticipants,
-          db.chatParticipants.userId.equalsExp(db.messages.senderId) &
-              db.chatParticipants.chatId.equalsExp(db.messages.chatId),
-        ),
+      Stream<List<MessageWithSender>> resultStream;
 
-        leftOuterJoin(
-          db.messageStatusTable,
-          db.messageStatusTable.messageId.equalsExp(db.messages.serverId),
-        ),
-      ]);
+      try {
+        final query = db.select(db.messages).join([
+          innerJoin(
+            db.chatParticipants,
+            db.chatParticipants.userId.equalsExp(db.messages.senderId) &
+                db.chatParticipants.chatId.equalsExp(db.messages.chatId),
+          ),
 
-      query.where(
-        db.messages.chatId.equals(args.chatId) |
-            db.messages.chatId.equals(localChatId),
-      );
+          leftOuterJoin(
+            db.messageStatusTable,
+            db.messageStatusTable.messageId.equalsExp(db.messages.serverId),
+          ),
+          leftOuterJoin(
+            db.mediaTable,
+            db.mediaTable.actorId.equalsExp(db.messages.serverId) |
+                db.mediaTable.actorId.equalsExp(db.messages.id),
+          ),
+        ]);
 
-      query.orderBy([OrderingTerm.asc(db.messages.createdAt)]);
+        query.where(
+          db.messages.chatId.equals(args.chatId) |
+              db.messages.chatId.equals(localChatId),
+        );
 
-      return query.watch().map((rows) {
-        final Map<String, MessageWithSender> grouped = {};
+        query.orderBy([OrderingTerm.asc(db.messages.createdAt)]);
 
-        for (final row in rows) {
-          final message = row.readTable(db.messages);
+        resultStream = query.watch().map((rows) {
+          final Map<String, MessageWithSender> grouped = {};
 
-          final participant = row.readTable(db.chatParticipants);
+          for (final row in rows) {
+            final message = row.readTable(db.messages);
 
-          final status = row.readTableOrNull(db.messageStatusTable);
+            final participant = row.readTable(db.chatParticipants);
 
-          final key = message.id;
+            final status = row.readTableOrNull(db.messageStatusTable);
+            final media = row.readTableOrNull(db.mediaTable);
 
-          if (!grouped.containsKey(key)) {
-            grouped[key] = MessageWithSender(
-              message: message,
-              participant: participant,
-              statuses: [],
-              overallStatus: "sent",
-              isGroupChat: false,
+            final key = message.id;
+
+            if (!grouped.containsKey(key)) {
+              grouped[key] = MessageWithSender(
+                message: message,
+                participant: participant,
+                statuses: [],
+                attachments: [],
+                overallStatus: "sent",
+                isGroupChat: false,
+              );
+            }
+
+            if (status != null) {
+              grouped[key]!.statuses.add(status);
+            }
+
+            if (media != null) {
+              grouped[key]!.attachments.add(media);
+            }
+          }
+
+          return grouped.values.map((item) {
+            return MessageWithSender(
+              message: item.message,
+              participant: item.participant,
+              statuses: item.statuses,
+              attachments: item.attachments,
+              overallStatus: getOverallStatus(
+                item.statuses,
+                senderId: item.message.senderId,
+                fallback: item.message.messageStatus,
+              ),
+              isGroupChat: item.isGroupChat,
             );
-          }
+          }).toList();
+        });
+      } catch (e, st) {
+        // Log error and return an empty list stream to prevent indefinite loading
+        // during runtime errors in the query construction or watch.
+        // This avoids crashing the UI — the caller can handle empty lists.
+        // You can remove or replace the print with a proper logger.
+        print('chatMessagesProvider error: $e\n$st');
+        resultStream = Stream.value([]);
+      }
 
-          if (status != null) {
-            grouped[key]!.statuses.add(status);
-          }
-        }
-
-        return grouped.values.map((item) {
-          return MessageWithSender(
-            message: item.message,
-            participant: item.participant,
-            statuses: item.statuses,
-            overallStatus: getOverallStatus(
-              item.statuses,
-              senderId: item.message.senderId,
-              fallback: item.message.messageStatus,
-            ),
-            isGroupChat: item.isGroupChat,
-          );
-        }).toList();
-      });
+      return resultStream;
     });
