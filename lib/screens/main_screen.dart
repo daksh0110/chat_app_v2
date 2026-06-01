@@ -1,10 +1,14 @@
 import 'package:flip_card/flip_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/core/app_routes.dart';
+import 'package:my_app/core/network/api_client.dart';
 import 'package:my_app/data/navigation_menu.dart';
+import 'package:my_app/data/services/user_api_service.dart';
 import 'package:my_app/modal/chat_list_modal.dart';
 import 'package:my_app/providers/chat_list_provider.dart';
 import 'package:my_app/providers/database_provider.dart';
@@ -39,6 +43,29 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       // const SettingsMain(),
       const SettingsMain(),
     ];
+    _registerFcmToken();
+  }
+
+  Future<void> _registerFcmToken() async {
+    try {
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+      if (fcmToken == null || fcmToken.isEmpty) {
+        return;
+      }
+
+      final storage = const FlutterSecureStorage();
+      final accessToken = await storage.read(key: 'accessToken');
+      if (accessToken == null || accessToken.isEmpty) {
+        return;
+      }
+
+      await UserApiService(ApiClient()).registerFcmToken(
+        token: accessToken,
+        fcmToken: fcmToken,
+      );
+    } catch (e) {
+      debugPrint('Failed to register FCM token: $e');
+    }
   }
 
   void onDelete() async {

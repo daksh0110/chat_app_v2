@@ -11,6 +11,8 @@ import 'package:my_app/providers/message_provider.dart';
 import 'package:my_app/providers/message_typing_provider.dart';
 import 'package:my_app/providers/settings_user_notifier_provider.dart';
 import 'package:my_app/providers/socket_provider.dart';
+import 'package:my_app/core/network/api_client.dart';
+import 'package:my_app/data/services/chat_sync_service.dart';
 import 'package:my_app/widgets/screens/message/chat_input_box.dart';
 import 'package:my_app/widgets/screens/message/date_banner.dart';
 import 'package:my_app/widgets/screens/message/header.dart';
@@ -32,6 +34,7 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
   late String chatId;
   late String receiverId;
   late String name;
+  String? profilePicUrl;
   String? _lastActiveUserId;
   bool _isOnline = false;
   late final ChatListController _chatListController;
@@ -70,7 +73,12 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
     chatId = args.chatId;
     receiverId = args.receiverId;
     name = args.name;
+    profilePicUrl = args.profilePicUrl;
     final isGroup = args.isGroupChat == "GROUP";
+
+    if (name.isEmpty) {
+      _resolveChatInfo(isGroup);
+    }
 
     if (_lastActiveUserId != chatId) {
       _lastActiveUserId = chatId;
@@ -241,12 +249,65 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
     }
   }
 
+  Future<void> _resolveChatInfo(bool isGroup) async {
+    final db = ref.read(databaseProvider);
+    final apiClient = ApiClient();
+    final chatSyncService = ChatSyncService(db: db, apiClient: apiClient);
+
+    if (isGroup) {
+      if (chatId.isEmpty) return;
+      var chat = await db.managers.chatListTable
+          .filter((f) => f.chatId.equals(chatId))
+          .getSingleOrNull();
+
+      if (chat == null || chat.name.isEmpty) {
+        final currentUser = ref.read(settingsUserProvider);
+        if (currentUser != null) {
+          await chatSyncService.syncCreatedGroupById(
+            incomingChatId: chatId,
+            accessToken: currentUser.accessToken,
+            currentUserId: currentUser.id,
+          );
+          chat = await db.managers.chatListTable
+              .filter((f) => f.chatId.equals(chatId))
+              .getSingleOrNull();
+        }
+      }
+
+      if (chat != null && mounted) {
+        setState(() {
+          name = chat?.name ?? '';
+          profilePicUrl = chat?.profilePicUrl;
+        });
+      }
+    } else {
+      if (receiverId.isEmpty) return;
+
+      var user = await db.managers.usersTable
+          .filter((f) => f.id.equals(receiverId))
+          .getSingleOrNull();
+
+      if (user == null || user.name.isEmpty) {
+        await chatSyncService.cacheUserIfMissing(receiverId);
+        user = await db.managers.usersTable
+            .filter((f) => f.id.equals(receiverId))
+            .getSingleOrNull();
+      }
+
+      if (user != null && mounted) {
+        setState(() {
+          name = user?.name ?? '';
+          profilePicUrl = user?.profilePictureUrl;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final typingMap = ref.watch(messageTypingProvider);
     final args =
         ModalRoute.of(context)!.settings.arguments as MessageScreenArguments;
-    final String name = args.name;
     final String isGroupChat = args.isGroupChat;
     final isGroup = isGroupChat == "GROUP";
     final currentUser = ref.watch(settingsUserProvider);
@@ -267,7 +328,7 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
         id: isGroupChat == "GROUP" ? chatId : receiverId,
         name: name,
         isOnline: _isOnline,
-        profilePicUrl: args.profilePicUrl,
+        profilePicUrl: profilePicUrl,
         isGroupChat: isGroupChat == "GROUP",
         subtitle: subtitle,
       ),
@@ -307,15 +368,23 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
                           final currentLabel = getDateLabel(msg.createdAt);
 
                           String? previousLabel;
+                          bool isGrouped = false;
                           if (msgIndex < messages.length - 1) {
                             final prevMsg =
                                 messages[messages.length - 1 - (msgIndex + 1)];
                             previousLabel = getDateLabel(
                               prevMsg.message.createdAt,
                             );
+                            isGrouped =
+                                prevMsg.message.senderId == msg.senderId &&
+                                (msg.createdAt - prevMsg.message.createdAt)
+                                        .abs() <
+                                    5 * 60 * 1000;
                           }
 
                           final showBanner = currentLabel != previousLabel;
+
+                          if (showBanner) isGrouped = false;
 
                           return Column(
                             children: [
@@ -333,6 +402,7 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
                                     ? "You"
                                     : sender.name,
                                 isGroupChat: isGroupChat == "GROUP",
+                                isGrouped: isGrouped,
                               ),
                             ],
                           );

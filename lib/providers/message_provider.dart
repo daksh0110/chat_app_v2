@@ -3,6 +3,7 @@ import 'dart:collection';
 
 import 'package:drift/drift.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:my_app/core/database.dart';
@@ -157,7 +158,8 @@ class MessageNotifer extends Notifier {
 
     final activeChatId = ref.read(chatListControllerProvider).activeChatId;
 
-    final shouldAutoRead = activeChatId == chatId;
+    final isResumed = WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+    final shouldAutoRead = isResumed && activeChatId == chatId;
 
     await database.transaction(() async {
       await database.managers.messages.create(
@@ -666,21 +668,35 @@ class MessageNotifer extends Notifier {
 
     final now = DateTime.now().millisecondsSinceEpoch;
 
-    final unreadStatuses = await db.managers.messageStatusTable
-        .filter((f) => f.userId.equals(currentUser.id) & f.status.not("read"))
-        .get();
+    final query = db.select(db.messageStatusTable).join([
+      innerJoin(
+        db.messages,
+        db.messages.serverId.equalsExp(db.messageStatusTable.messageId),
+      ),
+    ]);
+
+    query.where(
+      db.messageStatusTable.userId.equals(currentUser.id) &
+      db.messageStatusTable.status.equals("read").not() &
+      db.messages.chatId.equals(chatId),
+    );
+
+    final rows = await query.get();
+    final unreadStatuses = rows.map((row) => row.readTable(db.messageStatusTable)).toList();
 
     if (unreadStatuses.isEmpty) return;
 
-    await db.managers.messageStatusTable
-        .filter((f) => f.userId.equals(currentUser.id) & f.status.not("read"))
-        .update(
-          (o) => o(
-            status: const Value("read"),
-            readAt: Value(now),
-            updatedAt: Value(now),
-          ),
-        );
+    final messageIdsToUpdate = unreadStatuses.map((s) => s.messageId).toList();
+
+    await (db.update(db.messageStatusTable)
+          ..where((t) => t.userId.equals(currentUser.id) & t.messageId.isIn(messageIdsToUpdate)))
+        .write(
+      MessageStatusTableCompanion(
+        status: const Value("read"),
+        readAt: Value(now),
+        updatedAt: Value(now),
+      ),
+    );
 
     for (final status in unreadStatuses) {
       ref.read(socketProvider).sendMessage("message_read", {
