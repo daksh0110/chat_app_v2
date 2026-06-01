@@ -115,6 +115,22 @@ class UserApiService {
     }
   }
 
+  Future<ApiResponse<void>> registerFcmToken({
+    required String token,
+    required String fcmToken,
+  }) async {
+    try {
+      final response = await apiClient.post(
+        "${ApiConstants.baseUrl}${ApiConstants.users}/fcm-token",
+        {"fcm_token": fcmToken},
+        token: token,
+      );
+      return ApiResponse<void>.fromJson(response, (_) => {});
+    } catch (e) {
+      throw Exception("Register FCM token failed: $e");
+    }
+  }
+
   Future<ApiResponse<SearchItem>> getMyProfile({required String token}) async {
     try {
       final response = await apiClient.get(

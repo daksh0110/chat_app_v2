@@ -52,6 +52,8 @@ class MessageItem extends ConsumerWidget {
   final bool isGroupChat;
   final List<MediaTableData> attachments;
 
+  final bool isGrouped;
+
   const MessageItem({
     super.key,
     required this.message,
@@ -61,6 +63,7 @@ class MessageItem extends ConsumerWidget {
     required this.senderName,
     this.isGroupChat = false,
     this.attachments = const [],
+    this.isGrouped = false,
   });
 
   @override
@@ -68,7 +71,7 @@ class MessageItem extends ConsumerWidget {
     return Align(
       alignment: isSender ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        margin: EdgeInsets.fromLTRB(12, isGrouped ? 1 : 4, 12, 0),
         padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
         constraints: BoxConstraints(
           maxWidth: MediaQuery.of(context).size.width * 0.7,
@@ -87,12 +90,12 @@ class MessageItem extends ConsumerWidget {
         child: Stack(
           children: [
             Padding(
-              padding: const EdgeInsets.only(right: 0, bottom: 14),
+              padding: EdgeInsets.only(right: isSender ? 55 : 40, bottom: 14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (!isSender && isGroupChat) ...[
+                  if (!isSender && isGroupChat && !isGrouped) ...[
                     PrimaryText(
                       senderName,
                       fontSize: 11,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/core/util/route_observer.dart';
+import 'package:my_app/data/services/notification_service.dart';
 import 'package:my_app/providers/auth_notifier_provider.dart';
 import 'package:my_app/providers/database_provider.dart';
 import 'package:my_app/providers/message_provider.dart';
@@ -23,17 +24,59 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:my_app/screens/profile_setup.dart';
 import 'package:my_app/screens/user_profile.dart';
 import 'package:my_app/screens/verify_email.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
+import 'firebase_options.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+  await NotificationService.initialize();
+
   await dotenv.load(fileName: ".env");
+
   runApp(const ProviderScope(child: MyApp()));
 }
 
-class MyApp extends ConsumerWidget {
+class MyApp extends ConsumerStatefulWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      final socket = ref.read(socketProvider);
+      if (socket.isConnected) {
+        final notifier = ref.read(messageProvider.notifier);
+        notifier.sendChatSyncEvent();
+        notifier.sendQueueMessages();
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     ref.listen(authProvider, (previous, next) async {
       // ref.read(databaseProvider).managers.chatListTable.delete();
       // ref.read(databaseProvider).managers.messages.delete();
@@ -56,15 +99,19 @@ class MyApp extends ConsumerWidget {
             notifier.receiveStopTypingEvent();
             notifier.sendQueueMessages();
             notifier.groupChatCreatedListener();
+
+            await NotificationService.handleInitialMessage();
           });
           await ref.read(settingsUserProvider.notifier).setUser(token);
           ref.read(socketProvider).connect(token);
         }
       });
     });
+
     final authState = ref.watch(authProvider);
 
     return MaterialApp(
+      navigatorKey: navigatorKey,
       navigatorObservers: [routeObserver],
       title: 'Flutter Demo',
       debugShowCheckedModeBanner: false,

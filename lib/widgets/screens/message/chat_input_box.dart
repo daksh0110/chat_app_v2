@@ -92,7 +92,7 @@ class _ChatInputBoxState extends State<ChatInputBox> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         border: Border(
           top: BorderSide(color: DefaultColorSheet.white100, width: 1),
