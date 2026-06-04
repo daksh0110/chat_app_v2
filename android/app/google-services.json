@@ -7,6 +7,35 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:781228422790:android:f29d4d8bf203503d1d0307",
+        "android_client_info": {
+          "package_name": "com.atlas.messenger"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "781228422790-b1j3l7gna8vtegqe4kcn152bi7njojio.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAoMgnsh-cSkiXYPSnoLME2RWZMnjEzB_M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "781228422790-b1j3l7gna8vtegqe4kcn152bi7njojio.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:781228422790:android:af25c3e37c8eb2361d0307",
         "android_client_info": {
           "package_name": "com.example.atlas"

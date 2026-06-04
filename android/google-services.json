@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:781228422790:android:af25c3e37c8eb2361d0307",
         "android_client_info": {
-          "package_name": "com.example.atlas"
+          "package_name": "com.atlas.messenger"
         }
       },
       "oauth_client": [
@@ -17,7 +17,7 @@
           "client_id": "781228422790-8gehfs9p2gn6mg9e6g2jd98gf0s6quer.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.example.atlas",
+            "package_name": "com.atlas.messenger",
             "certificate_hash": "e050a051625d508b3a4f2277e6bc07eddbfbcac2"
           }
         },
