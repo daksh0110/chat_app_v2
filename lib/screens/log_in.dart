@@ -89,6 +89,12 @@ class _LogInState extends ConsumerState<LogIn> {
         }
 
         return;
+      } else {
+        ToastHelper.show(
+          context: context,
+          message: result.message,
+          type: ToastificationType.error,
+        );
       }
     } catch (e, stackTrace) {
       debugPrint("Login error: $e");
@@ -188,8 +194,8 @@ class _LogInState extends ConsumerState<LogIn> {
                             if (value == null || value.isEmpty) {
                               return "Password is required";
                             }
-                            if (value.length < 6) {
-                              return "Password must be at least 6 characters";
+                            if (value.length < 8) {
+                              return "Password must be at least 8 characters";
                             }
                             return null;
                           },
@@ -200,15 +206,15 @@ class _LogInState extends ConsumerState<LogIn> {
 
                   const SizedBox(height: 40),
                   PrimaryButton(
-                    text: "Log In",
-                    onPressed: isDisabled ? () {} : _onLogin,
-                    backgroundColor: isDisabled
+                    text: loading ? "Logging up" : "Log In",
+                    onPressed: (isDisabled || loading) ? () {} : _onLogin,
+                    backgroundColor: (isDisabled || loading)
                         ? DefaultColorSheet.disbaledButton
                         : DefaultColorSheet.primary,
-                    borderColor: isDisabled
+                    borderColor: (isDisabled || loading)
                         ? DefaultColorSheet.disbaledButton
                         : DefaultColorSheet.primary,
-                    textColor: isDisabled
+                    textColor: (isDisabled || loading)
                         ? DefaultColorSheet.grey500
                         : Colors.white,
                   ),

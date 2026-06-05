@@ -76,8 +76,8 @@ class _HeaderState extends State<Header> {
           chatBubbleSize: toolbarHeight - 12,
           needActiveIndicator: widget.isGroupChat
               ? (widget.subtitle != null &&
-                  widget.subtitle!.isNotEmpty &&
-                  !widget.subtitle!.startsWith("0 "))
+                    widget.subtitle!.isNotEmpty &&
+                    !widget.subtitle!.startsWith("0 "))
               : widget.isOnline,
           item: SearchItem(
             id: widget.id,
@@ -88,11 +88,11 @@ class _HeaderState extends State<Header> {
         ),
       ),
       actionsPadding: const EdgeInsets.only(right: 15, left: 10),
-      actions: const [
-        Icon(LucideIcons.phone, color: DefaultColorSheet.lightBlack, size: 20),
-        SizedBox(width: 10),
-        Icon(LucideIcons.video, color: DefaultColorSheet.lightBlack, size: 20),
-      ],
+      // actions: const [
+      //   Icon(LucideIcons.phone, color: DefaultColorSheet.lightBlack, size: 20),
+      //   SizedBox(width: 10),
+      //   Icon(LucideIcons.video, color: DefaultColorSheet.lightBlack, size: 20),
+      // ],
     );
   }
 }

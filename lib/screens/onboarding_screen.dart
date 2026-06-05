@@ -47,21 +47,21 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     children: [
                       PrimaryText(
                         "Atlas",
-                        fontSize: 14,
+                        fontSize: 65,
                         color: Colors.white,
                         fontWeight: FontWeight.w500,
                       ),
                       const SizedBox(height: 12),
                       PrimaryText(
                         "Connect friends",
-                        fontSize: 68,
+                        fontSize: 45,
                         overflow: TextOverflow.visible,
                         fontWeight: FontWeight.w400,
                         color: Colors.white,
                       ),
                       PrimaryText(
                         "easily & quickly",
-                        fontSize: 68,
+                        fontSize: 45,
                         overflow: TextOverflow.visible,
                         fontWeight: FontWeight.w600,
                         color: Colors.white,

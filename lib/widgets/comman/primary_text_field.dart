@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'primary_text.dart';
 
-class PrimaryTextField extends StatelessWidget {
+class PrimaryTextField extends StatefulWidget {
   final String label;
   final TextEditingController? controller;
   final TextInputType keyboardType;
@@ -21,13 +21,26 @@ class PrimaryTextField extends StatelessWidget {
   });
 
   @override
+  State<PrimaryTextField> createState() => _PrimaryTextFieldState();
+}
+
+class _PrimaryTextFieldState extends State<PrimaryTextField> {
+  late bool _obscureText;
+
+  @override
+  void initState() {
+    super.initState();
+    _obscureText = widget.obscureText;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Label
         PrimaryText(
-          label,
+          widget.label,
           fontSize: 14,
           fontWeight: FontWeight.w500,
           color: DefaultColorSheet.primary,
@@ -35,14 +48,14 @@ class PrimaryTextField extends StatelessWidget {
         const SizedBox(height: 8),
 
         TextFormField(
-          controller: controller,
-          keyboardType: keyboardType,
-          obscureText: obscureText,
-          validator: validator,
+          controller: widget.controller,
+          keyboardType: widget.keyboardType,
+          obscureText: _obscureText,
+          validator: widget.validator,
           autovalidateMode: AutovalidateMode.onUserInteraction,
           decoration: InputDecoration(
             border: const UnderlineInputBorder(),
-            enabled: !disabled,
+            enabled: !widget.disabled,
             enabledBorder: UnderlineInputBorder(
               borderSide: BorderSide(color: DefaultColorSheet.primary),
             ),
@@ -74,6 +87,21 @@ class PrimaryTextField extends StatelessWidget {
               color: DefaultColorSheet.error,
               fontSize: 12,
             ),
+
+            // Suffix icon for password visibility toggle
+            suffixIcon: widget.obscureText
+                ? IconButton(
+                    icon: Icon(
+                      _obscureText ? Icons.visibility_off : Icons.visibility,
+                      color: DefaultColorSheet.primary,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscureText = !_obscureText;
+                      });
+                    },
+                  )
+                : null,
           ),
         ),
       ],
