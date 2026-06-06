@@ -3,9 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/core/network/api_client.dart';
+import 'package:my_app/core/util/debouncer.dart';
 import 'package:my_app/data/services/user_api_service.dart';
 import 'package:my_app/modal/screens/search/search_item_group.dart';
+import 'package:my_app/modal/screens/search/search_item.dart';
 import 'package:my_app/providers/secure_storage_provider.dart';
+import 'package:my_app/providers/recent_searches_provider.dart';
+import 'package:my_app/core/database.dart';
+import 'package:my_app/widgets/comman/primary_text.dart';
 import 'package:my_app/widgets/screens/search/search_group.dart';
 
 class Search extends ConsumerStatefulWidget {
@@ -20,20 +25,52 @@ class Search extends ConsumerStatefulWidget {
 class _SearchState extends ConsumerState<Search> {
   final List<SearchItemGroup> data = [];
   final ApiClient apiClient = ApiClient();
+  final TextEditingController _searchInputController = TextEditingController();
+  final _debouncer = Debouncer(milliseconds: 500);
+  String _latestQuery = '';
 
-  void onSearching(String text) async {
-    final token = ref.read(secureStorageProvider).value;
-    final result = await UserApiService(
-      apiClient,
-    ).getUsers(page: 1, search: text, token: token ?? "");
+  void onSearching(String text) {
+    _latestQuery = text;
 
-    if (result.data != null) {
-      setState(() {
-        data.clear();
+    _debouncer.run(() async {
+      final currentQuery = text;
 
-        data.add(SearchItemGroup(id: "1", name: "People", items: result.data!));
-      });
-    }
+      if (currentQuery.trim().isEmpty) {
+        if (mounted) {
+          setState(() {
+            data.clear();
+          });
+        }
+        return;
+      }
+
+      final token = ref.read(secureStorageProvider).value;
+
+      final result = await UserApiService(
+        apiClient,
+      ).getUsers(page: 1, search: currentQuery, token: token ?? "");
+
+      if (currentQuery != _latestQuery) {
+        return;
+      }
+
+      if (result.data != null && mounted) {
+        setState(() {
+          data.clear();
+
+          data.add(
+            SearchItemGroup(id: "1", name: "People", items: result.data!),
+          );
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    _searchInputController.dispose();
+    super.dispose();
   }
 
   @override
@@ -61,6 +98,7 @@ class _SearchState extends ConsumerState<Search> {
 
               Expanded(
                 child: TextField(
+                  controller: _searchInputController,
                   onChanged: (value) => onSearching(value),
                   decoration: InputDecoration(
                     hintText: "Search",
@@ -72,25 +110,71 @@ class _SearchState extends ConsumerState<Search> {
 
               const SizedBox(width: 8),
 
-              Icon(LucideIcons.x, size: 20),
+              IconButton(
+                onPressed: () {
+                  _latestQuery = '';
+                  _searchInputController.clear();
+
+                  setState(() {
+                    data.clear();
+                  });
+                },
+                icon: const Icon(LucideIcons.x, size: 20),
+              ),
             ],
           ),
         ),
       ),
       body: Container(
-        margin: EdgeInsetsGeometry.directional(top: 20),
-        padding: EdgeInsetsDirectional.symmetric(horizontal: 24),
+        margin: const EdgeInsetsDirectional.only(top: 20),
+        padding: const EdgeInsetsDirectional.symmetric(horizontal: 24),
         child: Column(
           children: [
             Expanded(
-              child: ListView.separated(
-                itemBuilder: (context, index) {
-                  return SearchGroup(list: data[index]);
-                },
-                separatorBuilder: (context, index) =>
-                    const SizedBox(height: 20),
-                itemCount: data.length,
-              ),
+              child: _searchInputController.text.trim().isEmpty
+                  ? StreamBuilder<List<RecentSearchesTableData>>(
+                      stream: ref
+                          .watch(recentSearchesProvider)
+                          .watchRecentSearches(),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                          return const Center(
+                            child: PrimaryText(
+                              "No recent searches",
+                              color: DefaultColorSheet.grey500,
+                            ),
+                          );
+                        }
+
+                        final recentSearches = snapshot.data!;
+                        final recentGroup = SearchItemGroup(
+                          id: 'recent',
+                          name: 'Recent',
+                          items: recentSearches
+                              .map(
+                                (r) => SearchItem(
+                                  id: r.userId,
+                                  name: r.name,
+                                  email: r.email,
+                                  profilePicUrl: r.profilePicUrl,
+                                ),
+                              )
+                              .toList(),
+                        );
+
+                        return ListView(
+                          children: [SearchGroup(list: recentGroup)],
+                        );
+                      },
+                    )
+                  : ListView.separated(
+                      itemBuilder: (context, index) {
+                        return SearchGroup(list: data[index]);
+                      },
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: 20),
+                      itemCount: data.length,
+                    ),
             ),
           ],
         ),

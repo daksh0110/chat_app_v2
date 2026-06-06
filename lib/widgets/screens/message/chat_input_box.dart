@@ -237,50 +237,77 @@ class _ChatInputBoxState extends State<ChatInputBox> {
                         child: FadeTransition(opacity: animation, child: child),
                       );
                     },
-                    child: (_isTyping || attachments.isNotEmpty)
-                        ? InkWell(
-                            key: const ValueKey('send'),
-                            onTap: () {
-                              final text = chatMessageController.text.trim();
-                              if (text.isEmpty && attachments.isEmpty) return;
-                              widget.onSend(text, List.from(attachments));
-                              widget.onStopTyping();
-                              setState(() {
-                                _isTyping = false;
-                                attachments.clear();
-                              });
-                              chatMessageController.clear();
-                            },
 
-                            child: Container(
-                              padding: const EdgeInsets.all(11),
-                              decoration: const BoxDecoration(
-                                color: DefaultColorSheet.green500,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                LucideIcons.sendHorizontal,
-                                color: Colors.white,
-                              ),
-                            ),
-                          )
-                        : Row(
-                            key: const ValueKey('media'),
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: const [
-                              Icon(
-                                LucideIcons.camera,
-                                size: 24,
-                                color: DefaultColorSheet.lightBlack,
-                              ),
-                              SizedBox(width: 8),
-                              Icon(
-                                LucideIcons.mic,
-                                size: 24,
-                                color: DefaultColorSheet.lightBlack,
-                              ),
-                            ],
-                          ),
+                    // child: (_isTyping || attachments.isNotEmpty)
+                    //     ? InkWell(
+                    //         key: const ValueKey('send'),
+                    //         onTap: () {
+                    //           final text = chatMessageController.text.trim();
+                    //           if (text.isEmpty && attachments.isEmpty) return;
+                    //           widget.onSend(text, List.from(attachments));
+                    //           widget.onStopTyping();
+                    //           setState(() {
+                    //             _isTyping = false;
+                    //             attachments.clear();
+                    //           });
+                    //           chatMessageController.clear();
+                    //         },
+
+                    //         child: Container(
+                    //           padding: const EdgeInsets.all(11),
+                    //           decoration: const BoxDecoration(
+                    //             color: DefaultColorSheet.green500,
+                    //             shape: BoxShape.circle,
+                    //           ),
+                    //           child: const Icon(
+                    //             LucideIcons.sendHorizontal,
+                    //             color: Colors.white,
+                    //           ),
+                    //         ),
+                    //       )
+                    //     : Row(
+                    //         key: const ValueKey('media'),
+                    //         mainAxisAlignment: MainAxisAlignment.end,
+                    //         children: const [
+                    //           Icon(
+                    //             LucideIcons.camera,
+                    //             size: 24,
+                    //             color: DefaultColorSheet.lightBlack,
+                    //           ),
+                    //           SizedBox(width: 8),
+                    //           Icon(
+                    //             LucideIcons.mic,
+                    //             size: 24,
+                    //             color: DefaultColorSheet.lightBlack,
+                    //           ),
+                    //         ],
+                    //       ),
+                    child: InkWell(
+                      key: const ValueKey('send'),
+                      onTap: () {
+                        final text = chatMessageController.text.trim();
+                        if (text.isEmpty && attachments.isEmpty) return;
+                        widget.onSend(text, List.from(attachments));
+                        widget.onStopTyping();
+                        setState(() {
+                          _isTyping = false;
+                          attachments.clear();
+                        });
+                        chatMessageController.clear();
+                      },
+
+                      child: Container(
+                        padding: const EdgeInsets.all(11),
+                        decoration: const BoxDecoration(
+                          color: DefaultColorSheet.green500,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          LucideIcons.sendHorizontal,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ],

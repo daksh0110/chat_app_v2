@@ -3311,6 +3311,381 @@ class MediaTableCompanion extends UpdateCompanion<MediaTableData> {
   }
 }
 
+class $RecentSearchesTableTable extends RecentSearchesTable
+    with TableInfo<$RecentSearchesTableTable, RecentSearchesTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RecentSearchesTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _emailMeta = const VerificationMeta('email');
+  @override
+  late final GeneratedColumn<String> email = GeneratedColumn<String>(
+    'email',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _profilePicUrlMeta = const VerificationMeta(
+    'profilePicUrl',
+  );
+  @override
+  late final GeneratedColumn<String> profilePicUrl = GeneratedColumn<String>(
+    'profile_pic_url',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _searchedAtMeta = const VerificationMeta(
+    'searchedAt',
+  );
+  @override
+  late final GeneratedColumn<int> searchedAt = GeneratedColumn<int>(
+    'searched_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    userId,
+    name,
+    email,
+    profilePicUrl,
+    searchedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'recent_searches_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RecentSearchesTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('email')) {
+      context.handle(
+        _emailMeta,
+        email.isAcceptableOrUnknown(data['email']!, _emailMeta),
+      );
+    }
+    if (data.containsKey('profile_pic_url')) {
+      context.handle(
+        _profilePicUrlMeta,
+        profilePicUrl.isAcceptableOrUnknown(
+          data['profile_pic_url']!,
+          _profilePicUrlMeta,
+        ),
+      );
+    }
+    if (data.containsKey('searched_at')) {
+      context.handle(
+        _searchedAtMeta,
+        searchedAt.isAcceptableOrUnknown(data['searched_at']!, _searchedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_searchedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {userId};
+  @override
+  RecentSearchesTableData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RecentSearchesTableData(
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      email: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}email'],
+      )!,
+      profilePicUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}profile_pic_url'],
+      ),
+      searchedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}searched_at'],
+      )!,
+    );
+  }
+
+  @override
+  $RecentSearchesTableTable createAlias(String alias) {
+    return $RecentSearchesTableTable(attachedDatabase, alias);
+  }
+}
+
+class RecentSearchesTableData extends DataClass
+    implements Insertable<RecentSearchesTableData> {
+  final String userId;
+  final String name;
+  final String email;
+  final String? profilePicUrl;
+  final int searchedAt;
+  const RecentSearchesTableData({
+    required this.userId,
+    required this.name,
+    required this.email,
+    this.profilePicUrl,
+    required this.searchedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['user_id'] = Variable<String>(userId);
+    map['name'] = Variable<String>(name);
+    map['email'] = Variable<String>(email);
+    if (!nullToAbsent || profilePicUrl != null) {
+      map['profile_pic_url'] = Variable<String>(profilePicUrl);
+    }
+    map['searched_at'] = Variable<int>(searchedAt);
+    return map;
+  }
+
+  RecentSearchesTableCompanion toCompanion(bool nullToAbsent) {
+    return RecentSearchesTableCompanion(
+      userId: Value(userId),
+      name: Value(name),
+      email: Value(email),
+      profilePicUrl: profilePicUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(profilePicUrl),
+      searchedAt: Value(searchedAt),
+    );
+  }
+
+  factory RecentSearchesTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RecentSearchesTableData(
+      userId: serializer.fromJson<String>(json['userId']),
+      name: serializer.fromJson<String>(json['name']),
+      email: serializer.fromJson<String>(json['email']),
+      profilePicUrl: serializer.fromJson<String?>(json['profilePicUrl']),
+      searchedAt: serializer.fromJson<int>(json['searchedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'userId': serializer.toJson<String>(userId),
+      'name': serializer.toJson<String>(name),
+      'email': serializer.toJson<String>(email),
+      'profilePicUrl': serializer.toJson<String?>(profilePicUrl),
+      'searchedAt': serializer.toJson<int>(searchedAt),
+    };
+  }
+
+  RecentSearchesTableData copyWith({
+    String? userId,
+    String? name,
+    String? email,
+    Value<String?> profilePicUrl = const Value.absent(),
+    int? searchedAt,
+  }) => RecentSearchesTableData(
+    userId: userId ?? this.userId,
+    name: name ?? this.name,
+    email: email ?? this.email,
+    profilePicUrl: profilePicUrl.present
+        ? profilePicUrl.value
+        : this.profilePicUrl,
+    searchedAt: searchedAt ?? this.searchedAt,
+  );
+  RecentSearchesTableData copyWithCompanion(RecentSearchesTableCompanion data) {
+    return RecentSearchesTableData(
+      userId: data.userId.present ? data.userId.value : this.userId,
+      name: data.name.present ? data.name.value : this.name,
+      email: data.email.present ? data.email.value : this.email,
+      profilePicUrl: data.profilePicUrl.present
+          ? data.profilePicUrl.value
+          : this.profilePicUrl,
+      searchedAt: data.searchedAt.present
+          ? data.searchedAt.value
+          : this.searchedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecentSearchesTableData(')
+          ..write('userId: $userId, ')
+          ..write('name: $name, ')
+          ..write('email: $email, ')
+          ..write('profilePicUrl: $profilePicUrl, ')
+          ..write('searchedAt: $searchedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(userId, name, email, profilePicUrl, searchedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RecentSearchesTableData &&
+          other.userId == this.userId &&
+          other.name == this.name &&
+          other.email == this.email &&
+          other.profilePicUrl == this.profilePicUrl &&
+          other.searchedAt == this.searchedAt);
+}
+
+class RecentSearchesTableCompanion
+    extends UpdateCompanion<RecentSearchesTableData> {
+  final Value<String> userId;
+  final Value<String> name;
+  final Value<String> email;
+  final Value<String?> profilePicUrl;
+  final Value<int> searchedAt;
+  final Value<int> rowid;
+  const RecentSearchesTableCompanion({
+    this.userId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.email = const Value.absent(),
+    this.profilePicUrl = const Value.absent(),
+    this.searchedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RecentSearchesTableCompanion.insert({
+    required String userId,
+    required String name,
+    this.email = const Value.absent(),
+    this.profilePicUrl = const Value.absent(),
+    required int searchedAt,
+    this.rowid = const Value.absent(),
+  }) : userId = Value(userId),
+       name = Value(name),
+       searchedAt = Value(searchedAt);
+  static Insertable<RecentSearchesTableData> custom({
+    Expression<String>? userId,
+    Expression<String>? name,
+    Expression<String>? email,
+    Expression<String>? profilePicUrl,
+    Expression<int>? searchedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (userId != null) 'user_id': userId,
+      if (name != null) 'name': name,
+      if (email != null) 'email': email,
+      if (profilePicUrl != null) 'profile_pic_url': profilePicUrl,
+      if (searchedAt != null) 'searched_at': searchedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RecentSearchesTableCompanion copyWith({
+    Value<String>? userId,
+    Value<String>? name,
+    Value<String>? email,
+    Value<String?>? profilePicUrl,
+    Value<int>? searchedAt,
+    Value<int>? rowid,
+  }) {
+    return RecentSearchesTableCompanion(
+      userId: userId ?? this.userId,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      profilePicUrl: profilePicUrl ?? this.profilePicUrl,
+      searchedAt: searchedAt ?? this.searchedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (email.present) {
+      map['email'] = Variable<String>(email.value);
+    }
+    if (profilePicUrl.present) {
+      map['profile_pic_url'] = Variable<String>(profilePicUrl.value);
+    }
+    if (searchedAt.present) {
+      map['searched_at'] = Variable<int>(searchedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecentSearchesTableCompanion(')
+          ..write('userId: $userId, ')
+          ..write('name: $name, ')
+          ..write('email: $email, ')
+          ..write('profilePicUrl: $profilePicUrl, ')
+          ..write('searchedAt: $searchedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3326,6 +3701,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $MessageStatusTableTable messageStatusTable =
       $MessageStatusTableTable(this);
   late final $MediaTableTable mediaTable = $MediaTableTable(this);
+  late final $RecentSearchesTableTable recentSearchesTable =
+      $RecentSearchesTableTable(this);
+  late final RecentSearchesDao recentSearchesDao = RecentSearchesDao(
+    this as AppDatabase,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3338,6 +3718,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     chatParticipants,
     messageStatusTable,
     mediaTable,
+    recentSearchesTable,
   ];
 }
 
@@ -5061,6 +5442,226 @@ typedef $$MediaTableTableProcessedTableManager =
       MediaTableData,
       PrefetchHooks Function()
     >;
+typedef $$RecentSearchesTableTableCreateCompanionBuilder =
+    RecentSearchesTableCompanion Function({
+      required String userId,
+      required String name,
+      Value<String> email,
+      Value<String?> profilePicUrl,
+      required int searchedAt,
+      Value<int> rowid,
+    });
+typedef $$RecentSearchesTableTableUpdateCompanionBuilder =
+    RecentSearchesTableCompanion Function({
+      Value<String> userId,
+      Value<String> name,
+      Value<String> email,
+      Value<String?> profilePicUrl,
+      Value<int> searchedAt,
+      Value<int> rowid,
+    });
+
+class $$RecentSearchesTableTableFilterComposer
+    extends Composer<_$AppDatabase, $RecentSearchesTableTable> {
+  $$RecentSearchesTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get profilePicUrl => $composableBuilder(
+    column: $table.profilePicUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get searchedAt => $composableBuilder(
+    column: $table.searchedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$RecentSearchesTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $RecentSearchesTableTable> {
+  $$RecentSearchesTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get profilePicUrl => $composableBuilder(
+    column: $table.profilePicUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get searchedAt => $composableBuilder(
+    column: $table.searchedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$RecentSearchesTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RecentSearchesTableTable> {
+  $$RecentSearchesTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get email =>
+      $composableBuilder(column: $table.email, builder: (column) => column);
+
+  GeneratedColumn<String> get profilePicUrl => $composableBuilder(
+    column: $table.profilePicUrl,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get searchedAt => $composableBuilder(
+    column: $table.searchedAt,
+    builder: (column) => column,
+  );
+}
+
+class $$RecentSearchesTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RecentSearchesTableTable,
+          RecentSearchesTableData,
+          $$RecentSearchesTableTableFilterComposer,
+          $$RecentSearchesTableTableOrderingComposer,
+          $$RecentSearchesTableTableAnnotationComposer,
+          $$RecentSearchesTableTableCreateCompanionBuilder,
+          $$RecentSearchesTableTableUpdateCompanionBuilder,
+          (
+            RecentSearchesTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $RecentSearchesTableTable,
+              RecentSearchesTableData
+            >,
+          ),
+          RecentSearchesTableData,
+          PrefetchHooks Function()
+        > {
+  $$RecentSearchesTableTableTableManager(
+    _$AppDatabase db,
+    $RecentSearchesTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RecentSearchesTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RecentSearchesTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$RecentSearchesTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> userId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> email = const Value.absent(),
+                Value<String?> profilePicUrl = const Value.absent(),
+                Value<int> searchedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RecentSearchesTableCompanion(
+                userId: userId,
+                name: name,
+                email: email,
+                profilePicUrl: profilePicUrl,
+                searchedAt: searchedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String userId,
+                required String name,
+                Value<String> email = const Value.absent(),
+                Value<String?> profilePicUrl = const Value.absent(),
+                required int searchedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => RecentSearchesTableCompanion.insert(
+                userId: userId,
+                name: name,
+                email: email,
+                profilePicUrl: profilePicUrl,
+                searchedAt: searchedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$RecentSearchesTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RecentSearchesTableTable,
+      RecentSearchesTableData,
+      $$RecentSearchesTableTableFilterComposer,
+      $$RecentSearchesTableTableOrderingComposer,
+      $$RecentSearchesTableTableAnnotationComposer,
+      $$RecentSearchesTableTableCreateCompanionBuilder,
+      $$RecentSearchesTableTableUpdateCompanionBuilder,
+      (
+        RecentSearchesTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $RecentSearchesTableTable,
+          RecentSearchesTableData
+        >,
+      ),
+      RecentSearchesTableData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5079,4 +5680,6 @@ class $AppDatabaseManager {
       $$MessageStatusTableTableTableManager(_db, _db.messageStatusTable);
   $$MediaTableTableTableManager get mediaTable =>
       $$MediaTableTableTableManager(_db, _db.mediaTable);
+  $$RecentSearchesTableTableTableManager get recentSearchesTable =>
+      $$RecentSearchesTableTableTableManager(_db, _db.recentSearchesTable);
 }

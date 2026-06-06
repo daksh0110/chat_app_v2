@@ -6,6 +6,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class SocketService {
   IO.Socket? socket;
   final List<void Function()> _onConnectCallbacks = [];
+  final Set<String> _registeredEvents = {};
 
   bool get isInitialized => socket != null;
   bool get isConnected => socket?.connected ?? false;
@@ -26,8 +27,10 @@ class SocketService {
 
     socket!.onConnect((_) {
       print('✅ Connected');
-
-      for (final cb in _onConnectCallbacks) {
+      _registeredEvents.clear();
+      final callbacks = List<void Function()>.from(_onConnectCallbacks);
+      _onConnectCallbacks.clear(); 
+      for (final cb in callbacks) {
         cb();
       }
     });
@@ -51,6 +54,13 @@ class SocketService {
     } else {
       _onConnectCallbacks.add(callback);
     }
+  }
+
+  void listenOnce(String event, Function(dynamic) callback) {
+    if (socket == null) return;
+    if (_registeredEvents.contains(event)) return;
+    _registeredEvents.add(event);
+    socket!.on(event, callback);
   }
 
   void sendMessage(String event, dynamic data) {

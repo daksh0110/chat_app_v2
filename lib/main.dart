@@ -7,10 +7,12 @@ import 'package:my_app/providers/auth_notifier_provider.dart';
 import 'package:my_app/providers/database_provider.dart';
 import 'package:my_app/providers/message_provider.dart';
 import 'package:my_app/providers/secure_storage_provider.dart';
+import 'package:my_app/providers/server_connection_provider.dart';
 import 'package:my_app/providers/settings_user_notifier_provider.dart';
 import 'package:my_app/providers/socket_provider.dart';
 import 'package:my_app/screens/change_password.dart';
 import 'package:my_app/screens/create_group_chat.dart';
+import 'package:my_app/screens/new_chat_screen.dart';
 import 'package:my_app/screens/main_screen.dart';
 import 'package:my_app/screens/log_in.dart';
 import 'package:my_app/screens/message.dart';
@@ -26,8 +28,8 @@ import 'package:my_app/screens/user_profile.dart';
 import 'package:my_app/screens/verify_email.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
 import 'firebase_options.dart';
+import 'package:my_app/widgets/comman/server_connection_banner.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -55,6 +57,9 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    Future.microtask(() {
+      ref.read(serverConnectedProvider.notifier).verifyServerConnection();
+    });
   }
 
   @override
@@ -99,6 +104,7 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
             notifier.receiveStopTypingEvent();
             notifier.sendQueueMessages();
             notifier.groupChatCreatedListener();
+            notifier.groupsCountSync();
 
             await NotificationService.handleInitialMessage();
           });
@@ -116,7 +122,9 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
       title: 'Flutter Demo',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(fontFamily: "Caros"),
-
+      builder: (context, child) {
+        return Stack(children: [child!, const ServerConnectionBanner()]);
+      },
       home: authState.when(
         loading: () =>
             const Scaffold(body: Center(child: CircularProgressIndicator())),
@@ -147,6 +155,7 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
         AppRoutes.profileSetup: (context) => const ProfileSetupScreen(),
         AppRoutes.userProfile: (context) => UserProfile(),
         AppRoutes.createGroupChat: (context) => CreateGroupChat(),
+        AppRoutes.newChat: (context) => const NewChatScreen(),
       },
     );
   }

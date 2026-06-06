@@ -227,17 +227,17 @@ class UserProfileState extends ConsumerState<UserProfile> {
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back, color: Colors.white),
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: ProfileActionButton(
-              icon: LucideIcons.ellipsis,
-              onTap: () {},
-              size: 35,
-              iconSize: 20,
-            ),
-          ),
-        ],
+        // actions: [
+        //   Padding(
+        //     padding: const EdgeInsets.only(right: 8),
+        //     child: ProfileActionButton(
+        //       icon: LucideIcons.ellipsis,
+        //       onTap: () {},
+        //       size: 35,
+        //       iconSize: 20,
+        //     ),
+        //   ),
+        // ],
       ),
       body: _buildProfileBody(
         children: [
@@ -256,16 +256,16 @@ class UserProfileState extends ConsumerState<UserProfile> {
             fontWeight: FontWeight.w600,
           ),
           const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              ProfileActionButton(icon: LucideIcons.messageCircleMore),
-              SizedBox(width: 20),
-              ProfileActionButton(icon: LucideIcons.phone),
-              SizedBox(width: 20),
-              ProfileActionButton(icon: LucideIcons.video),
-            ],
-          ),
+          // Row(
+          //   mainAxisAlignment: MainAxisAlignment.center,
+          //   children: const [
+          //     ProfileActionButton(icon: LucideIcons.messageCircleMore),
+          //     SizedBox(width: 20),
+          //     ProfileActionButton(icon: LucideIcons.phone),
+          //     SizedBox(width: 20),
+          //     ProfileActionButton(icon: LucideIcons.video),
+          //   ],
+          // ),
           const SizedBox(height: 20),
           Expanded(
             child: PrimaryContainer(

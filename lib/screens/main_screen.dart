@@ -105,7 +105,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         floatingActionButton: currentActive == 0
             ? FloatingActionButton(
                 onPressed: () {
-                  Navigator.pushNamed(context, AppRoutes.createGroupChat);
+                  Navigator.pushNamed(context, AppRoutes.newChat);
                 },
                 child: Icon(LucideIcons.plus),
               )

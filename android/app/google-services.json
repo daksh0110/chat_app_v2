@@ -14,7 +14,23 @@
       },
       "oauth_client": [
         {
-          "client_id": "781228422790-b1j3l7gna8vtegqe4kcn152bi7njojio.apps.googleusercontent.com",
+          "client_id": "781228422790-e85j7r5kn5k7khm4el6uukm6j14poqhk.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.atlas.messenger",
+            "certificate_hash": "6bf94848e270b6d71b6016c6affbd27d8610720d"
+          }
+        },
+        {
+          "client_id": "781228422790-prqfsupo89qn09do5gfvb0odm2gk7qjk.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.atlas.messenger",
+            "certificate_hash": "e050a051625d508b3a4f2277e6bc07eddbfbcac2"
+          }
+        },
+        {
+          "client_id": "781228422790-h1ojfth6bejaf8c3acnlurivf3hsqbr6.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
@@ -29,6 +45,13 @@
             {
               "client_id": "781228422790-b1j3l7gna8vtegqe4kcn152bi7njojio.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "781228422790-3nljd4e2cjulobij640fg33q6st896ro.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.myApp"
+              }
             }
           ]
         }
@@ -51,7 +74,7 @@
           }
         },
         {
-          "client_id": "781228422790-b1j3l7gna8vtegqe4kcn152bi7njojio.apps.googleusercontent.com",
+          "client_id": "781228422790-h1ojfth6bejaf8c3acnlurivf3hsqbr6.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
@@ -66,6 +89,13 @@
             {
               "client_id": "781228422790-b1j3l7gna8vtegqe4kcn152bi7njojio.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "781228422790-3nljd4e2cjulobij640fg33q6st896ro.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.myApp"
+              }
             }
           ]
         }
