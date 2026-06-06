@@ -12,4 +12,5 @@ class AppRoutes {
   static const String profileSetup = "/profile-setup";
   static const String userProfile = "/user-profile";
   static const String createGroupChat = "/create-group";
+  static const String newChat = "/new-chat";
 }

@@ -98,7 +98,7 @@ class MessageNotifer extends Notifier {
   }
 
   Future<void> receiveMessage() async {
-    ref.read(socketProvider).listen("receive_message", (dynamic data) {
+    ref.read(socketProvider).listenOnce("receive_message", (dynamic data) {
       _acknowledgeEvent(data);
       final chatId = data["chat_id"];
       if (chatId != null) {
@@ -158,7 +158,8 @@ class MessageNotifer extends Notifier {
 
     final activeChatId = ref.read(chatListControllerProvider).activeChatId;
 
-    final isResumed = WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+    final isResumed =
+        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
     final shouldAutoRead = isResumed && activeChatId == chatId;
 
     await database.transaction(() async {
@@ -201,16 +202,20 @@ class MessageNotifer extends Notifier {
 
       if (data.attachments.isNotEmpty) {
         await database.managers.mediaTable.bulkCreate(
-          (o) => data.attachments.map<Insertable<MediaTableData>>((attachment) => o(
-            createdAt: createdAt,
-            actorId: Value(messageId),
-            key: Value(attachment.key),
-            url: Value(attachment.url),
-            Type: Value(attachment.type),
-            contentType: Value(attachment.contentType),
-            name: Value(attachment.name),
-            location: const Value(null),
-          )).toList(),
+          (o) => data.attachments
+              .map<Insertable<MediaTableData>>(
+                (attachment) => o(
+                  createdAt: createdAt,
+                  actorId: Value(messageId),
+                  key: Value(attachment.key),
+                  url: Value(attachment.url),
+                  Type: Value(attachment.type),
+                  contentType: Value(attachment.contentType),
+                  name: Value(attachment.name),
+                  location: const Value(null),
+                ),
+              )
+              .toList(),
           mode: InsertMode.insertOrIgnore,
         );
       }
@@ -514,10 +519,7 @@ class MessageNotifer extends Notifier {
                 final att = ackAttachments[i];
                 await database.managers.mediaTable
                     .filter((f) => f.id.equals(localMedias[i].id))
-                    .update((o) => o(
-                      key: Value(att.key),
-                      url: Value(att.url),
-                    ));
+                    .update((o) => o(key: Value(att.key), url: Value(att.url)));
               }
             }
           }
@@ -570,7 +572,7 @@ class MessageNotifer extends Notifier {
   Future<void> messageDelivered() async {
     final db = ref.read(databaseProvider);
 
-    ref.read(socketProvider).listen("message_delivered", (data) async {
+    ref.read(socketProvider).listenOnce("message_delivered", (data) async {
       _acknowledgeEvent(data);
       _statusQueue.add(() async {
         await _retry(() async {
@@ -616,7 +618,7 @@ class MessageNotifer extends Notifier {
   Future<void> markRead() async {
     final db = ref.read(databaseProvider);
 
-    ref.read(socketProvider).listen("message_read", (data) async {
+    ref.read(socketProvider).listenOnce("message_read", (data) async {
       _acknowledgeEvent(data);
       _statusQueue.add(() async {
         await _retry(() async {
@@ -677,26 +679,31 @@ class MessageNotifer extends Notifier {
 
     query.where(
       db.messageStatusTable.userId.equals(currentUser.id) &
-      db.messageStatusTable.status.equals("read").not() &
-      db.messages.chatId.equals(chatId),
+          db.messageStatusTable.status.equals("read").not() &
+          db.messages.chatId.equals(chatId),
     );
 
     final rows = await query.get();
-    final unreadStatuses = rows.map((row) => row.readTable(db.messageStatusTable)).toList();
+    final unreadStatuses = rows
+        .map((row) => row.readTable(db.messageStatusTable))
+        .toList();
 
     if (unreadStatuses.isEmpty) return;
 
     final messageIdsToUpdate = unreadStatuses.map((s) => s.messageId).toList();
 
-    await (db.update(db.messageStatusTable)
-          ..where((t) => t.userId.equals(currentUser.id) & t.messageId.isIn(messageIdsToUpdate)))
+    await (db.update(db.messageStatusTable)..where(
+          (t) =>
+              t.userId.equals(currentUser.id) &
+              t.messageId.isIn(messageIdsToUpdate),
+        ))
         .write(
-      MessageStatusTableCompanion(
-        status: const Value("read"),
-        readAt: Value(now),
-        updatedAt: Value(now),
-      ),
-    );
+          MessageStatusTableCompanion(
+            status: const Value("read"),
+            readAt: Value(now),
+            updatedAt: Value(now),
+          ),
+        );
 
     for (final status in unreadStatuses) {
       ref.read(socketProvider).sendMessage("message_read", {
@@ -813,7 +820,7 @@ class MessageNotifer extends Notifier {
     if (_typingListenerAdded) return;
     _typingListenerAdded = true;
 
-    ref.read(socketProvider).listen("user_typing", (dynamic data) {
+    ref.read(socketProvider).listenOnce("user_typing", (dynamic data) {
       final chatId = data["chat_id"];
       if (chatId != null) {
         ref.read(messageTypingProvider.notifier).receiveUserTyping(chatId);
@@ -834,7 +841,7 @@ class MessageNotifer extends Notifier {
   }
 
   void receiveStopTypingEvent() {
-    ref.read(socketProvider).listen("user_stop_typing", (dynamic data) {
+    ref.read(socketProvider).listenOnce("user_stop_typing", (dynamic data) {
       final chatId = data["chat_id"];
       if (chatId != null) {
         ref.read(messageTypingProvider.notifier).clearTyping(chatId);
@@ -844,7 +851,9 @@ class MessageNotifer extends Notifier {
 
   Future<void> groupChatCreatedListener() async {
     try {
-      ref.read(socketProvider).listen("group-created", (dynamic data) async {
+      ref.read(socketProvider).listenOnce("group-created", (
+        dynamic data,
+      ) async {
         _acknowledgeEvent(data);
         final db = ref.read(databaseProvider);
         final currentUser = ref.read(settingsUserProvider);
@@ -869,6 +878,41 @@ class MessageNotifer extends Notifier {
         }
       });
     } catch (_) {}
+  }
+
+  Future<void> groupsCountSync() async {
+    try {
+      ref.read(socketProvider).listenOnce("group-sync", (dynamic data) async {
+        try {
+          final db = ref.read(databaseProvider);
+          final currentUser = ref.read(settingsUserProvider);
+          if (currentUser == null || currentUser.accessToken.isEmpty) return;
+
+          final flatMap = Map<String, dynamic>.from(data);
+          final chatId = flatMap['chat_id'] as String? ?? '';
+          if (chatId.isEmpty) return;
+
+          final wrappedPayload = CreateGroupResponse.fromJson({
+            'success': true,
+            'message': 'sync',
+            ...flatMap,
+          });
+          if (wrappedPayload.data?.chatId.isEmpty ?? true) return;
+
+          await ChatSyncService(
+            db: db,
+            apiClient: ApiClient(),
+          ).syncCreatedGroupEventPayload(
+            rawPayload: wrappedPayload,
+            currentUserId: currentUser.id,
+          );
+        } catch (e) {
+          debugPrint('group-sync handler error: $e');
+        }
+      });
+    } catch (e) {
+      debugPrint(e.toString());
+    }
   }
 
   Future<void> _retry(

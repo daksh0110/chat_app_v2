@@ -88,7 +88,6 @@ class _PrimaryTextFieldState extends State<PrimaryTextField> {
               fontSize: 12,
             ),
 
-            // Suffix icon for password visibility toggle
             suffixIcon: widget.obscureText
                 ? IconButton(
                     icon: Icon(

@@ -97,7 +97,49 @@ class ChatSyncService {
     required String currentUserId,
   }) async {
     if (!payload.success || payload.data == null) return;
+
     final group = payload.data!;
+
+    final existingChat = await (db.select(
+      db.chatListTable,
+    )..where((tbl) => tbl.chatId.equals(group.chatId))).getSingleOrNull();
+
+    if (existingChat != null) {
+      await (db.update(db.chatListTable)
+            ..where((tbl) => tbl.chatId.equals(group.chatId)))
+          .write(
+            ChatListTableCompanion(
+              name: Value(group.name),
+              profilePicUrl: Value(group.profilePictureUrl),
+              description: Value(group.description),
+            ),
+          );
+
+      if (group.participants.isNotEmpty) {
+        await db.batch((batch) {
+          batch.insertAll(
+            db.chatParticipants,
+            group.participants
+                .where((p) => p.chatId.isNotEmpty || group.chatId.isNotEmpty)
+                .map((p) {
+                  final resolvedUserId =
+                      p.userId.isEmpty ? currentUserId : p.userId;
+                  return ChatParticipantsCompanion.insert(
+                    chatId: group.chatId,
+                    userId: resolvedUserId,
+                    name: p.name,
+                    role: Value(p.role),
+                    profilePicUrl: Value(p.profilePictureUrl),
+                  );
+                })
+                .toList(),
+            mode: InsertMode.insertOrIgnore,
+          );
+        });
+      }
+      return;
+    }
+
     await db.managers.chatListTable.create(
       (o) => o(
         chatId: group.chatId,
@@ -110,7 +152,6 @@ class ChatSyncService {
         description: Value(group.description),
         unReadCount: const Value(0),
       ),
-      mode: InsertMode.insertOrReplace,
     );
 
     if (group.participants.isEmpty) return;
@@ -124,6 +165,7 @@ class ChatSyncService {
               final resolvedUserId = p.userId.isEmpty
                   ? currentUserId
                   : p.userId;
+
               return ChatParticipantsCompanion.insert(
                 chatId: group.chatId,
                 userId: resolvedUserId,
@@ -133,7 +175,7 @@ class ChatSyncService {
               );
             })
             .toList(),
-        mode: InsertMode.insertOrReplace,
+        mode: InsertMode.insertOrIgnore,
       );
     });
   }

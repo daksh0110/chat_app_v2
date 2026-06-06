@@ -12,6 +12,7 @@ import 'package:my_app/providers/settings_user_notifier_provider.dart';
 import 'package:my_app/providers/socket_provider.dart';
 import 'package:my_app/screens/change_password.dart';
 import 'package:my_app/screens/create_group_chat.dart';
+import 'package:my_app/screens/new_chat_screen.dart';
 import 'package:my_app/screens/main_screen.dart';
 import 'package:my_app/screens/log_in.dart';
 import 'package:my_app/screens/message.dart';
@@ -103,6 +104,7 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
             notifier.receiveStopTypingEvent();
             notifier.sendQueueMessages();
             notifier.groupChatCreatedListener();
+            notifier.groupsCountSync();
 
             await NotificationService.handleInitialMessage();
           });
@@ -153,6 +155,7 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
         AppRoutes.profileSetup: (context) => const ProfileSetupScreen(),
         AppRoutes.userProfile: (context) => UserProfile(),
         AppRoutes.createGroupChat: (context) => CreateGroupChat(),
+        AppRoutes.newChat: (context) => const NewChatScreen(),
       },
     );
   }
