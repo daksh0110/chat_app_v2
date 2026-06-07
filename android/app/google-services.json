@@ -30,6 +30,14 @@
           }
         },
         {
+          "client_id": "781228422790-qu5vlrbrgkqdql1frjp3fj575drupmim.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.atlas.messenger",
+            "certificate_hash": "0f7dffdc2e67ae9a3f82eb3ae0dde026176f9414"
+          }
+        },
+        {
           "client_id": "781228422790-h1ojfth6bejaf8c3acnlurivf3hsqbr6.apps.googleusercontent.com",
           "client_type": 3
         }
