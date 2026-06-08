@@ -38,6 +38,14 @@
           }
         },
         {
+          "client_id": "781228422790-vpuv53oentl7dkae9avb0o4mqnenj385.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.atlas.messenger",
+            "certificate_hash": "c68e78c920815eef496d0e0f4784ff02bab07f1a"
+          }
+        },
+        {
           "client_id": "781228422790-h1ojfth6bejaf8c3acnlurivf3hsqbr6.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -74,11 +82,27 @@
       },
       "oauth_client": [
         {
+          "client_id": "781228422790-76864o1deg1rj3hdk3hdrmvvtefliadg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.atlas",
+            "certificate_hash": "6bf94848e270b6d71b6016c6affbd27d8610720d"
+          }
+        },
+        {
           "client_id": "781228422790-8gehfs9p2gn6mg9e6g2jd98gf0s6quer.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.example.atlas",
             "certificate_hash": "e050a051625d508b3a4f2277e6bc07eddbfbcac2"
+          }
+        },
+        {
+          "client_id": "781228422790-q4c2kfkp56n3sheriugrtil6c6dvep5m.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.atlas",
+            "certificate_hash": "0f7dffdc2e67ae9a3f82eb3ae0dde026176f9414"
           }
         },
         {
