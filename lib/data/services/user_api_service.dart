@@ -7,6 +7,7 @@ import 'package:my_app/modal/send_email_verification_otp.dart';
 import 'package:my_app/modal/send_otp_response.dart';
 import 'package:my_app/modal/succesfull_authentication_after_verification.dart';
 import 'package:my_app/modal/sucessfull_authentication.dart';
+import 'package:my_app/modal/upload_responses/upload_attachment.dart';
 
 class UserApiService {
   final ApiClient apiClient;
@@ -260,6 +261,7 @@ class UserApiService {
     required String token,
     String? bio,
     String? profilePicPath,
+    UploadAttachment? media,
   }) async {
     try {
       final response = await apiClient.patch(
@@ -267,6 +269,7 @@ class UserApiService {
         {
           if (bio != null) "bio": bio,
           if (profilePicPath != null) "profile_picture": profilePicPath,
+          if (media != null) "media": media.toJson(),
           "token": token,
         },
       );
