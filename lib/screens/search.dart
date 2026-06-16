@@ -4,9 +4,11 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/core/network/api_client.dart';
 import 'package:my_app/core/util/debouncer.dart';
+import 'package:my_app/data/services/upload_service.dart';
 import 'package:my_app/data/services/user_api_service.dart';
 import 'package:my_app/modal/screens/search/search_item_group.dart';
 import 'package:my_app/modal/screens/search/search_item.dart';
+import 'package:my_app/providers/media_download_provider.dart';
 import 'package:my_app/providers/secure_storage_provider.dart';
 import 'package:my_app/providers/recent_searches_provider.dart';
 import 'package:my_app/core/database.dart';
@@ -157,6 +159,7 @@ class _SearchState extends ConsumerState<Search> {
                                   name: r.name,
                                   email: r.email,
                                   profilePicUrl: r.profilePicUrl,
+                                  bio: r.email,
                                 ),
                               )
                               .toList(),

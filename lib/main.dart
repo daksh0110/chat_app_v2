@@ -89,6 +89,7 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
       // ref.read(databaseProvider).managers.chatParticipants.delete();
       // ref.read(databaseProvider).managers.usersTable.delete();
       // ref.read(databaseProvider).managers.messageStatusTable.delete();
+      // ref.read(databaseProvider).managers.mediaTable.delete();
       // ref.read(secureStorageProvider.notifier).clearToken();
       next.whenData((state) async {
         if (state == AuthState.authenticated) {

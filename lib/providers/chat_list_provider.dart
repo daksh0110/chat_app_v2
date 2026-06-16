@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:my_app/core/database.dart';
 import 'package:my_app/modal/chat_list_modal.dart';
 import 'package:my_app/providers/database_provider.dart';
@@ -7,12 +8,53 @@ import 'package:my_app/providers/settings_user_notifier_provider.dart';
 
 final chatListProvider = StreamProvider<List<ChatListModal>>((ref) {
   final db = ref.watch(databaseProvider);
+  final user = ref.watch(settingsUserProvider);
+  final query = db.select(db.chatListTable).join([
+    leftOuterJoin(
+      db.chatParticipants,
+      db.chatParticipants.chatId.equalsExp(db.chatListTable.chatId) &
+          db.chatListTable.type.equals('DIRECT'),
+    ),
+    leftOuterJoin(
+      db.mediaTable,
+      (db.chatListTable.type.equals('DIRECT') &
+              db.mediaTable.actorId.equalsExp(db.chatParticipants.userId)) |
+          (db.chatListTable.type.equals('DIRECT').not() &
+              db.mediaTable.actorId.equalsExp(db.chatListTable.chatId)),
+    ),
+  ]);
 
-  return (db.select(db.chatListTable)
-        ..where((t) => t.isDeleted.equals(false))
-        ..orderBy([(t) => OrderingTerm.desc(t.lastMessageTime)]))
-      .watch()
-      .map((rows) => rows.map(ChatListModal.fromDrift).toList());
+  return query.watch().map((rows) {
+    return rows
+        .where((row) {
+          final chat = row.readTable(db.chatListTable);
+          final participant = row.readTableOrNull(db.chatParticipants);
+
+          return chat.type != "DIRECT" || participant?.userId != user?.id;
+        })
+        .map((row) {
+          final chat = row.readTable(db.chatListTable);
+          final media = row.readTableOrNull(db.mediaTable);
+
+          return ChatListModal(
+            chatId: chat.chatId,
+            name: chat.name,
+            lastMessage: chat.lastMessage ?? "",
+            lastMessageTime: chat.lastMessageTime != null
+                ? DateFormat("HH:mm").format(
+                    DateTime.fromMillisecondsSinceEpoch(chat.lastMessageTime!),
+                  )
+                : "",
+            unReadCount: chat.unReadCount,
+            type: chat.type,
+            id: chat.id.toString(),
+            profilePicUrl: chat.type == "DIRECT"
+                ? (media?.location ?? media?.url)
+                : media?.location,
+          );
+        })
+        .toList();
+  });
 });
 
 final chatListControllerProvider = Provider<ChatListController>((ref) {

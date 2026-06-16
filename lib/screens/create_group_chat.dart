@@ -1,18 +1,20 @@
 import 'dart:async';
-import 'dart:typed_data';
+import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mime/mime.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/core/database.dart';
 import 'package:my_app/core/network/api_client.dart';
+import 'package:my_app/core/util/get_file_type.dart';
 import 'package:my_app/data/services/chat_sync_service.dart';
-import 'package:my_app/modal/screens/createGroup/create_group_response.dart';
+import 'package:my_app/data/services/upload_service.dart';
+import 'package:my_app/modal/upload_responses/upload_attachment.dart';
 import 'package:my_app/providers/database_provider.dart';
 import 'package:my_app/providers/settings_user_notifier_provider.dart';
 import 'package:my_app/providers/socket_provider.dart';
 import 'package:my_app/screens/select_members_screen.dart';
-import 'package:my_app/services/cloudinary_service.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
 import 'package:my_app/widgets/comman/primary_button.dart';
 import 'package:my_app/widgets/comman/user_bubble.dart';
@@ -37,6 +39,72 @@ class _createGroupChatState extends ConsumerState<CreateGroupChat> {
   List<UsersTableData> _selectedMembers = [];
   bool _isCreating = false;
   Timer? _createGroupTimeout;
+
+  void _removePhoto() {
+    setState(() {
+      _pickedPhotoBytes = null;
+      _pickedImageFile = null;
+    });
+  }
+
+  Future<UploadAttachment?> uploadImage(XFile? pickedImageFile) async {
+    if (pickedImageFile == null) {
+      return null;
+    }
+
+    try {
+      final mime =
+          lookupMimeType(pickedImageFile.path) ?? "application/octet-stream";
+
+      final presignedUrl = await UploadService(ApiClient()).getPresignedUrl(
+        assetType: "chat",
+        entityType: "avatar",
+        contentType: mime,
+      );
+
+      if (!presignedUrl.success || presignedUrl.data == null) {
+        ToastHelper.show(
+          context: context,
+          message: "Failed to upload media",
+          type: ToastificationType.error,
+        );
+        return null;
+      }
+
+      final response = presignedUrl.data!;
+
+      final result = await UploadService(ApiClient()).uploadToSignedUrl(
+        await pickedImageFile.readAsBytes(),
+        response.url,
+        mime,
+      );
+
+      if (result == 200) {
+        return UploadAttachment(
+          contentType: mime,
+          key: response.key ?? "",
+          type: getMediaType(mime),
+          name: pickedImageFile.name,
+        );
+      }
+
+      ToastHelper.show(
+        context: context,
+        message: "Upload failed",
+        type: ToastificationType.error,
+      );
+
+      return null;
+    } catch (e) {
+      ToastHelper.show(
+        context: context,
+        message: "Something went wrong",
+        type: ToastificationType.error,
+      );
+
+      return null;
+    }
+  }
 
   Future<void> _pickPhoto() async {
     try {
@@ -111,15 +179,19 @@ class _createGroupChatState extends ConsumerState<CreateGroupChat> {
     });
 
     try {
-      String? imageUrl;
+      UploadAttachment? media;
       if (_pickedImageFile != null) {
-        imageUrl = await CloudinaryService.uploadImage(_pickedImageFile!);
+        media = await uploadImage(_pickedImageFile);
+        if (media == null) {
+          throw Exception("Failed to upload group image");
+        }
       }
+
       final groupData = {
         "name": _groupNameController.text.trim(),
         "description": _descriptionController.text.trim(),
         "userIds": _selectedMembers.map((m) => m.id).toList(),
-        if (imageUrl != null && imageUrl.isNotEmpty) "image": imageUrl,
+        if (media != null) "media": media.toJson(),
       };
 
       final socket = ref.read(socketProvider);
@@ -144,6 +216,40 @@ class _createGroupChatState extends ConsumerState<CreateGroupChat> {
         });
 
         if (response.success == true) {
+          if (media != null && response.data?.chatId != null) {
+            final database = ref.read(databaseProvider);
+            final chatId = response.data!.chatId;
+            final existing = await database.managers.mediaTable
+                .filter((f) => f.actorId(chatId))
+                .getSingleOrNull();
+
+            if (existing == null) {
+              await database.into(database.mediaTable).insert(
+                    MediaTableCompanion.insert(
+                      createdAt: DateTime.now().millisecondsSinceEpoch,
+                      actorId: Value(chatId),
+                      Type: Value(media.type),
+                      contentType: Value(media.contentType),
+                      location: Value(_pickedImageFile!.path),
+                      name: Value(media.name),
+                      key: Value(media.key),
+                    ),
+                  );
+            } else {
+              await (database.update(database.mediaTable)
+                    ..where((tbl) => tbl.id.equals(existing.id)))
+                  .write(
+                MediaTableCompanion(
+                  Type: Value(media.type),
+                  contentType: Value(media.contentType),
+                  location: Value(_pickedImageFile!.path),
+                  name: Value(media.name),
+                  key: Value(media.key),
+                ),
+              );
+            }
+          }
+
           final currentUser = ref.read(settingsUserProvider);
           if (currentUser != null) {
             await ChatSyncService(
@@ -224,11 +330,12 @@ class _createGroupChatState extends ConsumerState<CreateGroupChat> {
                       Center(
                         child: Column(
                           children: [
-                            GestureDetector(
-                              onTap: _isCreating ? null : _pickPhoto,
-                              child: Stack(
-                                children: [
-                                  _pickedPhotoBytes != null
+                            Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                GestureDetector(
+                                  onTap: _isCreating ? null : _pickPhoto,
+                                  child: _pickedPhotoBytes != null
                                       ? CircleAvatar(
                                           radius: 50,
                                           backgroundImage: MemoryImage(
@@ -248,25 +355,49 @@ class _createGroupChatState extends ConsumerState<CreateGroupChat> {
                                             size: 40,
                                           ),
                                         ),
-                                  if (!_isCreating)
+                                ),
+                                if (!_isCreating) ...[
+                                  if (_pickedPhotoBytes != null)
                                     Positioned(
-                                      bottom: 0,
-                                      right: 4,
+                                      right: -4,
+                                      top: -4,
+                                      child: GestureDetector(
+                                        onTap: _removePhoto,
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: DefaultColorSheet.grey200,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          padding: const EdgeInsets.all(6),
+                                          child: const Icon(
+                                            Icons.close,
+                                            size: 16,
+                                            color: DefaultColorSheet.grey500,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  Positioned(
+                                    bottom: 0,
+                                    right: 4,
+                                    child: GestureDetector(
+                                      onTap: _isCreating ? null : _pickPhoto,
                                       child: Container(
                                         padding: const EdgeInsets.all(6),
                                         decoration: const BoxDecoration(
                                           color: DefaultColorSheet.primary,
                                           shape: BoxShape.circle,
                                         ),
-                                        child: const Icon(
-                                          Icons.add,
+                                        child: Icon(
+                                          _pickedPhotoBytes != null ? Icons.edit : Icons.add,
                                           color: Colors.white,
                                           size: 20,
                                         ),
                                       ),
                                     ),
+                                  ),
                                 ],
-                              ),
+                              ],
                             ),
                             const SizedBox(height: 24),
                             TextField(

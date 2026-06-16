@@ -4,6 +4,7 @@ import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/modal/chat_list_modal.dart';
 import 'package:my_app/providers/message_typing_provider.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
+import 'dart:io';
 
 class ChatListItem extends ConsumerWidget {
   const ChatListItem({
@@ -24,10 +25,7 @@ class ChatListItem extends ConsumerWidget {
     final typingMap = ref.watch(messageTypingProvider);
     final isTyping = typingMap[chat.chatId] ?? false;
     final isProfilePicValid =
-        (chat.profilePicUrl != null &&
-            Uri.tryParse(chat.profilePicUrl!)?.hasAbsolutePath == true)
-        ? true
-        : false;
+        chat.profilePicUrl != null && File(chat.profilePicUrl!).existsSync();
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -50,8 +48,8 @@ class ChatListItem extends ConsumerWidget {
               // Profile Image
               ClipOval(
                 child: isProfilePicValid
-                    ? Image.network(
-                        chat.profilePicUrl!,
+                    ? Image.file(
+                        File(chat.profilePicUrl!),
                         width: 46,
                         height: 46,
                         fit: BoxFit.cover,
@@ -110,7 +108,7 @@ class ChatListItem extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   PrimaryText(
-                    chat.lastMessageTime ?? "",
+                    chat.lastMessageTime,
                     fontSize: 12,
                     color: DefaultColorSheet.grey500,
                   ),

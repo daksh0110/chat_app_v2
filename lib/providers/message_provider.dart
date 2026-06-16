@@ -13,7 +13,7 @@ import 'package:my_app/data/services/chat_api_service.dart';
 import 'package:my_app/data/services/chat_sync_service.dart';
 import 'package:my_app/data/services/upload_service.dart';
 import 'package:my_app/data/services/user_api_service.dart';
-import 'package:my_app/modal/screens/createGroup/create_group_response.dart';
+import 'package:my_app/modal/screens/createGroup/create_group_response.dart' show CreateGroupResponse, GroupData;
 import 'package:my_app/modal/screens/message/message_delivered_response.dart';
 import 'package:my_app/modal/screens/message/message_read_response.dart';
 import 'package:my_app/modal/screens/message/message_status.dart';
@@ -28,7 +28,7 @@ import 'package:my_app/providers/socket_provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:mime/mime.dart';
 
-int _parseTimestamp(dynamic ts) {
+int parseTimestamp(dynamic ts) {
   if (ts == null) return DateTime.now().millisecondsSinceEpoch;
   if (ts is int) return ts;
   if (ts is String) {
@@ -137,7 +137,7 @@ class MessageNotifer extends Notifier {
     final chatId = data.chatId;
     final tempId = data.tempId;
 
-    final createdAt = _parseTimestamp(data.createdAt);
+    final createdAt = parseTimestamp(data.createdAt);
     _serverTimeOffset = createdAt - DateTime.now().millisecondsSinceEpoch;
 
     if (senderId == currentUser.id) return;
@@ -161,6 +161,7 @@ class MessageNotifer extends Notifier {
     final isResumed =
         WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
     final shouldAutoRead = isResumed && activeChatId == chatId;
+    GroupData? fetchedChatData;
 
     await database.transaction(() async {
       await database.managers.messages.create(
@@ -184,15 +185,15 @@ class MessageNotifer extends Notifier {
                 messageId: messageId,
                 userId: status.userId,
                 status: Value(status.status),
-                createdAt: _parseTimestamp(status.createdAt),
-                updatedAt: _parseTimestamp(status.updatedAt),
+                createdAt: parseTimestamp(status.createdAt),
+                updatedAt: parseTimestamp(status.updatedAt),
                 deliveredAt: Value(
                   status.deliveredAt != null
-                      ? _parseTimestamp(status.deliveredAt)
+                      ? parseTimestamp(status.deliveredAt)
                       : null,
                 ),
                 readAt: Value(
-                  status.readAt != null ? _parseTimestamp(status.readAt) : null,
+                  status.readAt != null ? parseTimestamp(status.readAt) : null,
                 ),
               ),
             )
@@ -231,6 +232,7 @@ class MessageNotifer extends Notifier {
         ).getChat(token: token, chatId: chatId);
 
         final user = response.data?.data;
+        fetchedChatData = user;
         debugPrint("Fetched chat details for new message: ${user}");
         await database.managers.chatListTable.create(
           (o) => o(
@@ -301,6 +303,9 @@ class MessageNotifer extends Notifier {
     unawaited(
       chatSyncService.updateDmChatItem(userId: senderId, chatId: chatId),
     );
+    if (fetchedChatData != null) {
+      unawaited(chatSyncService.syncChatMedia(fetchedChatData!));
+    }
   }
 
   Future<void> sendMessage({
@@ -474,7 +479,7 @@ class MessageNotifer extends Notifier {
           final payload = SendMessageAck.fromJson(response);
           final realChatId = payload.chatId;
           final messageId = payload.messageId;
-          final createdAt = _parseTimestamp(payload.createdAt);
+          final createdAt = parseTimestamp(payload.createdAt);
           _serverTimeOffset = createdAt - DateTime.now().millisecondsSinceEpoch;
 
           if (currentChatId.startsWith("local_")) {
@@ -533,15 +538,15 @@ class MessageNotifer extends Notifier {
                 messageId: messageId,
                 userId: status.userId,
                 status: Value(status.status),
-                createdAt: _parseTimestamp(status.createdAt),
-                updatedAt: _parseTimestamp(status.updatedAt),
+                createdAt: parseTimestamp(status.createdAt),
+                updatedAt: parseTimestamp(status.updatedAt),
                 deliveredAt: Value(
                   status.deliveredAt != null
-                      ? _parseTimestamp(status.deliveredAt)
+                      ? parseTimestamp(status.deliveredAt)
                       : null,
                 ),
                 readAt: Value(
-                  status.readAt != null ? _parseTimestamp(status.readAt) : null,
+                  status.readAt != null ? parseTimestamp(status.readAt) : null,
                 ),
               );
             }).toList(),
@@ -605,8 +610,8 @@ class MessageNotifer extends Notifier {
               .update(
                 (o) => o(
                   status: Value(status.status),
-                  deliveredAt: Value(_parseTimestamp(status.deliveredAt)),
-                  updatedAt: Value(_parseTimestamp(status.updatedAt)),
+                  deliveredAt: Value(parseTimestamp(status.deliveredAt)),
+                  updatedAt: Value(parseTimestamp(status.updatedAt)),
                 ),
               );
         });
@@ -651,8 +656,8 @@ class MessageNotifer extends Notifier {
               .update(
                 (o) => o(
                   status: Value(status.status),
-                  readAt: Value(_parseTimestamp(status.readAt)),
-                  updatedAt: Value(_parseTimestamp(status.updatedAt)),
+                  readAt: Value(parseTimestamp(status.readAt)),
+                  updatedAt: Value(parseTimestamp(status.updatedAt)),
                 ),
               );
         });
@@ -759,7 +764,7 @@ class MessageNotifer extends Notifier {
         (response) async {
           final messageId = response["message_id"];
           final chatId = response["chat_id"];
-          final createdAt = _parseTimestamp(response["created_at"]);
+          final createdAt = parseTimestamp(response["created_at"]);
 
           if (msg.chatId.startsWith("local_")) {
             await db.managers.chatParticipants

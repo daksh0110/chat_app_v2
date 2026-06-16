@@ -5,7 +5,8 @@ import 'package:my_app/modal/tables/recent_searches_table.dart';
 part 'recent_searches_dao.g.dart';
 
 @DriftAccessor(tables: [RecentSearchesTable])
-class RecentSearchesDao extends DatabaseAccessor<AppDatabase> with _$RecentSearchesDaoMixin {
+class RecentSearchesDao extends DatabaseAccessor<AppDatabase>
+    with _$RecentSearchesDaoMixin {
   RecentSearchesDao(super.db);
 
   Future<void> upsertRecentSearch({
@@ -33,8 +34,8 @@ class RecentSearchesDao extends DatabaseAccessor<AppDatabase> with _$RecentSearc
   }
 
   Future<void> deleteRecentSearch(String userId) async {
-    await (delete(recentSearchesTable)
-          ..where((t) => t.userId.equals(userId)))
-        .go();
+    await (delete(
+      recentSearchesTable,
+    )..where((t) => t.userId.equals(userId))).go();
   }
 }

@@ -1,3 +1,5 @@
+import 'package:my_app/modal/upload_responses/upload_attachment.dart';
+
 class CreateGroupResponse {
   final bool success;
   final String message;
@@ -29,6 +31,7 @@ class GroupData {
   final String description;
   final String type;
   final List<Participant> participants;
+  final UploadAttachment? media;
 
   GroupData({
     required this.chatId,
@@ -37,6 +40,7 @@ class GroupData {
     this.description = "",
     required this.type,
     required this.participants,
+    this.media,
   });
 
   factory GroupData.fromJson(Map<String, dynamic> json) {
@@ -49,6 +53,9 @@ class GroupData {
       participants: (json['participants'] as List? ?? [])
           .map((e) => Participant.fromJson(e))
           .toList(),
+      media: json['media'] != null
+          ? UploadAttachment.fromJson(json['media'] as Map<String, dynamic>)
+          : null,
     );
   }
 }
@@ -59,6 +66,7 @@ class Participant {
   final String profilePictureUrl;
   final String role;
   final String chatId;
+  final UploadAttachment? media;
 
   Participant({
     required this.userId,
@@ -66,6 +74,7 @@ class Participant {
     this.profilePictureUrl = "",
     required this.role,
     required this.chatId,
+    this.media,
   });
 
   factory Participant.fromJson(Map<String, dynamic> json) {
@@ -75,6 +84,9 @@ class Participant {
       profilePictureUrl: json['profile_pic_url'] ?? '',
       role: json['role'] ?? 'MEMBER',
       chatId: json['chat_id'] ?? '',
+      media: json['media'] != null
+          ? UploadAttachment.fromJson(json['media'] as Map<String, dynamic>)
+          : null,
     );
   }
 }
