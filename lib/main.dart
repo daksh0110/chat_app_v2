@@ -18,6 +18,7 @@ import 'package:my_app/screens/log_in.dart';
 import 'package:my_app/screens/message.dart';
 import 'package:my_app/screens/onboarding_screen.dart';
 import 'package:my_app/screens/search.dart';
+import 'package:my_app/screens/settings/profile/profile_edit.dart';
 import 'package:my_app/screens/settings/settings_main.dart';
 import 'package:my_app/screens/sign_up.dart';
 import 'package:my_app/screens/google_password_setup.dart';
@@ -157,6 +158,7 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
         AppRoutes.userProfile: (context) => UserProfile(),
         AppRoutes.createGroupChat: (context) => CreateGroupChat(),
         AppRoutes.newChat: (context) => const NewChatScreen(),
+        AppRoutes.profileEdit: (context) => const ProfileEdit(),
       },
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
+import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/data/settins_main_data.dart';
 import 'package:my_app/modal/screens/search/search_item.dart';
 import 'package:my_app/providers/settings_user_notifier_provider.dart';
@@ -30,7 +31,9 @@ class SettingsMain extends ConsumerWidget {
                 subtitle: user.email,
                 profilePicUrl: user.profilePictureUrl,
               ),
-
+              onTap: () {
+                Navigator.pushNamed(context, AppRoutes.profileEdit);
+              },
               actionWidget: [
                 const Spacer(),
                 Icon(Icons.qr_code_scanner, color: DefaultColorSheet.green400),
