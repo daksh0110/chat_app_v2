@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/providers/database_provider.dart';
+import 'package:my_app/providers/edit_profile_provider.dart';
 import 'package:my_app/providers/settings_user_notifier_provider.dart';
 import 'package:my_app/providers/user_profile_info_procider.dart';
 import 'package:my_app/modal/screens/search/search_item.dart';
@@ -81,6 +82,8 @@ class UserProfile extends ConsumerStatefulWidget {
 }
 
 class UserProfileState extends ConsumerState<UserProfile> {
+  SearchItem? user;
+
   @override
   Widget build(BuildContext context) {
     final routeArgs = ModalRoute.of(context)!.settings.arguments;

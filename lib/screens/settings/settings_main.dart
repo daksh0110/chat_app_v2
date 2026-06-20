@@ -4,6 +4,7 @@ import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/data/settins_main_data.dart';
 import 'package:my_app/modal/screens/search/search_item.dart';
+import 'package:my_app/providers/edit_profile_provider.dart';
 import 'package:my_app/providers/settings_user_notifier_provider.dart';
 import 'package:my_app/widgets/comman/primary_container.dart';
 import 'package:my_app/widgets/screens/search/search_group_item.dart';
@@ -14,7 +15,7 @@ class SettingsMain extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(settingsUserProvider);
+    final user = ref.watch(userProvider).value;
     if (user == null) {
       return const SizedBox.shrink();
     }
@@ -28,8 +29,8 @@ class SettingsMain extends ConsumerWidget {
               item: SearchItem(
                 id: user.id,
                 name: user.name,
-                subtitle: user.email,
-                profilePicUrl: user.profilePictureUrl,
+                subtitle: user.email ?? "?",
+                profilePicUrl: user.profilePicUrl ?? "",
               ),
               onTap: () {
                 Navigator.pushNamed(context, AppRoutes.profileEdit);

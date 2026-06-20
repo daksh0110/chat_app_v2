@@ -4,6 +4,8 @@ class UploadAttachment {
   final String type;
   final String name;
   final String? url;
+  final String? actorId;
+  final String? location;
 
   UploadAttachment({
     required this.key,
@@ -11,6 +13,8 @@ class UploadAttachment {
     required this.type,
     this.name = "",
     this.url,
+    this.actorId = "",
+    this.location = "",
   });
 
   factory UploadAttachment.fromJson(Map<String, dynamic> json) {
@@ -20,6 +24,7 @@ class UploadAttachment {
       type: json['type'] as String,
       name: json['name'] as String? ?? "",
       url: json['url'] as String?,
+      actorId: json["actor_id"],
     );
   }
 
