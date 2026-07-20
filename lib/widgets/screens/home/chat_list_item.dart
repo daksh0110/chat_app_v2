@@ -63,9 +63,7 @@ class ChatListItem extends ConsumerWidget {
                         height: 46,
                         alignment: Alignment.center,
                         child: PrimaryText(
-                          chat.name.isNotEmpty
-                              ? chat.name[0].toUpperCase()
-                              : "",
+                          (chat.name ?? "")[0].toUpperCase(),
                           color: Colors.white,
                           fontSize: 26,
                         ),
@@ -79,7 +77,7 @@ class ChatListItem extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     PrimaryText(
-                      chat.name,
+                      chat.name ?? "",
                       fontSize: 20,
                       fontWeight: FontWeight.w500,
                       color: DefaultColorSheet.lightBlack,
@@ -92,7 +90,7 @@ class ChatListItem extends ConsumerWidget {
                             color: DefaultColorSheet.green500,
                           )
                         : PrimaryText(
-                            chat.lastMessage ?? "",
+                            chat.lastMessage,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             fontSize: 12,

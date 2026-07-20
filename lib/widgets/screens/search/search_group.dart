@@ -7,10 +7,9 @@ import 'package:my_app/modal/api_response.dart';
 import 'package:my_app/modal/screens/search/message_screen_arguments.dart';
 import 'package:my_app/modal/screens/search/search_item.dart';
 import 'package:my_app/modal/screens/search/search_item_group.dart';
-import 'package:my_app/providers/media_download_provider.dart';
+import 'package:my_app/providers/tables/recent_search_provider.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
 import 'package:my_app/widgets/screens/search/search_group_item.dart';
-import 'package:my_app/providers/recent_searches_provider.dart';
 
 class SearchGroup extends ConsumerWidget {
   const SearchGroup({super.key, required this.list});
@@ -19,6 +18,10 @@ class SearchGroup extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final apiClient = ApiClient();
+
+    if (list.items.isEmpty) {
+      return const SizedBox.shrink();
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
 
@@ -32,10 +35,15 @@ class SearchGroup extends ConsumerWidget {
           itemBuilder: (context, index) {
             final item = list.items[index];
             final media = item.media;
-
+            final profilePicUrl = item.profilePicUrl;
+            debugPrint(
+              "Building SearchGroupItem for ${item.name}, profilePicUrl: $profilePicUrl, media key: ${media?.key}",
+            );
             return FutureBuilder<ApiResponse<String>>(
-              future: media != null
-                  ? UploadService(apiClient).getDownloadUrl(media.key)
+              future:
+                  (profilePicUrl == null || profilePicUrl.isEmpty) &&
+                      media?.key != null
+                  ? UploadService(apiClient).getDownloadUrl(media!.key)
                   : null,
               builder: (context, snapshot) {
                 final imageUrl = snapshot.data?.data;
@@ -46,28 +54,21 @@ class SearchGroup extends ConsumerWidget {
                     bio: item.bio,
                     email: item.email,
                     profilePicUrl: imageUrl ?? item.profilePicUrl,
-                    subtitle: item.subtitle,
                     media: item.media,
                   ),
                   onTap: () {
-                    if (imageUrl != null) {
-                      ref
-                          .read(mediaDownloadProvider.notifier)
-                          .saveImageUrlLocally(imageUrl)
-                          .then((file) {
-                            ref
-                                .read(recentSearchesProvider)
-                                .upsertRecentSearch(
-                                  userId: item.id,
-                                  name: item.name,
-                                  email: item.email ?? "",
-                                  profilePicUrl: file.path,
-                                );
-                          })
-                          .catchError((e) {
-                            debugPrint('Failed to download image: $e');
-                          });
-                    }
+                    ref
+                        .read(recentSearchProvider.notifier)
+                        .addRecentSearch(
+                          SearchItem(
+                            id: item.id,
+                            name: item.name,
+                            bio: item.bio,
+                            email: item.email,
+                            media: item.media,
+                            actorType: item.actorType,
+                          ),
+                        );
 
                     Navigator.pushNamed(
                       context,
@@ -75,7 +76,7 @@ class SearchGroup extends ConsumerWidget {
                       arguments: MessageScreenArguments(
                         receiverId: item.id,
                         name: item.name,
-                        profilePicUrl: imageUrl,
+                        profilePicUrl: imageUrl ?? item.profilePicUrl,
                       ),
                     );
                   },

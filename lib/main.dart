@@ -1,21 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/core/util/route_observer.dart';
 import 'package:my_app/data/services/notification_service.dart';
 import 'package:my_app/providers/auth_notifier_provider.dart';
-import 'package:my_app/providers/database_provider.dart';
 import 'package:my_app/providers/message_provider.dart';
-import 'package:my_app/providers/secure_storage_provider.dart';
+
 import 'package:my_app/providers/server_connection_provider.dart';
-import 'package:my_app/providers/settings_user_notifier_provider.dart';
 import 'package:my_app/providers/socket_provider.dart';
+import 'package:my_app/providers/token_provider.dart';
 import 'package:my_app/screens/change_password.dart';
 import 'package:my_app/screens/create_group_chat.dart';
-import 'package:my_app/screens/new_chat_screen.dart';
 import 'package:my_app/screens/main_screen.dart';
 import 'package:my_app/screens/log_in.dart';
 import 'package:my_app/screens/message.dart';
+import 'package:my_app/screens/new_chat_screen.dart';
 import 'package:my_app/screens/onboarding_screen.dart';
 import 'package:my_app/screens/search.dart';
 import 'package:my_app/screens/settings/profile/profile_edit.dart';
@@ -84,18 +82,11 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     ref.listen(authProvider, (previous, next) async {
-      // ref.read(databaseProvider).managers.chatListTable.delete();
-      // ref.read(databaseProvider).managers.messages.delete();
-      // ref.read(databaseProvider).managers.userInfoSettings.delete();
-      // ref.read(databaseProvider).managers.chatParticipants.delete();
-      // ref.read(databaseProvider).managers.usersTable.delete();
-      // ref.read(databaseProvider).managers.messageStatusTable.delete();
-      // ref.read(databaseProvider).managers.mediaTable.delete();
-      // ref.read(secureStorageProvider.notifier).clearToken();
       next.whenData((state) async {
         if (state == AuthState.authenticated) {
-          final storage = const FlutterSecureStorage();
-          final token = await storage.read(key: "accessToken") ?? "";
+          final token = await ref.read(tokenProvider.future);
+
+          if (token == null) return;
           ref.read(socketProvider).onConnect(() async {
             final notifier = ref.read(messageProvider.notifier);
             await notifier.receiveMessage();
@@ -106,11 +97,10 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
             notifier.receiveStopTypingEvent();
             notifier.sendQueueMessages();
             notifier.groupChatCreatedListener();
-            notifier.groupsCountSync();
+            // notifier.groupsCountSync();
 
             await NotificationService.handleInitialMessage();
           });
-          await ref.read(settingsUserProvider.notifier).setUser(token);
           ref.read(socketProvider).connect(token);
         }
       });

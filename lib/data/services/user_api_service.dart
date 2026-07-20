@@ -8,6 +8,7 @@ import 'package:my_app/modal/send_otp_response.dart';
 import 'package:my_app/modal/succesfull_authentication_after_verification.dart';
 import 'package:my_app/modal/sucessfull_authentication.dart';
 import 'package:my_app/modal/upload_responses/upload_attachment.dart';
+import 'package:my_app/modal/user.modal.dart';
 
 class UserApiService {
   final ApiClient apiClient;
@@ -95,20 +96,21 @@ class UserApiService {
     }
   }
 
-  Future<ApiResponse<List<SearchItem>>> getUsers({
+  Future<ApiResponse<List<UserModel>>> getUsers({
     required String search,
     required int page,
     required String token,
+    int limit = 10,
   }) async {
     try {
       final response = await apiClient.get(
-        "${ApiConstants.baseUrl}${ApiConstants.users}?search=$search&page=$page",
+        "${ApiConstants.baseUrl}${ApiConstants.users}?search=$search&page=$page&limit=$limit",
         token: token,
       );
-      final apiResponse = ApiResponse<List<SearchItem>>.fromJson(
+      final apiResponse = ApiResponse<List<UserModel>>.fromJson(
         response,
         (json) =>
-            (json as List).map((item) => SearchItem.fromJson(item)).toList(),
+            (json as List).map((item) => UserModel.fromJson(item)).toList(),
       );
       return apiResponse;
     } catch (e) {
@@ -132,16 +134,16 @@ class UserApiService {
     }
   }
 
-  Future<ApiResponse<SearchItem>> getMyProfile({required String token}) async {
+  Future<ApiResponse<UserModel>> getMyProfile({required String token}) async {
     try {
       final response = await apiClient.get(
         "${ApiConstants.baseUrl}${ApiConstants.users}/me",
         token: token,
       );
 
-      final apiResponse = ApiResponse<SearchItem>.fromJson(
+      final apiResponse = ApiResponse<UserModel>.fromJson(
         response,
-        (json) => SearchItem.fromJson(json as Map<String, dynamic>),
+        (json) => UserModel.fromJson(json as Map<String, dynamic>),
       );
       return apiResponse;
     } catch (e) {

@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/core/app_routes.dart';
-import 'package:my_app/core/database.dart';
 import 'package:my_app/modal/screens/search/message_screen_arguments.dart';
-import 'package:my_app/providers/database_provider.dart';
+import 'package:my_app/modal/user.modal.dart';
+import 'package:my_app/providers/tables/users_table_provider.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
 import 'package:my_app/widgets/comman/user_bubble.dart';
 
@@ -14,7 +14,7 @@ class NewChatScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final db = ref.watch(databaseProvider);
+    final usersAsync = ref.watch(allUsersProvider);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -22,7 +22,10 @@ class NewChatScreen extends ConsumerWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: DefaultColorSheet.lightBlack),
+          icon: const Icon(
+            Icons.arrow_back,
+            color: DefaultColorSheet.lightBlack,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: const PrimaryText(
@@ -34,17 +37,15 @@ class NewChatScreen extends ConsumerWidget {
         centerTitle: true,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(
-            color: DefaultColorSheet.grey200,
-            height: 1,
-          ),
+          child: Container(color: DefaultColorSheet.grey200, height: 1),
         ),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           InkWell(
-            onTap: () => Navigator.pushNamed(context, AppRoutes.createGroupChat),
+            onTap: () =>
+                Navigator.pushNamed(context, AppRoutes.createGroupChat),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Row(
@@ -90,10 +91,7 @@ class NewChatScreen extends ConsumerWidget {
             ),
           ),
 
-          Container(
-            height: 1,
-            color: DefaultColorSheet.grey200,
-          ),
+          Container(height: 1, color: DefaultColorSheet.grey200),
 
           const Padding(
             padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
@@ -106,16 +104,10 @@ class NewChatScreen extends ConsumerWidget {
           ),
 
           Expanded(
-            child: StreamBuilder<List<UsersTableData>>(
-              stream: db.getAllUsers(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting &&
-                    !snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                final users = snapshot.data ?? [];
-
+            child: usersAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, stack) => Center(child: Text(err.toString())),
+              data: (users) {
                 if (users.isEmpty) {
                   return Center(
                     child: Column(
@@ -148,11 +140,13 @@ class NewChatScreen extends ConsumerWidget {
                   itemCount: users.length,
                   separatorBuilder: (_, __) => Padding(
                     padding: const EdgeInsets.only(left: 86),
-                    child: Container(height: 1, color: DefaultColorSheet.grey200),
+                    child: Container(
+                      height: 1,
+                      color: DefaultColorSheet.grey200,
+                    ),
                   ),
-                  itemBuilder: (context, index) {
-                    final user = users[index];
-                    return _ContactTile(user: user);
+                  itemBuilder: (_, index) {
+                    return _ContactTile(user: users[index]);
                   },
                 );
               },
@@ -165,7 +159,7 @@ class NewChatScreen extends ConsumerWidget {
 }
 
 class _ContactTile extends StatelessWidget {
-  final UsersTableData user;
+  final UserModel user;
   const _ContactTile({required this.user});
 
   @override
@@ -178,7 +172,7 @@ class _ContactTile extends StatelessWidget {
           arguments: MessageScreenArguments(
             receiverId: user.id,
             name: user.name,
-            profilePicUrl: user.profilePictureUrl,
+            profilePicUrl: user.profilePic,
           ),
         );
       },
@@ -187,7 +181,7 @@ class _ContactTile extends StatelessWidget {
         child: Row(
           children: [
             UserBubble(
-              profilePicUrl: user.profilePictureUrl,
+              profilePicUrl: user.profilePic,
               name: user.name,
               size: 50,
             ),
@@ -205,7 +199,7 @@ class _ContactTile extends StatelessWidget {
                   if (user.email.isNotEmpty) ...[
                     const SizedBox(height: 2),
                     PrimaryText(
-                      user.email,
+                      user.email ?? "",
                       fontSize: 13,
                       color: DefaultColorSheet.grey500,
                     ),

@@ -3,24 +3,14 @@ import 'dart:typed_data';
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/core/app_routes.dart';
-import 'package:my_app/core/database.dart';
-import 'package:my_app/core/network/api_client.dart';
-import 'package:my_app/core/util/get_file_type.dart';
-import 'package:my_app/data/services/upload_service.dart';
-import 'package:my_app/data/services/user_api_service.dart';
-import 'package:my_app/modal/screens/search/search_item.dart';
-import 'package:my_app/modal/upload_responses/upload_attachment.dart';
-import 'package:my_app/providers/database_provider.dart';
-import 'package:my_app/providers/media_download_provider.dart';
+import 'package:my_app/providers/profile_setup_provider.dart';
 import 'package:my_app/widgets/comman/primary_button.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
 import 'package:my_app/widgets/comman/toast_notification.dart';
 import 'package:toastification/toastification.dart';
-import 'package:mime/mime.dart';
 
 class ProfileSetupScreen extends ConsumerStatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -35,33 +25,38 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   Uint8List? _pickedPhotoBytes;
   XFile? _pickedImageFile;
   String? _profilePicUrl;
-  bool _isPickingPhoto = false;
   bool _isUploading = false;
-  SearchItem? argsData;
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final args = ModalRoute.of(context)?.settings.arguments as SearchItem?;
+  bool _isLoading = true;
 
-    if (args != null) {
-      argsData = args;
-      if (args.bio != null && args.bio!.isNotEmpty) {
-        bioController.text = args.bio!;
+  Future<void> _loadProfile() async {
+    try {
+      final user = await ref
+          .read(profileScreenProvider.notifier)
+          .fetchUserProfileDetails();
+
+      if (user != null) {
+        bioController.text = user.bio ?? "";
+        _profilePicUrl = user.profilePic;
       }
-      if (args.profilePicUrl != null && args.profilePicUrl!.isNotEmpty) {
+    } catch (e) {
+      debugPrint("Error loading profile: $e");
+    } finally {
+      if (mounted) {
         setState(() {
-          _profilePicUrl = args.profilePicUrl;
+          _isLoading = false;
         });
       }
     }
   }
 
-  Future<void> _pickPhoto() async {
-    setState(() {
-      _isPickingPhoto = true;
-    });
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
 
+  Future<void> _pickPhoto() async {
     try {
       final XFile? pickedImage = await ImagePicker().pickImage(
         source: ImageSource.gallery,
@@ -84,10 +79,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         ).showSnackBar(SnackBar(content: Text('Error picking image: $e')));
       }
     }
-
-    setState(() {
-      _isPickingPhoto = false;
-    });
   }
 
   void _removePhoto() {
@@ -96,197 +87,36 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     });
   }
 
-  Future<UploadAttachment?> uploadImage(XFile? pickedImageFile) async {
-    if (pickedImageFile == null) {
-      return null;
-    }
-
-    try {
-      final mime =
-          lookupMimeType(pickedImageFile.path) ?? "application/octet-stream";
-
-      final presignedUrl = await UploadService(ApiClient()).getPresignedUrl(
-        assetType: "user",
-        entityType: "avatar",
-        contentType: mime,
-        entityId: argsData?.id,
-      );
-
-      if (!presignedUrl.success || presignedUrl.data == null) {
-        ToastHelper.show(
-          context: context,
-          message: "Failed to upload media",
-          type: ToastificationType.error,
-        );
-        return null;
-      }
-
-      final response = presignedUrl.data!;
-
-      final result = await UploadService(ApiClient()).uploadToSignedUrl(
-        await pickedImageFile.readAsBytes(),
-        response.url,
-        mime,
-      );
-
-      if (result == 200) {
-        return UploadAttachment(
-          contentType: mime,
-          key: response.key ?? "",
-          type: getMediaType(mime),
-          name: pickedImageFile.name,
-        );
-      }
-
-      ToastHelper.show(
-        context: context,
-        message: "Upload failed",
-        type: ToastificationType.error,
-      );
-
-      return null;
-    } catch (e) {
-      ToastHelper.show(
-        context: context,
-        message: "Something went wrong",
-        type: ToastificationType.error,
-      );
-
-      return null;
-    }
-  }
-
   void _onContinue() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      _isUploading = true;
-    });
+    setState(() => _isUploading = true);
 
     try {
-      final storage = const FlutterSecureStorage();
-      final token = await storage.read(key: 'accessToken');
-      final apiClient = ApiClient();
-
-      UploadAttachment? media;
-      String? localPath;
-
-      if (_pickedImageFile == null && _profilePicUrl == null) {
-        final result = await UserApiService(apiClient).updateProfile(
-          token: token ?? "",
-          bio: bioController.text.trim().isNotEmpty
-              ? bioController.text.trim()
-              : null,
-          media: null,
-        );
-
-        if (result.success) {
-          if (!mounted) return;
-
-          Navigator.of(
-            context,
-          ).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
-        } else {
-          ToastHelper.show(
-            context: context,
-            message: result.message,
-            type: ToastificationType.error,
+      await ref
+          .read(profileScreenProvider.notifier)
+          .updateProfile(
+            bio: bioController.text,
+            pickedImageFile: _pickedImageFile,
+            profilePicUrl: _profilePicUrl,
           );
-        }
 
-        return;
-      }
+      if (!mounted) return;
 
-      if (_pickedImageFile != null) {
-        media = await uploadImage(_pickedImageFile);
-
-        if (media == null) {
-          throw Exception("Failed to upload image");
-        }
-
-        localPath = _pickedImageFile!.path;
-      } else {
-        final localFile = await ref
-            .read(mediaDownloadProvider.notifier)
-            .saveImageUrlLocally(_profilePicUrl!);
-
-        localPath = localFile.path;
-
-        media = await uploadImage(localFile);
-
-        if (media == null) {
-          throw Exception("Failed to upload Google profile image");
-        }
-      }
-
-      final database = ref.read(databaseProvider);
-
-      final existing = await database.managers.mediaTable
-          .filter((f) => f.actorId(argsData?.id))
-          .getSingleOrNull();
-
-      if (existing == null) {
-        await database
-            .into(database.mediaTable)
-            .insert(
-              MediaTableCompanion.insert(
-                createdAt: DateTime.now().millisecondsSinceEpoch,
-                actorId: Value(argsData?.id),
-                Type: Value(media.type),
-                contentType: Value(media.contentType),
-                location: Value(localPath),
-                name: Value(media.name),
-                key: Value(media.key),
-              ),
-            );
-      } else {
-        await (database.update(
-          database.mediaTable,
-        )..where((tbl) => tbl.id.equals(existing.id))).write(
-          MediaTableCompanion(
-            Type: Value(media.type),
-            contentType: Value(media.contentType),
-            location: Value(localPath),
-            name: Value(media.name),
-            key: Value(media.key),
-          ),
-        );
-      }
-
-      final result = await UserApiService(apiClient).updateProfile(
-        token: token ?? "",
-        bio: bioController.text.trim().isNotEmpty
-            ? bioController.text.trim()
-            : null,
-        media: media,
-      );
-
-      if (result.success) {
-        if (!mounted) return;
-
-        Navigator.of(
-          context,
-        ).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
-      } else {
-        ToastHelper.show(
-          context: context,
-          message: result.message,
-          type: ToastificationType.error,
-        );
-      }
+      Navigator.of(
+        context,
+      ).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
     } catch (e) {
-      if (mounted) {
-        ToastHelper.show(
-          context: context,
-          message: 'Failed to update profile: $e',
-          type: ToastificationType.error,
-        );
-      }
+      if (!mounted) return;
+
+      ToastHelper.show(
+        context: context,
+        message: e.toString(),
+        type: ToastificationType.error,
+      );
     } finally {
       if (mounted) {
-        setState(() {
-          _isUploading = false;
-        });
+        setState(() => _isUploading = false);
       }
     }
   }
@@ -320,6 +150,10 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               color: DefaultColorSheet.primary,
             ),
           );
+
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     return Scaffold(
       backgroundColor: Colors.white,

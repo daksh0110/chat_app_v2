@@ -21,7 +21,6 @@ class UserBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint("user Bubble view $profilePicUrl ");
     final isNetworkUrl =
         profilePicUrl != null &&
         (profilePicUrl!.startsWith('http://') ||

@@ -153,21 +153,29 @@ class _VerifyEmailState extends ConsumerState<VerifyEmailScreen> {
 
       ToastHelper.show(context: context, message: result.message);
 
-      await ref
-          .read(authProvider.notifier)
-          .login(result.data?.accessToken ?? "");
+      try {
+        await ref
+            .read(authProvider.notifier)
+            .login(result.data?.accessToken ?? "");
 
-      final profile = await UserApiService(
-        apiClient,
-      ).getMyProfile(token: result.data?.accessToken ?? "");
+        if (!mounted) return;
 
-      if (!mounted) return;
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil(AppRoutes.profileSetup, (_) => false);
+      } catch (e) {
+        if (!mounted) return;
 
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        AppRoutes.profileSetup,
-        (route) => false,
-        arguments: profile.data,
-      );
+        ToastHelper.show(
+          context: context,
+          message: e.toString(),
+          type: ToastificationType.error,
+        );
+      }
+
+      Navigator.of(
+        context,
+      ).pushNamedAndRemoveUntil(AppRoutes.profileSetup, (route) => false);
     } catch (e, stackTrace) {
       debugPrint("Verify OTP error: $e");
       debugPrintStack(stackTrace: stackTrace);

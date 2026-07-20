@@ -3,16 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
-import 'package:my_app/core/network/api_client.dart';
-import 'package:my_app/data/services/user_api_service.dart';
-import 'package:my_app/modal/screens/search/search_item.dart';
-import 'package:my_app/modal/upload_responses/upload_attachment.dart';
-import 'package:my_app/providers/edit_profile_provider.dart';
+
 import 'package:my_app/providers/image_picker_provider.dart';
-import 'package:my_app/providers/notifiers/aws_notifier.dart';
-import 'package:my_app/providers/secure_storage_provider.dart';
-import 'package:my_app/services/database_services/media_table_service.dart';
-import 'package:my_app/services/database_services/user_table_service.dart';
+import 'package:my_app/providers/profile_edit_provider.dart';
+
+import 'package:my_app/providers/tables/user_preference_table_provider.dart';
 import 'package:my_app/widgets/comman/primary_button.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
 import 'package:my_app/widgets/comman/primary_text_field.dart';
@@ -35,7 +30,6 @@ class _profileEditState extends ConsumerState<ProfileEdit> {
   late final TextEditingController emailController;
   late final TextEditingController bioController;
   late final TextEditingController profilePhotoController;
-  bool isLoading = false;
   XFile? image;
   late final String userId;
   String _originalBio = '';
@@ -89,140 +83,55 @@ class _profileEditState extends ConsumerState<ProfileEdit> {
   }
 
   Future<void> _onSubmit() async {
-    if (!hasChanges || isLoading) return;
+    if (!hasChanges) return;
 
     try {
-      setState(() {
-        isLoading = true;
-      });
-
-      final bool profileChange =
-          profilePhotoController.text != _originalProfilePhoto;
-
-      UploadAttachment? media;
-
-      if (profileChange) {
-        media = await ref
-            .read(AwsNotifierProvider.notifier)
-            .uploadImage(image, userId);
-
-        if (media == null) {
-          throw Exception('Failed to upload image');
-        }
-      }
-
-      final token = await ref
-          .read(flutterSecureStorageProvider)
-          .read(key: "accessToken");
-
-      if (token == null || token.isEmpty) {
-        throw Exception('Access token not found');
-      }
-
-      // API update
-      final result = await UserApiService(ApiClient()).updateProfile(
-        token: token,
-        bio: bioController.text.trim().isNotEmpty
-            ? bioController.text.trim()
-            : null,
-        media: media,
-      );
+      await ref
+          .read(profileEditProvider.notifier)
+          .updateProfile(
+            userId: userId,
+            name: nameController.text,
+            email: emailController.text,
+            bio: bioController.text,
+            image: image,
+            profileChanged:
+                profilePhotoController.text != _originalProfilePhoto,
+          );
 
       if (!mounted) return;
 
-      if (!result.success) {
-        ToastHelper.show(
-          context: context,
-          message: result.message,
-          type: ToastificationType.error,
-        );
-        return;
-      }
-
-      if (media != null) {
-        try {
-          debugPrint("key: ${media.key}");
-          await addOrUpdateMediaDocument(
-            UploadAttachment(
-              key: media.key,
-              contentType: media.contentType,
-              type: media.type,
-              actorId: userId,
-              location: image?.path,
-              name: media.name,
-            ),
-            ref,
-            userId,
-          );
-        } catch (e) {
-          debugPrint('Media update failed: $e');
-          ToastHelper.show(
-            context: context,
-            message: 'Profile updated, but failed to save image locally.',
-            type: ToastificationType.error,
-          );
-          return;
-        }
-      }
-
-      try {
-        await updateUserProfile(
-          ref,
-          SearchItem(
-            id: userId,
-            name: nameController.text,
-            bio: bioController.text,
-            email: emailController.text,
-            media: media,
-          ),
-        );
-      } catch (e) {
-        debugPrint('User update failed: $e');
-
-        ToastHelper.show(
-          context: context,
-          message: 'Profile updated on server but failed locally.',
-          type: ToastificationType.error,
-        );
-        return;
-      }
-
-      ToastHelper.show(context: context, message: result.message);
+      ToastHelper.show(
+        context: context,
+        message: "Profile updated successfully",
+      );
 
       Navigator.pop(context);
-    } catch (e, stack) {
-      debugPrint('Profile update error: $e');
-      debugPrintStack(stackTrace: stack);
+    } catch (e) {
+      if (!mounted) return;
 
-      if (mounted) {
-        ToastHelper.show(
-          context: context,
-          message: e.toString(),
-          type: ToastificationType.error,
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
+      ToastHelper.show(
+        context: context,
+        message: e.toString(),
+        type: ToastificationType.error,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final profileState = ref.watch(profileEditProvider);
+    final isLoading = profileState.isLoading;
     final userAsync = ref.watch(userProvider);
 
     userAsync.whenData((user) {
       if (user == null) return;
       if (nameController.text.isEmpty) {
         nameController.text = user.name;
-        emailController.text = user.email ?? '';
+        emailController.text = user.email;
         bioController.text = user.bio ?? '';
-        profilePhotoController.text = user.profilePicUrl ?? "";
+        profilePhotoController.text = user.profilePic ?? '';
         _originalBio = user.bio ?? '';
-        _originalProfilePhoto = user.profilePicUrl ?? '';
+        _originalProfilePhoto = user.profilePic ?? '';
         userId = user.id;
       }
     });

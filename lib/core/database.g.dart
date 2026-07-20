@@ -3,429 +3,6 @@
 part of 'database.dart';
 
 // ignore_for_file: type=lint
-class $UserInfoSettingsTable extends UserInfoSettings
-    with TableInfo<$UserInfoSettingsTable, UserInfoSetting> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $UserInfoSettingsTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<String> id = GeneratedColumn<String>(
-    'id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _nameMeta = const VerificationMeta('name');
-  @override
-  late final GeneratedColumn<String> name = GeneratedColumn<String>(
-    'name',
-    aliasedName,
-    false,
-    additionalChecks: GeneratedColumn.checkTextLength(
-      minTextLength: 4,
-      maxTextLength: 32,
-    ),
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _emailMeta = const VerificationMeta('email');
-  @override
-  late final GeneratedColumn<String> email = GeneratedColumn<String>(
-    'email',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _accessTokenMeta = const VerificationMeta(
-    'accessToken',
-  );
-  @override
-  late final GeneratedColumn<String> accessToken = GeneratedColumn<String>(
-    'access_token',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _profilePictureUrlMeta = const VerificationMeta(
-    'profilePictureUrl',
-  );
-  @override
-  late final GeneratedColumn<String> profilePictureUrl =
-      GeneratedColumn<String>(
-        'profile_picture_url',
-        aliasedName,
-        true,
-        type: DriftSqlType.string,
-        requiredDuringInsert: false,
-      );
-  static const VerificationMeta _bioMeta = const VerificationMeta('bio');
-  @override
-  late final GeneratedColumn<String> bio = GeneratedColumn<String>(
-    'bio',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    name,
-    email,
-    accessToken,
-    profilePictureUrl,
-    bio,
-  ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'user_info_settings';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<UserInfoSetting> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    } else if (isInserting) {
-      context.missing(_idMeta);
-    }
-    if (data.containsKey('name')) {
-      context.handle(
-        _nameMeta,
-        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_nameMeta);
-    }
-    if (data.containsKey('email')) {
-      context.handle(
-        _emailMeta,
-        email.isAcceptableOrUnknown(data['email']!, _emailMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_emailMeta);
-    }
-    if (data.containsKey('access_token')) {
-      context.handle(
-        _accessTokenMeta,
-        accessToken.isAcceptableOrUnknown(
-          data['access_token']!,
-          _accessTokenMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_accessTokenMeta);
-    }
-    if (data.containsKey('profile_picture_url')) {
-      context.handle(
-        _profilePictureUrlMeta,
-        profilePictureUrl.isAcceptableOrUnknown(
-          data['profile_picture_url']!,
-          _profilePictureUrlMeta,
-        ),
-      );
-    }
-    if (data.containsKey('bio')) {
-      context.handle(
-        _bioMeta,
-        bio.isAcceptableOrUnknown(data['bio']!, _bioMeta),
-      );
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  UserInfoSetting map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return UserInfoSetting(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}id'],
-      )!,
-      name: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}name'],
-      )!,
-      email: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}email'],
-      )!,
-      accessToken: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}access_token'],
-      )!,
-      profilePictureUrl: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}profile_picture_url'],
-      ),
-      bio: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}bio'],
-      ),
-    );
-  }
-
-  @override
-  $UserInfoSettingsTable createAlias(String alias) {
-    return $UserInfoSettingsTable(attachedDatabase, alias);
-  }
-}
-
-class UserInfoSetting extends DataClass implements Insertable<UserInfoSetting> {
-  final String id;
-  final String name;
-  final String email;
-  final String accessToken;
-  final String? profilePictureUrl;
-  final String? bio;
-  const UserInfoSetting({
-    required this.id,
-    required this.name,
-    required this.email,
-    required this.accessToken,
-    this.profilePictureUrl,
-    this.bio,
-  });
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<String>(id);
-    map['name'] = Variable<String>(name);
-    map['email'] = Variable<String>(email);
-    map['access_token'] = Variable<String>(accessToken);
-    if (!nullToAbsent || profilePictureUrl != null) {
-      map['profile_picture_url'] = Variable<String>(profilePictureUrl);
-    }
-    if (!nullToAbsent || bio != null) {
-      map['bio'] = Variable<String>(bio);
-    }
-    return map;
-  }
-
-  UserInfoSettingsCompanion toCompanion(bool nullToAbsent) {
-    return UserInfoSettingsCompanion(
-      id: Value(id),
-      name: Value(name),
-      email: Value(email),
-      accessToken: Value(accessToken),
-      profilePictureUrl: profilePictureUrl == null && nullToAbsent
-          ? const Value.absent()
-          : Value(profilePictureUrl),
-      bio: bio == null && nullToAbsent ? const Value.absent() : Value(bio),
-    );
-  }
-
-  factory UserInfoSetting.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return UserInfoSetting(
-      id: serializer.fromJson<String>(json['id']),
-      name: serializer.fromJson<String>(json['name']),
-      email: serializer.fromJson<String>(json['email']),
-      accessToken: serializer.fromJson<String>(json['accessToken']),
-      profilePictureUrl: serializer.fromJson<String?>(
-        json['profilePictureUrl'],
-      ),
-      bio: serializer.fromJson<String?>(json['bio']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<String>(id),
-      'name': serializer.toJson<String>(name),
-      'email': serializer.toJson<String>(email),
-      'accessToken': serializer.toJson<String>(accessToken),
-      'profilePictureUrl': serializer.toJson<String?>(profilePictureUrl),
-      'bio': serializer.toJson<String?>(bio),
-    };
-  }
-
-  UserInfoSetting copyWith({
-    String? id,
-    String? name,
-    String? email,
-    String? accessToken,
-    Value<String?> profilePictureUrl = const Value.absent(),
-    Value<String?> bio = const Value.absent(),
-  }) => UserInfoSetting(
-    id: id ?? this.id,
-    name: name ?? this.name,
-    email: email ?? this.email,
-    accessToken: accessToken ?? this.accessToken,
-    profilePictureUrl: profilePictureUrl.present
-        ? profilePictureUrl.value
-        : this.profilePictureUrl,
-    bio: bio.present ? bio.value : this.bio,
-  );
-  UserInfoSetting copyWithCompanion(UserInfoSettingsCompanion data) {
-    return UserInfoSetting(
-      id: data.id.present ? data.id.value : this.id,
-      name: data.name.present ? data.name.value : this.name,
-      email: data.email.present ? data.email.value : this.email,
-      accessToken: data.accessToken.present
-          ? data.accessToken.value
-          : this.accessToken,
-      profilePictureUrl: data.profilePictureUrl.present
-          ? data.profilePictureUrl.value
-          : this.profilePictureUrl,
-      bio: data.bio.present ? data.bio.value : this.bio,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('UserInfoSetting(')
-          ..write('id: $id, ')
-          ..write('name: $name, ')
-          ..write('email: $email, ')
-          ..write('accessToken: $accessToken, ')
-          ..write('profilePictureUrl: $profilePictureUrl, ')
-          ..write('bio: $bio')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode =>
-      Object.hash(id, name, email, accessToken, profilePictureUrl, bio);
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is UserInfoSetting &&
-          other.id == this.id &&
-          other.name == this.name &&
-          other.email == this.email &&
-          other.accessToken == this.accessToken &&
-          other.profilePictureUrl == this.profilePictureUrl &&
-          other.bio == this.bio);
-}
-
-class UserInfoSettingsCompanion extends UpdateCompanion<UserInfoSetting> {
-  final Value<String> id;
-  final Value<String> name;
-  final Value<String> email;
-  final Value<String> accessToken;
-  final Value<String?> profilePictureUrl;
-  final Value<String?> bio;
-  final Value<int> rowid;
-  const UserInfoSettingsCompanion({
-    this.id = const Value.absent(),
-    this.name = const Value.absent(),
-    this.email = const Value.absent(),
-    this.accessToken = const Value.absent(),
-    this.profilePictureUrl = const Value.absent(),
-    this.bio = const Value.absent(),
-    this.rowid = const Value.absent(),
-  });
-  UserInfoSettingsCompanion.insert({
-    required String id,
-    required String name,
-    required String email,
-    required String accessToken,
-    this.profilePictureUrl = const Value.absent(),
-    this.bio = const Value.absent(),
-    this.rowid = const Value.absent(),
-  }) : id = Value(id),
-       name = Value(name),
-       email = Value(email),
-       accessToken = Value(accessToken);
-  static Insertable<UserInfoSetting> custom({
-    Expression<String>? id,
-    Expression<String>? name,
-    Expression<String>? email,
-    Expression<String>? accessToken,
-    Expression<String>? profilePictureUrl,
-    Expression<String>? bio,
-    Expression<int>? rowid,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (name != null) 'name': name,
-      if (email != null) 'email': email,
-      if (accessToken != null) 'access_token': accessToken,
-      if (profilePictureUrl != null) 'profile_picture_url': profilePictureUrl,
-      if (bio != null) 'bio': bio,
-      if (rowid != null) 'rowid': rowid,
-    });
-  }
-
-  UserInfoSettingsCompanion copyWith({
-    Value<String>? id,
-    Value<String>? name,
-    Value<String>? email,
-    Value<String>? accessToken,
-    Value<String?>? profilePictureUrl,
-    Value<String?>? bio,
-    Value<int>? rowid,
-  }) {
-    return UserInfoSettingsCompanion(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      email: email ?? this.email,
-      accessToken: accessToken ?? this.accessToken,
-      profilePictureUrl: profilePictureUrl ?? this.profilePictureUrl,
-      bio: bio ?? this.bio,
-      rowid: rowid ?? this.rowid,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<String>(id.value);
-    }
-    if (name.present) {
-      map['name'] = Variable<String>(name.value);
-    }
-    if (email.present) {
-      map['email'] = Variable<String>(email.value);
-    }
-    if (accessToken.present) {
-      map['access_token'] = Variable<String>(accessToken.value);
-    }
-    if (profilePictureUrl.present) {
-      map['profile_picture_url'] = Variable<String>(profilePictureUrl.value);
-    }
-    if (bio.present) {
-      map['bio'] = Variable<String>(bio.value);
-    }
-    if (rowid.present) {
-      map['rowid'] = Variable<int>(rowid.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('UserInfoSettingsCompanion(')
-          ..write('id: $id, ')
-          ..write('name: $name, ')
-          ..write('email: $email, ')
-          ..write('accessToken: $accessToken, ')
-          ..write('profilePictureUrl: $profilePictureUrl, ')
-          ..write('bio: $bio, ')
-          ..write('rowid: $rowid')
-          ..write(')'))
-        .toString();
-  }
-}
-
 class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -471,18 +48,6 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _messageStatusMeta = const VerificationMeta(
-    'messageStatus',
-  );
-  @override
-  late final GeneratedColumn<String> messageStatus = GeneratedColumn<String>(
-    'message_status',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    defaultValue: const Constant("sending"),
-  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -493,6 +58,17 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
     false,
     type: DriftSqlType.int,
     requiredDuringInsert: true,
+  );
+  static const VerificationMeta _serverCreatedAtMeta = const VerificationMeta(
+    'serverCreatedAt',
+  );
+  @override
+  late final GeneratedColumn<int> serverCreatedAt = GeneratedColumn<int>(
+    'server_created_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _isReadMeta = const VerificationMeta('isRead');
   @override
@@ -524,8 +100,8 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
     chatId,
     senderId,
     message,
-    messageStatus,
     createdAt,
+    serverCreatedAt,
     isRead,
     serverId,
   ];
@@ -570,15 +146,6 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
     } else if (isInserting) {
       context.missing(_messageMeta);
     }
-    if (data.containsKey('message_status')) {
-      context.handle(
-        _messageStatusMeta,
-        messageStatus.isAcceptableOrUnknown(
-          data['message_status']!,
-          _messageStatusMeta,
-        ),
-      );
-    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -586,6 +153,15 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
       );
     } else if (isInserting) {
       context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('server_created_at')) {
+      context.handle(
+        _serverCreatedAtMeta,
+        serverCreatedAt.isAcceptableOrUnknown(
+          data['server_created_at']!,
+          _serverCreatedAtMeta,
+        ),
+      );
     }
     if (data.containsKey('is_read')) {
       context.handle(
@@ -624,14 +200,14 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
         DriftSqlType.string,
         data['${effectivePrefix}message'],
       )!,
-      messageStatus: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}message_status'],
-      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}created_at'],
       )!,
+      serverCreatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}server_created_at'],
+      ),
       isRead: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_read'],
@@ -654,8 +230,8 @@ class Message extends DataClass implements Insertable<Message> {
   final String chatId;
   final String senderId;
   final String message;
-  final String messageStatus;
   final int createdAt;
+  final int? serverCreatedAt;
   final bool isRead;
   final String? serverId;
   const Message({
@@ -663,8 +239,8 @@ class Message extends DataClass implements Insertable<Message> {
     required this.chatId,
     required this.senderId,
     required this.message,
-    required this.messageStatus,
     required this.createdAt,
+    this.serverCreatedAt,
     required this.isRead,
     this.serverId,
   });
@@ -675,8 +251,10 @@ class Message extends DataClass implements Insertable<Message> {
     map['chat_id'] = Variable<String>(chatId);
     map['sender_id'] = Variable<String>(senderId);
     map['message'] = Variable<String>(message);
-    map['message_status'] = Variable<String>(messageStatus);
     map['created_at'] = Variable<int>(createdAt);
+    if (!nullToAbsent || serverCreatedAt != null) {
+      map['server_created_at'] = Variable<int>(serverCreatedAt);
+    }
     map['is_read'] = Variable<bool>(isRead);
     if (!nullToAbsent || serverId != null) {
       map['server_id'] = Variable<String>(serverId);
@@ -690,8 +268,10 @@ class Message extends DataClass implements Insertable<Message> {
       chatId: Value(chatId),
       senderId: Value(senderId),
       message: Value(message),
-      messageStatus: Value(messageStatus),
       createdAt: Value(createdAt),
+      serverCreatedAt: serverCreatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serverCreatedAt),
       isRead: Value(isRead),
       serverId: serverId == null && nullToAbsent
           ? const Value.absent()
@@ -709,8 +289,8 @@ class Message extends DataClass implements Insertable<Message> {
       chatId: serializer.fromJson<String>(json['chatId']),
       senderId: serializer.fromJson<String>(json['senderId']),
       message: serializer.fromJson<String>(json['message']),
-      messageStatus: serializer.fromJson<String>(json['messageStatus']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
+      serverCreatedAt: serializer.fromJson<int?>(json['serverCreatedAt']),
       isRead: serializer.fromJson<bool>(json['isRead']),
       serverId: serializer.fromJson<String?>(json['serverId']),
     );
@@ -723,8 +303,8 @@ class Message extends DataClass implements Insertable<Message> {
       'chatId': serializer.toJson<String>(chatId),
       'senderId': serializer.toJson<String>(senderId),
       'message': serializer.toJson<String>(message),
-      'messageStatus': serializer.toJson<String>(messageStatus),
       'createdAt': serializer.toJson<int>(createdAt),
+      'serverCreatedAt': serializer.toJson<int?>(serverCreatedAt),
       'isRead': serializer.toJson<bool>(isRead),
       'serverId': serializer.toJson<String?>(serverId),
     };
@@ -735,8 +315,8 @@ class Message extends DataClass implements Insertable<Message> {
     String? chatId,
     String? senderId,
     String? message,
-    String? messageStatus,
     int? createdAt,
+    Value<int?> serverCreatedAt = const Value.absent(),
     bool? isRead,
     Value<String?> serverId = const Value.absent(),
   }) => Message(
@@ -744,8 +324,10 @@ class Message extends DataClass implements Insertable<Message> {
     chatId: chatId ?? this.chatId,
     senderId: senderId ?? this.senderId,
     message: message ?? this.message,
-    messageStatus: messageStatus ?? this.messageStatus,
     createdAt: createdAt ?? this.createdAt,
+    serverCreatedAt: serverCreatedAt.present
+        ? serverCreatedAt.value
+        : this.serverCreatedAt,
     isRead: isRead ?? this.isRead,
     serverId: serverId.present ? serverId.value : this.serverId,
   );
@@ -755,10 +337,10 @@ class Message extends DataClass implements Insertable<Message> {
       chatId: data.chatId.present ? data.chatId.value : this.chatId,
       senderId: data.senderId.present ? data.senderId.value : this.senderId,
       message: data.message.present ? data.message.value : this.message,
-      messageStatus: data.messageStatus.present
-          ? data.messageStatus.value
-          : this.messageStatus,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      serverCreatedAt: data.serverCreatedAt.present
+          ? data.serverCreatedAt.value
+          : this.serverCreatedAt,
       isRead: data.isRead.present ? data.isRead.value : this.isRead,
       serverId: data.serverId.present ? data.serverId.value : this.serverId,
     );
@@ -771,8 +353,8 @@ class Message extends DataClass implements Insertable<Message> {
           ..write('chatId: $chatId, ')
           ..write('senderId: $senderId, ')
           ..write('message: $message, ')
-          ..write('messageStatus: $messageStatus, ')
           ..write('createdAt: $createdAt, ')
+          ..write('serverCreatedAt: $serverCreatedAt, ')
           ..write('isRead: $isRead, ')
           ..write('serverId: $serverId')
           ..write(')'))
@@ -785,8 +367,8 @@ class Message extends DataClass implements Insertable<Message> {
     chatId,
     senderId,
     message,
-    messageStatus,
     createdAt,
+    serverCreatedAt,
     isRead,
     serverId,
   );
@@ -798,8 +380,8 @@ class Message extends DataClass implements Insertable<Message> {
           other.chatId == this.chatId &&
           other.senderId == this.senderId &&
           other.message == this.message &&
-          other.messageStatus == this.messageStatus &&
           other.createdAt == this.createdAt &&
+          other.serverCreatedAt == this.serverCreatedAt &&
           other.isRead == this.isRead &&
           other.serverId == this.serverId);
 }
@@ -809,8 +391,8 @@ class MessagesCompanion extends UpdateCompanion<Message> {
   final Value<String> chatId;
   final Value<String> senderId;
   final Value<String> message;
-  final Value<String> messageStatus;
   final Value<int> createdAt;
+  final Value<int?> serverCreatedAt;
   final Value<bool> isRead;
   final Value<String?> serverId;
   final Value<int> rowid;
@@ -819,8 +401,8 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     this.chatId = const Value.absent(),
     this.senderId = const Value.absent(),
     this.message = const Value.absent(),
-    this.messageStatus = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.serverCreatedAt = const Value.absent(),
     this.isRead = const Value.absent(),
     this.serverId = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -830,8 +412,8 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     required String chatId,
     required String senderId,
     required String message,
-    this.messageStatus = const Value.absent(),
     required int createdAt,
+    this.serverCreatedAt = const Value.absent(),
     this.isRead = const Value.absent(),
     this.serverId = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -845,8 +427,8 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     Expression<String>? chatId,
     Expression<String>? senderId,
     Expression<String>? message,
-    Expression<String>? messageStatus,
     Expression<int>? createdAt,
+    Expression<int>? serverCreatedAt,
     Expression<bool>? isRead,
     Expression<String>? serverId,
     Expression<int>? rowid,
@@ -856,8 +438,8 @@ class MessagesCompanion extends UpdateCompanion<Message> {
       if (chatId != null) 'chat_id': chatId,
       if (senderId != null) 'sender_id': senderId,
       if (message != null) 'message': message,
-      if (messageStatus != null) 'message_status': messageStatus,
       if (createdAt != null) 'created_at': createdAt,
+      if (serverCreatedAt != null) 'server_created_at': serverCreatedAt,
       if (isRead != null) 'is_read': isRead,
       if (serverId != null) 'server_id': serverId,
       if (rowid != null) 'rowid': rowid,
@@ -869,8 +451,8 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     Value<String>? chatId,
     Value<String>? senderId,
     Value<String>? message,
-    Value<String>? messageStatus,
     Value<int>? createdAt,
+    Value<int?>? serverCreatedAt,
     Value<bool>? isRead,
     Value<String?>? serverId,
     Value<int>? rowid,
@@ -880,8 +462,8 @@ class MessagesCompanion extends UpdateCompanion<Message> {
       chatId: chatId ?? this.chatId,
       senderId: senderId ?? this.senderId,
       message: message ?? this.message,
-      messageStatus: messageStatus ?? this.messageStatus,
       createdAt: createdAt ?? this.createdAt,
+      serverCreatedAt: serverCreatedAt ?? this.serverCreatedAt,
       isRead: isRead ?? this.isRead,
       serverId: serverId ?? this.serverId,
       rowid: rowid ?? this.rowid,
@@ -903,11 +485,11 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     if (message.present) {
       map['message'] = Variable<String>(message.value);
     }
-    if (messageStatus.present) {
-      map['message_status'] = Variable<String>(messageStatus.value);
-    }
     if (createdAt.present) {
       map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (serverCreatedAt.present) {
+      map['server_created_at'] = Variable<int>(serverCreatedAt.value);
     }
     if (isRead.present) {
       map['is_read'] = Variable<bool>(isRead.value);
@@ -928,8 +510,8 @@ class MessagesCompanion extends UpdateCompanion<Message> {
           ..write('chatId: $chatId, ')
           ..write('senderId: $senderId, ')
           ..write('message: $message, ')
-          ..write('messageStatus: $messageStatus, ')
           ..write('createdAt: $createdAt, ')
+          ..write('serverCreatedAt: $serverCreatedAt, ')
           ..write('isRead: $isRead, ')
           ..write('serverId: $serverId, ')
           ..write('rowid: $rowid')
@@ -944,33 +526,10 @@ class $ChatListTableTable extends ChatListTable
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
   $ChatListTableTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
-    'id',
-    aliasedName,
-    false,
-    hasAutoIncrement: true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
-  );
   static const VerificationMeta _chatIdMeta = const VerificationMeta('chatId');
   @override
   late final GeneratedColumn<String> chatId = GeneratedColumn<String>(
     'chat_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
-  );
-  static const VerificationMeta _nameMeta = const VerificationMeta('name');
-  @override
-  late final GeneratedColumn<String> name = GeneratedColumn<String>(
-    'name',
     aliasedName,
     false,
     type: DriftSqlType.string,
@@ -1010,17 +569,6 @@ class $ChatListTableTable extends ChatListTable
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
-  static const VerificationMeta _profilePicUrlMeta = const VerificationMeta(
-    'profilePicUrl',
-  );
-  @override
-  late final GeneratedColumn<String> profilePicUrl = GeneratedColumn<String>(
-    'profile_pic_url',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
   static const VerificationMeta _isDeletedMeta = const VerificationMeta(
     'isDeleted',
   );
@@ -1036,17 +584,6 @@ class $ChatListTableTable extends ChatListTable
     ),
     defaultValue: const Constant(false),
   );
-  static const VerificationMeta _descriptionMeta = const VerificationMeta(
-    'description',
-  );
-  @override
-  late final GeneratedColumn<String> description = GeneratedColumn<String>(
-    'description',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
   static const VerificationMeta _typeMeta = const VerificationMeta('type');
   @override
   late final GeneratedColumn<String> type = GeneratedColumn<String>(
@@ -1058,15 +595,11 @@ class $ChatListTableTable extends ChatListTable
   );
   @override
   List<GeneratedColumn> get $columns => [
-    id,
     chatId,
-    name,
     lastMessage,
     lastMessageTime,
     unReadCount,
-    profilePicUrl,
     isDeleted,
-    description,
     type,
   ];
   @override
@@ -1081,9 +614,6 @@ class $ChatListTableTable extends ChatListTable
   }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
     if (data.containsKey('chat_id')) {
       context.handle(
         _chatIdMeta,
@@ -1091,14 +621,6 @@ class $ChatListTableTable extends ChatListTable
       );
     } else if (isInserting) {
       context.missing(_chatIdMeta);
-    }
-    if (data.containsKey('name')) {
-      context.handle(
-        _nameMeta,
-        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_nameMeta);
     }
     if (data.containsKey('last_message')) {
       context.handle(
@@ -1127,28 +649,10 @@ class $ChatListTableTable extends ChatListTable
         ),
       );
     }
-    if (data.containsKey('profile_pic_url')) {
-      context.handle(
-        _profilePicUrlMeta,
-        profilePicUrl.isAcceptableOrUnknown(
-          data['profile_pic_url']!,
-          _profilePicUrlMeta,
-        ),
-      );
-    }
     if (data.containsKey('is_deleted')) {
       context.handle(
         _isDeletedMeta,
         isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
-      );
-    }
-    if (data.containsKey('description')) {
-      context.handle(
-        _descriptionMeta,
-        description.isAcceptableOrUnknown(
-          data['description']!,
-          _descriptionMeta,
-        ),
       );
     }
     if (data.containsKey('type')) {
@@ -1163,22 +667,14 @@ class $ChatListTableTable extends ChatListTable
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {id};
+  Set<GeneratedColumn> get $primaryKey => {chatId};
   @override
   ChatListTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return ChatListTableData(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}id'],
-      )!,
       chatId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}chat_id'],
-      )!,
-      name: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}name'],
       )!,
       lastMessage: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -1192,18 +688,10 @@ class $ChatListTableTable extends ChatListTable
         DriftSqlType.int,
         data['${effectivePrefix}un_read_count'],
       )!,
-      profilePicUrl: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}profile_pic_url'],
-      ),
       isDeleted: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_deleted'],
       )!,
-      description: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}description'],
-      ),
       type: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}type'],
@@ -1219,34 +707,24 @@ class $ChatListTableTable extends ChatListTable
 
 class ChatListTableData extends DataClass
     implements Insertable<ChatListTableData> {
-  final int id;
   final String chatId;
-  final String name;
   final String? lastMessage;
   final int? lastMessageTime;
   final int unReadCount;
-  final String? profilePicUrl;
   final bool isDeleted;
-  final String? description;
   final String type;
   const ChatListTableData({
-    required this.id,
     required this.chatId,
-    required this.name,
     this.lastMessage,
     this.lastMessageTime,
     required this.unReadCount,
-    this.profilePicUrl,
     required this.isDeleted,
-    this.description,
     required this.type,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
     map['chat_id'] = Variable<String>(chatId);
-    map['name'] = Variable<String>(name);
     if (!nullToAbsent || lastMessage != null) {
       map['last_message'] = Variable<String>(lastMessage);
     }
@@ -1254,22 +732,14 @@ class ChatListTableData extends DataClass
       map['last_message_time'] = Variable<int>(lastMessageTime);
     }
     map['un_read_count'] = Variable<int>(unReadCount);
-    if (!nullToAbsent || profilePicUrl != null) {
-      map['profile_pic_url'] = Variable<String>(profilePicUrl);
-    }
     map['is_deleted'] = Variable<bool>(isDeleted);
-    if (!nullToAbsent || description != null) {
-      map['description'] = Variable<String>(description);
-    }
     map['type'] = Variable<String>(type);
     return map;
   }
 
   ChatListTableCompanion toCompanion(bool nullToAbsent) {
     return ChatListTableCompanion(
-      id: Value(id),
       chatId: Value(chatId),
-      name: Value(name),
       lastMessage: lastMessage == null && nullToAbsent
           ? const Value.absent()
           : Value(lastMessage),
@@ -1277,13 +747,7 @@ class ChatListTableData extends DataClass
           ? const Value.absent()
           : Value(lastMessageTime),
       unReadCount: Value(unReadCount),
-      profilePicUrl: profilePicUrl == null && nullToAbsent
-          ? const Value.absent()
-          : Value(profilePicUrl),
       isDeleted: Value(isDeleted),
-      description: description == null && nullToAbsent
-          ? const Value.absent()
-          : Value(description),
       type: Value(type),
     );
   }
@@ -1294,15 +758,11 @@ class ChatListTableData extends DataClass
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return ChatListTableData(
-      id: serializer.fromJson<int>(json['id']),
       chatId: serializer.fromJson<String>(json['chatId']),
-      name: serializer.fromJson<String>(json['name']),
       lastMessage: serializer.fromJson<String?>(json['lastMessage']),
       lastMessageTime: serializer.fromJson<int?>(json['lastMessageTime']),
       unReadCount: serializer.fromJson<int>(json['unReadCount']),
-      profilePicUrl: serializer.fromJson<String?>(json['profilePicUrl']),
       isDeleted: serializer.fromJson<bool>(json['isDeleted']),
-      description: serializer.fromJson<String?>(json['description']),
       type: serializer.fromJson<String>(json['type']),
     );
   }
@@ -1310,51 +770,35 @@ class ChatListTableData extends DataClass
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
       'chatId': serializer.toJson<String>(chatId),
-      'name': serializer.toJson<String>(name),
       'lastMessage': serializer.toJson<String?>(lastMessage),
       'lastMessageTime': serializer.toJson<int?>(lastMessageTime),
       'unReadCount': serializer.toJson<int>(unReadCount),
-      'profilePicUrl': serializer.toJson<String?>(profilePicUrl),
       'isDeleted': serializer.toJson<bool>(isDeleted),
-      'description': serializer.toJson<String?>(description),
       'type': serializer.toJson<String>(type),
     };
   }
 
   ChatListTableData copyWith({
-    int? id,
     String? chatId,
-    String? name,
     Value<String?> lastMessage = const Value.absent(),
     Value<int?> lastMessageTime = const Value.absent(),
     int? unReadCount,
-    Value<String?> profilePicUrl = const Value.absent(),
     bool? isDeleted,
-    Value<String?> description = const Value.absent(),
     String? type,
   }) => ChatListTableData(
-    id: id ?? this.id,
     chatId: chatId ?? this.chatId,
-    name: name ?? this.name,
     lastMessage: lastMessage.present ? lastMessage.value : this.lastMessage,
     lastMessageTime: lastMessageTime.present
         ? lastMessageTime.value
         : this.lastMessageTime,
     unReadCount: unReadCount ?? this.unReadCount,
-    profilePicUrl: profilePicUrl.present
-        ? profilePicUrl.value
-        : this.profilePicUrl,
     isDeleted: isDeleted ?? this.isDeleted,
-    description: description.present ? description.value : this.description,
     type: type ?? this.type,
   );
   ChatListTableData copyWithCompanion(ChatListTableCompanion data) {
     return ChatListTableData(
-      id: data.id.present ? data.id.value : this.id,
       chatId: data.chatId.present ? data.chatId.value : this.chatId,
-      name: data.name.present ? data.name.value : this.name,
       lastMessage: data.lastMessage.present
           ? data.lastMessage.value
           : this.lastMessage,
@@ -1364,13 +808,7 @@ class ChatListTableData extends DataClass
       unReadCount: data.unReadCount.present
           ? data.unReadCount.value
           : this.unReadCount,
-      profilePicUrl: data.profilePicUrl.present
-          ? data.profilePicUrl.value
-          : this.profilePicUrl,
       isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
-      description: data.description.present
-          ? data.description.value
-          : this.description,
       type: data.type.present ? data.type.value : this.type,
     );
   }
@@ -1378,15 +816,11 @@ class ChatListTableData extends DataClass
   @override
   String toString() {
     return (StringBuffer('ChatListTableData(')
-          ..write('id: $id, ')
           ..write('chatId: $chatId, ')
-          ..write('name: $name, ')
           ..write('lastMessage: $lastMessage, ')
           ..write('lastMessageTime: $lastMessageTime, ')
           ..write('unReadCount: $unReadCount, ')
-          ..write('profilePicUrl: $profilePicUrl, ')
           ..write('isDeleted: $isDeleted, ')
-          ..write('description: $description, ')
           ..write('type: $type')
           ..write(')'))
         .toString();
@@ -1394,133 +828,97 @@ class ChatListTableData extends DataClass
 
   @override
   int get hashCode => Object.hash(
-    id,
     chatId,
-    name,
     lastMessage,
     lastMessageTime,
     unReadCount,
-    profilePicUrl,
     isDeleted,
-    description,
     type,
   );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is ChatListTableData &&
-          other.id == this.id &&
           other.chatId == this.chatId &&
-          other.name == this.name &&
           other.lastMessage == this.lastMessage &&
           other.lastMessageTime == this.lastMessageTime &&
           other.unReadCount == this.unReadCount &&
-          other.profilePicUrl == this.profilePicUrl &&
           other.isDeleted == this.isDeleted &&
-          other.description == this.description &&
           other.type == this.type);
 }
 
 class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
-  final Value<int> id;
   final Value<String> chatId;
-  final Value<String> name;
   final Value<String?> lastMessage;
   final Value<int?> lastMessageTime;
   final Value<int> unReadCount;
-  final Value<String?> profilePicUrl;
   final Value<bool> isDeleted;
-  final Value<String?> description;
   final Value<String> type;
+  final Value<int> rowid;
   const ChatListTableCompanion({
-    this.id = const Value.absent(),
     this.chatId = const Value.absent(),
-    this.name = const Value.absent(),
     this.lastMessage = const Value.absent(),
     this.lastMessageTime = const Value.absent(),
     this.unReadCount = const Value.absent(),
-    this.profilePicUrl = const Value.absent(),
     this.isDeleted = const Value.absent(),
-    this.description = const Value.absent(),
     this.type = const Value.absent(),
+    this.rowid = const Value.absent(),
   });
   ChatListTableCompanion.insert({
-    this.id = const Value.absent(),
     required String chatId,
-    required String name,
     this.lastMessage = const Value.absent(),
     this.lastMessageTime = const Value.absent(),
     this.unReadCount = const Value.absent(),
-    this.profilePicUrl = const Value.absent(),
     this.isDeleted = const Value.absent(),
-    this.description = const Value.absent(),
     required String type,
+    this.rowid = const Value.absent(),
   }) : chatId = Value(chatId),
-       name = Value(name),
        type = Value(type);
   static Insertable<ChatListTableData> custom({
-    Expression<int>? id,
     Expression<String>? chatId,
-    Expression<String>? name,
     Expression<String>? lastMessage,
     Expression<int>? lastMessageTime,
     Expression<int>? unReadCount,
-    Expression<String>? profilePicUrl,
     Expression<bool>? isDeleted,
-    Expression<String>? description,
     Expression<String>? type,
+    Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
-      if (id != null) 'id': id,
       if (chatId != null) 'chat_id': chatId,
-      if (name != null) 'name': name,
       if (lastMessage != null) 'last_message': lastMessage,
       if (lastMessageTime != null) 'last_message_time': lastMessageTime,
       if (unReadCount != null) 'un_read_count': unReadCount,
-      if (profilePicUrl != null) 'profile_pic_url': profilePicUrl,
       if (isDeleted != null) 'is_deleted': isDeleted,
-      if (description != null) 'description': description,
       if (type != null) 'type': type,
+      if (rowid != null) 'rowid': rowid,
     });
   }
 
   ChatListTableCompanion copyWith({
-    Value<int>? id,
     Value<String>? chatId,
-    Value<String>? name,
     Value<String?>? lastMessage,
     Value<int?>? lastMessageTime,
     Value<int>? unReadCount,
-    Value<String?>? profilePicUrl,
     Value<bool>? isDeleted,
-    Value<String?>? description,
     Value<String>? type,
+    Value<int>? rowid,
   }) {
     return ChatListTableCompanion(
-      id: id ?? this.id,
       chatId: chatId ?? this.chatId,
-      name: name ?? this.name,
       lastMessage: lastMessage ?? this.lastMessage,
       lastMessageTime: lastMessageTime ?? this.lastMessageTime,
       unReadCount: unReadCount ?? this.unReadCount,
-      profilePicUrl: profilePicUrl ?? this.profilePicUrl,
       isDeleted: isDeleted ?? this.isDeleted,
-      description: description ?? this.description,
       type: type ?? this.type,
+      rowid: rowid ?? this.rowid,
     );
   }
 
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<int>(id.value);
-    }
     if (chatId.present) {
       map['chat_id'] = Variable<String>(chatId.value);
-    }
-    if (name.present) {
-      map['name'] = Variable<String>(name.value);
     }
     if (lastMessage.present) {
       map['last_message'] = Variable<String>(lastMessage.value);
@@ -1531,17 +929,14 @@ class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
     if (unReadCount.present) {
       map['un_read_count'] = Variable<int>(unReadCount.value);
     }
-    if (profilePicUrl.present) {
-      map['profile_pic_url'] = Variable<String>(profilePicUrl.value);
-    }
     if (isDeleted.present) {
       map['is_deleted'] = Variable<bool>(isDeleted.value);
     }
-    if (description.present) {
-      map['description'] = Variable<String>(description.value);
-    }
     if (type.present) {
       map['type'] = Variable<String>(type.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
     }
     return map;
   }
@@ -1549,16 +944,13 @@ class ChatListTableCompanion extends UpdateCompanion<ChatListTableData> {
   @override
   String toString() {
     return (StringBuffer('ChatListTableCompanion(')
-          ..write('id: $id, ')
           ..write('chatId: $chatId, ')
-          ..write('name: $name, ')
           ..write('lastMessage: $lastMessage, ')
           ..write('lastMessageTime: $lastMessageTime, ')
           ..write('unReadCount: $unReadCount, ')
-          ..write('profilePicUrl: $profilePicUrl, ')
           ..write('isDeleted: $isDeleted, ')
-          ..write('description: $description, ')
-          ..write('type: $type')
+          ..write('type: $type, ')
+          ..write('rowid: $rowid')
           ..write(')'))
         .toString();
   }
@@ -1570,14 +962,24 @@ class $UsersTableTable extends UsersTable
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
   $UsersTableTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
   @override
-  late final GeneratedColumn<String> id = GeneratedColumn<String>(
-    'id',
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
     aliasedName,
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
+  );
+  static const VerificationMeta _chatIdMeta = const VerificationMeta('chatId');
+  @override
+  late final GeneratedColumn<String> chatId = GeneratedColumn<String>(
+    'chat_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
   );
   static const VerificationMeta _nameMeta = const VerificationMeta('name');
   @override
@@ -1597,18 +999,6 @@ class $UsersTableTable extends UsersTable
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _profilePictureUrlMeta = const VerificationMeta(
-    'profilePictureUrl',
-  );
-  @override
-  late final GeneratedColumn<String> profilePictureUrl =
-      GeneratedColumn<String>(
-        'profile_picture_url',
-        aliasedName,
-        true,
-        type: DriftSqlType.string,
-        requiredDuringInsert: false,
-      );
   static const VerificationMeta _bioMeta = const VerificationMeta('bio');
   @override
   late final GeneratedColumn<String> bio = GeneratedColumn<String>(
@@ -1619,13 +1009,7 @@ class $UsersTableTable extends UsersTable
     requiredDuringInsert: false,
   );
   @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    name,
-    email,
-    profilePictureUrl,
-    bio,
-  ];
+  List<GeneratedColumn> get $columns => [userId, chatId, name, email, bio];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1638,10 +1022,19 @@ class $UsersTableTable extends UsersTable
   }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
     } else if (isInserting) {
-      context.missing(_idMeta);
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('chat_id')) {
+      context.handle(
+        _chatIdMeta,
+        chatId.isAcceptableOrUnknown(data['chat_id']!, _chatIdMeta),
+      );
     }
     if (data.containsKey('name')) {
       context.handle(
@@ -1659,15 +1052,6 @@ class $UsersTableTable extends UsersTable
     } else if (isInserting) {
       context.missing(_emailMeta);
     }
-    if (data.containsKey('profile_picture_url')) {
-      context.handle(
-        _profilePictureUrlMeta,
-        profilePictureUrl.isAcceptableOrUnknown(
-          data['profile_picture_url']!,
-          _profilePictureUrlMeta,
-        ),
-      );
-    }
     if (data.containsKey('bio')) {
       context.handle(
         _bioMeta,
@@ -1678,15 +1062,19 @@ class $UsersTableTable extends UsersTable
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {id};
+  Set<GeneratedColumn> get $primaryKey => {userId};
   @override
   UsersTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return UsersTableData(
-      id: attachedDatabase.typeMapping.read(
+      userId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}id'],
+        data['${effectivePrefix}user_id'],
       )!,
+      chatId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}chat_id'],
+      ),
       name: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}name'],
@@ -1695,10 +1083,6 @@ class $UsersTableTable extends UsersTable
         DriftSqlType.string,
         data['${effectivePrefix}email'],
       )!,
-      profilePictureUrl: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}profile_picture_url'],
-      ),
       bio: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}bio'],
@@ -1713,27 +1097,27 @@ class $UsersTableTable extends UsersTable
 }
 
 class UsersTableData extends DataClass implements Insertable<UsersTableData> {
-  final String id;
+  final String userId;
+  final String? chatId;
   final String name;
   final String email;
-  final String? profilePictureUrl;
   final String? bio;
   const UsersTableData({
-    required this.id,
+    required this.userId,
+    this.chatId,
     required this.name,
     required this.email,
-    this.profilePictureUrl,
     this.bio,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    map['id'] = Variable<String>(id);
+    map['user_id'] = Variable<String>(userId);
+    if (!nullToAbsent || chatId != null) {
+      map['chat_id'] = Variable<String>(chatId);
+    }
     map['name'] = Variable<String>(name);
     map['email'] = Variable<String>(email);
-    if (!nullToAbsent || profilePictureUrl != null) {
-      map['profile_picture_url'] = Variable<String>(profilePictureUrl);
-    }
     if (!nullToAbsent || bio != null) {
       map['bio'] = Variable<String>(bio);
     }
@@ -1742,12 +1126,12 @@ class UsersTableData extends DataClass implements Insertable<UsersTableData> {
 
   UsersTableCompanion toCompanion(bool nullToAbsent) {
     return UsersTableCompanion(
-      id: Value(id),
+      userId: Value(userId),
+      chatId: chatId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(chatId),
       name: Value(name),
       email: Value(email),
-      profilePictureUrl: profilePictureUrl == null && nullToAbsent
-          ? const Value.absent()
-          : Value(profilePictureUrl),
       bio: bio == null && nullToAbsent ? const Value.absent() : Value(bio),
     );
   }
@@ -1758,12 +1142,10 @@ class UsersTableData extends DataClass implements Insertable<UsersTableData> {
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return UsersTableData(
-      id: serializer.fromJson<String>(json['id']),
+      userId: serializer.fromJson<String>(json['userId']),
+      chatId: serializer.fromJson<String?>(json['chatId']),
       name: serializer.fromJson<String>(json['name']),
       email: serializer.fromJson<String>(json['email']),
-      profilePictureUrl: serializer.fromJson<String?>(
-        json['profilePictureUrl'],
-      ),
       bio: serializer.fromJson<String?>(json['bio']),
     );
   }
@@ -1771,37 +1153,33 @@ class UsersTableData extends DataClass implements Insertable<UsersTableData> {
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
-      'id': serializer.toJson<String>(id),
+      'userId': serializer.toJson<String>(userId),
+      'chatId': serializer.toJson<String?>(chatId),
       'name': serializer.toJson<String>(name),
       'email': serializer.toJson<String>(email),
-      'profilePictureUrl': serializer.toJson<String?>(profilePictureUrl),
       'bio': serializer.toJson<String?>(bio),
     };
   }
 
   UsersTableData copyWith({
-    String? id,
+    String? userId,
+    Value<String?> chatId = const Value.absent(),
     String? name,
     String? email,
-    Value<String?> profilePictureUrl = const Value.absent(),
     Value<String?> bio = const Value.absent(),
   }) => UsersTableData(
-    id: id ?? this.id,
+    userId: userId ?? this.userId,
+    chatId: chatId.present ? chatId.value : this.chatId,
     name: name ?? this.name,
     email: email ?? this.email,
-    profilePictureUrl: profilePictureUrl.present
-        ? profilePictureUrl.value
-        : this.profilePictureUrl,
     bio: bio.present ? bio.value : this.bio,
   );
   UsersTableData copyWithCompanion(UsersTableCompanion data) {
     return UsersTableData(
-      id: data.id.present ? data.id.value : this.id,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      chatId: data.chatId.present ? data.chatId.value : this.chatId,
       name: data.name.present ? data.name.value : this.name,
       email: data.email.present ? data.email.value : this.email,
-      profilePictureUrl: data.profilePictureUrl.present
-          ? data.profilePictureUrl.value
-          : this.profilePictureUrl,
       bio: data.bio.present ? data.bio.value : this.bio,
     );
   }
@@ -1809,84 +1187,84 @@ class UsersTableData extends DataClass implements Insertable<UsersTableData> {
   @override
   String toString() {
     return (StringBuffer('UsersTableData(')
-          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('chatId: $chatId, ')
           ..write('name: $name, ')
           ..write('email: $email, ')
-          ..write('profilePictureUrl: $profilePictureUrl, ')
           ..write('bio: $bio')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, email, profilePictureUrl, bio);
+  int get hashCode => Object.hash(userId, chatId, name, email, bio);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is UsersTableData &&
-          other.id == this.id &&
+          other.userId == this.userId &&
+          other.chatId == this.chatId &&
           other.name == this.name &&
           other.email == this.email &&
-          other.profilePictureUrl == this.profilePictureUrl &&
           other.bio == this.bio);
 }
 
 class UsersTableCompanion extends UpdateCompanion<UsersTableData> {
-  final Value<String> id;
+  final Value<String> userId;
+  final Value<String?> chatId;
   final Value<String> name;
   final Value<String> email;
-  final Value<String?> profilePictureUrl;
   final Value<String?> bio;
   final Value<int> rowid;
   const UsersTableCompanion({
-    this.id = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.chatId = const Value.absent(),
     this.name = const Value.absent(),
     this.email = const Value.absent(),
-    this.profilePictureUrl = const Value.absent(),
     this.bio = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   UsersTableCompanion.insert({
-    required String id,
+    required String userId,
+    this.chatId = const Value.absent(),
     required String name,
     required String email,
-    this.profilePictureUrl = const Value.absent(),
     this.bio = const Value.absent(),
     this.rowid = const Value.absent(),
-  }) : id = Value(id),
+  }) : userId = Value(userId),
        name = Value(name),
        email = Value(email);
   static Insertable<UsersTableData> custom({
-    Expression<String>? id,
+    Expression<String>? userId,
+    Expression<String>? chatId,
     Expression<String>? name,
     Expression<String>? email,
-    Expression<String>? profilePictureUrl,
     Expression<String>? bio,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
-      if (id != null) 'id': id,
+      if (userId != null) 'user_id': userId,
+      if (chatId != null) 'chat_id': chatId,
       if (name != null) 'name': name,
       if (email != null) 'email': email,
-      if (profilePictureUrl != null) 'profile_picture_url': profilePictureUrl,
       if (bio != null) 'bio': bio,
       if (rowid != null) 'rowid': rowid,
     });
   }
 
   UsersTableCompanion copyWith({
-    Value<String>? id,
+    Value<String>? userId,
+    Value<String?>? chatId,
     Value<String>? name,
     Value<String>? email,
-    Value<String?>? profilePictureUrl,
     Value<String?>? bio,
     Value<int>? rowid,
   }) {
     return UsersTableCompanion(
-      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      chatId: chatId ?? this.chatId,
       name: name ?? this.name,
       email: email ?? this.email,
-      profilePictureUrl: profilePictureUrl ?? this.profilePictureUrl,
       bio: bio ?? this.bio,
       rowid: rowid ?? this.rowid,
     );
@@ -1895,17 +1273,17 @@ class UsersTableCompanion extends UpdateCompanion<UsersTableData> {
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<String>(id.value);
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (chatId.present) {
+      map['chat_id'] = Variable<String>(chatId.value);
     }
     if (name.present) {
       map['name'] = Variable<String>(name.value);
     }
     if (email.present) {
       map['email'] = Variable<String>(email.value);
-    }
-    if (profilePictureUrl.present) {
-      map['profile_picture_url'] = Variable<String>(profilePictureUrl.value);
     }
     if (bio.present) {
       map['bio'] = Variable<String>(bio.value);
@@ -1919,10 +1297,10 @@ class UsersTableCompanion extends UpdateCompanion<UsersTableData> {
   @override
   String toString() {
     return (StringBuffer('UsersTableCompanion(')
-          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('chatId: $chatId, ')
           ..write('name: $name, ')
           ..write('email: $email, ')
-          ..write('profilePictureUrl: $profilePictureUrl, ')
           ..write('bio: $bio, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -1954,26 +1332,6 @@ class $ChatParticipantsTable extends ChatParticipants
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _nameMeta = const VerificationMeta('name');
-  @override
-  late final GeneratedColumn<String> name = GeneratedColumn<String>(
-    'name',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _profilePicUrlMeta = const VerificationMeta(
-    'profilePicUrl',
-  );
-  @override
-  late final GeneratedColumn<String> profilePicUrl = GeneratedColumn<String>(
-    'profile_pic_url',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
   static const VerificationMeta _roleMeta = const VerificationMeta('role');
   @override
   late final GeneratedColumn<String> role = GeneratedColumn<String>(
@@ -1985,13 +1343,7 @@ class $ChatParticipantsTable extends ChatParticipants
     defaultValue: const Constant("MEMBER"),
   );
   @override
-  List<GeneratedColumn> get $columns => [
-    chatId,
-    userId,
-    name,
-    profilePicUrl,
-    role,
-  ];
+  List<GeneratedColumn> get $columns => [chatId, userId, role];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -2020,23 +1372,6 @@ class $ChatParticipantsTable extends ChatParticipants
     } else if (isInserting) {
       context.missing(_userIdMeta);
     }
-    if (data.containsKey('name')) {
-      context.handle(
-        _nameMeta,
-        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_nameMeta);
-    }
-    if (data.containsKey('profile_pic_url')) {
-      context.handle(
-        _profilePicUrlMeta,
-        profilePicUrl.isAcceptableOrUnknown(
-          data['profile_pic_url']!,
-          _profilePicUrlMeta,
-        ),
-      );
-    }
     if (data.containsKey('role')) {
       context.handle(
         _roleMeta,
@@ -2060,14 +1395,6 @@ class $ChatParticipantsTable extends ChatParticipants
         DriftSqlType.string,
         data['${effectivePrefix}user_id'],
       )!,
-      name: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}name'],
-      )!,
-      profilePicUrl: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}profile_pic_url'],
-      ),
       role: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}role'],
@@ -2084,14 +1411,10 @@ class $ChatParticipantsTable extends ChatParticipants
 class ChatParticipant extends DataClass implements Insertable<ChatParticipant> {
   final String chatId;
   final String userId;
-  final String name;
-  final String? profilePicUrl;
   final String role;
   const ChatParticipant({
     required this.chatId,
     required this.userId,
-    required this.name,
-    this.profilePicUrl,
     required this.role,
   });
   @override
@@ -2099,10 +1422,6 @@ class ChatParticipant extends DataClass implements Insertable<ChatParticipant> {
     final map = <String, Expression>{};
     map['chat_id'] = Variable<String>(chatId);
     map['user_id'] = Variable<String>(userId);
-    map['name'] = Variable<String>(name);
-    if (!nullToAbsent || profilePicUrl != null) {
-      map['profile_pic_url'] = Variable<String>(profilePicUrl);
-    }
     map['role'] = Variable<String>(role);
     return map;
   }
@@ -2111,10 +1430,6 @@ class ChatParticipant extends DataClass implements Insertable<ChatParticipant> {
     return ChatParticipantsCompanion(
       chatId: Value(chatId),
       userId: Value(userId),
-      name: Value(name),
-      profilePicUrl: profilePicUrl == null && nullToAbsent
-          ? const Value.absent()
-          : Value(profilePicUrl),
       role: Value(role),
     );
   }
@@ -2127,8 +1442,6 @@ class ChatParticipant extends DataClass implements Insertable<ChatParticipant> {
     return ChatParticipant(
       chatId: serializer.fromJson<String>(json['chatId']),
       userId: serializer.fromJson<String>(json['userId']),
-      name: serializer.fromJson<String>(json['name']),
-      profilePicUrl: serializer.fromJson<String?>(json['profilePicUrl']),
       role: serializer.fromJson<String>(json['role']),
     );
   }
@@ -2138,35 +1451,20 @@ class ChatParticipant extends DataClass implements Insertable<ChatParticipant> {
     return <String, dynamic>{
       'chatId': serializer.toJson<String>(chatId),
       'userId': serializer.toJson<String>(userId),
-      'name': serializer.toJson<String>(name),
-      'profilePicUrl': serializer.toJson<String?>(profilePicUrl),
       'role': serializer.toJson<String>(role),
     };
   }
 
-  ChatParticipant copyWith({
-    String? chatId,
-    String? userId,
-    String? name,
-    Value<String?> profilePicUrl = const Value.absent(),
-    String? role,
-  }) => ChatParticipant(
-    chatId: chatId ?? this.chatId,
-    userId: userId ?? this.userId,
-    name: name ?? this.name,
-    profilePicUrl: profilePicUrl.present
-        ? profilePicUrl.value
-        : this.profilePicUrl,
-    role: role ?? this.role,
-  );
+  ChatParticipant copyWith({String? chatId, String? userId, String? role}) =>
+      ChatParticipant(
+        chatId: chatId ?? this.chatId,
+        userId: userId ?? this.userId,
+        role: role ?? this.role,
+      );
   ChatParticipant copyWithCompanion(ChatParticipantsCompanion data) {
     return ChatParticipant(
       chatId: data.chatId.present ? data.chatId.value : this.chatId,
       userId: data.userId.present ? data.userId.value : this.userId,
-      name: data.name.present ? data.name.value : this.name,
-      profilePicUrl: data.profilePicUrl.present
-          ? data.profilePicUrl.value
-          : this.profilePicUrl,
       role: data.role.present ? data.role.value : this.role,
     );
   }
@@ -2176,64 +1474,49 @@ class ChatParticipant extends DataClass implements Insertable<ChatParticipant> {
     return (StringBuffer('ChatParticipant(')
           ..write('chatId: $chatId, ')
           ..write('userId: $userId, ')
-          ..write('name: $name, ')
-          ..write('profilePicUrl: $profilePicUrl, ')
           ..write('role: $role')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(chatId, userId, name, profilePicUrl, role);
+  int get hashCode => Object.hash(chatId, userId, role);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is ChatParticipant &&
           other.chatId == this.chatId &&
           other.userId == this.userId &&
-          other.name == this.name &&
-          other.profilePicUrl == this.profilePicUrl &&
           other.role == this.role);
 }
 
 class ChatParticipantsCompanion extends UpdateCompanion<ChatParticipant> {
   final Value<String> chatId;
   final Value<String> userId;
-  final Value<String> name;
-  final Value<String?> profilePicUrl;
   final Value<String> role;
   final Value<int> rowid;
   const ChatParticipantsCompanion({
     this.chatId = const Value.absent(),
     this.userId = const Value.absent(),
-    this.name = const Value.absent(),
-    this.profilePicUrl = const Value.absent(),
     this.role = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ChatParticipantsCompanion.insert({
     required String chatId,
     required String userId,
-    required String name,
-    this.profilePicUrl = const Value.absent(),
     this.role = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : chatId = Value(chatId),
-       userId = Value(userId),
-       name = Value(name);
+       userId = Value(userId);
   static Insertable<ChatParticipant> custom({
     Expression<String>? chatId,
     Expression<String>? userId,
-    Expression<String>? name,
-    Expression<String>? profilePicUrl,
     Expression<String>? role,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (chatId != null) 'chat_id': chatId,
       if (userId != null) 'user_id': userId,
-      if (name != null) 'name': name,
-      if (profilePicUrl != null) 'profile_pic_url': profilePicUrl,
       if (role != null) 'role': role,
       if (rowid != null) 'rowid': rowid,
     });
@@ -2242,16 +1525,12 @@ class ChatParticipantsCompanion extends UpdateCompanion<ChatParticipant> {
   ChatParticipantsCompanion copyWith({
     Value<String>? chatId,
     Value<String>? userId,
-    Value<String>? name,
-    Value<String?>? profilePicUrl,
     Value<String>? role,
     Value<int>? rowid,
   }) {
     return ChatParticipantsCompanion(
       chatId: chatId ?? this.chatId,
       userId: userId ?? this.userId,
-      name: name ?? this.name,
-      profilePicUrl: profilePicUrl ?? this.profilePicUrl,
       role: role ?? this.role,
       rowid: rowid ?? this.rowid,
     );
@@ -2265,12 +1544,6 @@ class ChatParticipantsCompanion extends UpdateCompanion<ChatParticipant> {
     }
     if (userId.present) {
       map['user_id'] = Variable<String>(userId.value);
-    }
-    if (name.present) {
-      map['name'] = Variable<String>(name.value);
-    }
-    if (profilePicUrl.present) {
-      map['profile_pic_url'] = Variable<String>(profilePicUrl.value);
     }
     if (role.present) {
       map['role'] = Variable<String>(role.value);
@@ -2286,8 +1559,6 @@ class ChatParticipantsCompanion extends UpdateCompanion<ChatParticipant> {
     return (StringBuffer('ChatParticipantsCompanion(')
           ..write('chatId: $chatId, ')
           ..write('userId: $userId, ')
-          ..write('name: $name, ')
-          ..write('profilePicUrl: $profilePicUrl, ')
           ..write('role: $role, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -3317,10 +2588,552 @@ class $RecentSearchesTableTable extends RecentSearchesTable
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
   $RecentSearchesTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _actorIdMeta = const VerificationMeta(
+    'actorId',
+  );
+  @override
+  late final GeneratedColumn<String> actorId = GeneratedColumn<String>(
+    'actor_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _searchedAtMeta = const VerificationMeta(
+    'searchedAt',
+  );
+  @override
+  late final GeneratedColumn<int> searchedAt = GeneratedColumn<int>(
+    'searched_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _actorTypeMeta = const VerificationMeta(
+    'actorType',
+  );
+  @override
+  late final GeneratedColumn<String> actorType = GeneratedColumn<String>(
+    'actor_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [actorId, searchedAt, actorType];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'recent_searches_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RecentSearchesTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('actor_id')) {
+      context.handle(
+        _actorIdMeta,
+        actorId.isAcceptableOrUnknown(data['actor_id']!, _actorIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_actorIdMeta);
+    }
+    if (data.containsKey('searched_at')) {
+      context.handle(
+        _searchedAtMeta,
+        searchedAt.isAcceptableOrUnknown(data['searched_at']!, _searchedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_searchedAtMeta);
+    }
+    if (data.containsKey('actor_type')) {
+      context.handle(
+        _actorTypeMeta,
+        actorType.isAcceptableOrUnknown(data['actor_type']!, _actorTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_actorTypeMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {actorId};
+  @override
+  RecentSearchesTableData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RecentSearchesTableData(
+      actorId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}actor_id'],
+      )!,
+      searchedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}searched_at'],
+      )!,
+      actorType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}actor_type'],
+      )!,
+    );
+  }
+
+  @override
+  $RecentSearchesTableTable createAlias(String alias) {
+    return $RecentSearchesTableTable(attachedDatabase, alias);
+  }
+}
+
+class RecentSearchesTableData extends DataClass
+    implements Insertable<RecentSearchesTableData> {
+  final String actorId;
+  final int searchedAt;
+  final String actorType;
+  const RecentSearchesTableData({
+    required this.actorId,
+    required this.searchedAt,
+    required this.actorType,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['actor_id'] = Variable<String>(actorId);
+    map['searched_at'] = Variable<int>(searchedAt);
+    map['actor_type'] = Variable<String>(actorType);
+    return map;
+  }
+
+  RecentSearchesTableCompanion toCompanion(bool nullToAbsent) {
+    return RecentSearchesTableCompanion(
+      actorId: Value(actorId),
+      searchedAt: Value(searchedAt),
+      actorType: Value(actorType),
+    );
+  }
+
+  factory RecentSearchesTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RecentSearchesTableData(
+      actorId: serializer.fromJson<String>(json['actorId']),
+      searchedAt: serializer.fromJson<int>(json['searchedAt']),
+      actorType: serializer.fromJson<String>(json['actorType']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'actorId': serializer.toJson<String>(actorId),
+      'searchedAt': serializer.toJson<int>(searchedAt),
+      'actorType': serializer.toJson<String>(actorType),
+    };
+  }
+
+  RecentSearchesTableData copyWith({
+    String? actorId,
+    int? searchedAt,
+    String? actorType,
+  }) => RecentSearchesTableData(
+    actorId: actorId ?? this.actorId,
+    searchedAt: searchedAt ?? this.searchedAt,
+    actorType: actorType ?? this.actorType,
+  );
+  RecentSearchesTableData copyWithCompanion(RecentSearchesTableCompanion data) {
+    return RecentSearchesTableData(
+      actorId: data.actorId.present ? data.actorId.value : this.actorId,
+      searchedAt: data.searchedAt.present
+          ? data.searchedAt.value
+          : this.searchedAt,
+      actorType: data.actorType.present ? data.actorType.value : this.actorType,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecentSearchesTableData(')
+          ..write('actorId: $actorId, ')
+          ..write('searchedAt: $searchedAt, ')
+          ..write('actorType: $actorType')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(actorId, searchedAt, actorType);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RecentSearchesTableData &&
+          other.actorId == this.actorId &&
+          other.searchedAt == this.searchedAt &&
+          other.actorType == this.actorType);
+}
+
+class RecentSearchesTableCompanion
+    extends UpdateCompanion<RecentSearchesTableData> {
+  final Value<String> actorId;
+  final Value<int> searchedAt;
+  final Value<String> actorType;
+  final Value<int> rowid;
+  const RecentSearchesTableCompanion({
+    this.actorId = const Value.absent(),
+    this.searchedAt = const Value.absent(),
+    this.actorType = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RecentSearchesTableCompanion.insert({
+    required String actorId,
+    required int searchedAt,
+    required String actorType,
+    this.rowid = const Value.absent(),
+  }) : actorId = Value(actorId),
+       searchedAt = Value(searchedAt),
+       actorType = Value(actorType);
+  static Insertable<RecentSearchesTableData> custom({
+    Expression<String>? actorId,
+    Expression<int>? searchedAt,
+    Expression<String>? actorType,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (actorId != null) 'actor_id': actorId,
+      if (searchedAt != null) 'searched_at': searchedAt,
+      if (actorType != null) 'actor_type': actorType,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RecentSearchesTableCompanion copyWith({
+    Value<String>? actorId,
+    Value<int>? searchedAt,
+    Value<String>? actorType,
+    Value<int>? rowid,
+  }) {
+    return RecentSearchesTableCompanion(
+      actorId: actorId ?? this.actorId,
+      searchedAt: searchedAt ?? this.searchedAt,
+      actorType: actorType ?? this.actorType,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (actorId.present) {
+      map['actor_id'] = Variable<String>(actorId.value);
+    }
+    if (searchedAt.present) {
+      map['searched_at'] = Variable<int>(searchedAt.value);
+    }
+    if (actorType.present) {
+      map['actor_type'] = Variable<String>(actorType.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecentSearchesTableCompanion(')
+          ..write('actorId: $actorId, ')
+          ..write('searchedAt: $searchedAt, ')
+          ..write('actorType: $actorType, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $UserPreferencesTableTable extends UserPreferencesTable
+    with TableInfo<$UserPreferencesTableTable, UserPreferencesTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $UserPreferencesTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
   static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
   @override
   late final GeneratedColumn<String> userId = GeneratedColumn<String>(
     'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _accessTokenMeta = const VerificationMeta(
+    'accessToken',
+  );
+  @override
+  late final GeneratedColumn<String> accessToken = GeneratedColumn<String>(
+    'access_token',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, userId, accessToken];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'user_preferences_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<UserPreferencesTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('access_token')) {
+      context.handle(
+        _accessTokenMeta,
+        accessToken.isAcceptableOrUnknown(
+          data['access_token']!,
+          _accessTokenMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  UserPreferencesTableData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return UserPreferencesTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      )!,
+      accessToken: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}access_token'],
+      ),
+    );
+  }
+
+  @override
+  $UserPreferencesTableTable createAlias(String alias) {
+    return $UserPreferencesTableTable(attachedDatabase, alias);
+  }
+}
+
+class UserPreferencesTableData extends DataClass
+    implements Insertable<UserPreferencesTableData> {
+  final int id;
+  final String userId;
+  final String? accessToken;
+  const UserPreferencesTableData({
+    required this.id,
+    required this.userId,
+    this.accessToken,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['user_id'] = Variable<String>(userId);
+    if (!nullToAbsent || accessToken != null) {
+      map['access_token'] = Variable<String>(accessToken);
+    }
+    return map;
+  }
+
+  UserPreferencesTableCompanion toCompanion(bool nullToAbsent) {
+    return UserPreferencesTableCompanion(
+      id: Value(id),
+      userId: Value(userId),
+      accessToken: accessToken == null && nullToAbsent
+          ? const Value.absent()
+          : Value(accessToken),
+    );
+  }
+
+  factory UserPreferencesTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return UserPreferencesTableData(
+      id: serializer.fromJson<int>(json['id']),
+      userId: serializer.fromJson<String>(json['userId']),
+      accessToken: serializer.fromJson<String?>(json['accessToken']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'userId': serializer.toJson<String>(userId),
+      'accessToken': serializer.toJson<String?>(accessToken),
+    };
+  }
+
+  UserPreferencesTableData copyWith({
+    int? id,
+    String? userId,
+    Value<String?> accessToken = const Value.absent(),
+  }) => UserPreferencesTableData(
+    id: id ?? this.id,
+    userId: userId ?? this.userId,
+    accessToken: accessToken.present ? accessToken.value : this.accessToken,
+  );
+  UserPreferencesTableData copyWithCompanion(
+    UserPreferencesTableCompanion data,
+  ) {
+    return UserPreferencesTableData(
+      id: data.id.present ? data.id.value : this.id,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      accessToken: data.accessToken.present
+          ? data.accessToken.value
+          : this.accessToken,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserPreferencesTableData(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('accessToken: $accessToken')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, userId, accessToken);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is UserPreferencesTableData &&
+          other.id == this.id &&
+          other.userId == this.userId &&
+          other.accessToken == this.accessToken);
+}
+
+class UserPreferencesTableCompanion
+    extends UpdateCompanion<UserPreferencesTableData> {
+  final Value<int> id;
+  final Value<String> userId;
+  final Value<String?> accessToken;
+  const UserPreferencesTableCompanion({
+    this.id = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.accessToken = const Value.absent(),
+  });
+  UserPreferencesTableCompanion.insert({
+    this.id = const Value.absent(),
+    required String userId,
+    this.accessToken = const Value.absent(),
+  }) : userId = Value(userId);
+  static Insertable<UserPreferencesTableData> custom({
+    Expression<int>? id,
+    Expression<String>? userId,
+    Expression<String>? accessToken,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (userId != null) 'user_id': userId,
+      if (accessToken != null) 'access_token': accessToken,
+    });
+  }
+
+  UserPreferencesTableCompanion copyWith({
+    Value<int>? id,
+    Value<String>? userId,
+    Value<String?>? accessToken,
+  }) {
+    return UserPreferencesTableCompanion(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      accessToken: accessToken ?? this.accessToken,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (accessToken.present) {
+      map['access_token'] = Variable<String>(accessToken.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserPreferencesTableCompanion(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('accessToken: $accessToken')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $GroupListTableTable extends GroupListTable
+    with TableInfo<$GroupListTableTable, GroupListTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $GroupListTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _chatIdMeta = const VerificationMeta('chatId');
+  @override
+  late final GeneratedColumn<String> chatId = GeneratedColumn<String>(
+    'chat_id',
     aliasedName,
     false,
     type: DriftSqlType.string,
@@ -3335,65 +3148,36 @@ class $RecentSearchesTableTable extends RecentSearchesTable
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _emailMeta = const VerificationMeta('email');
+  static const VerificationMeta _bioMeta = const VerificationMeta('bio');
   @override
-  late final GeneratedColumn<String> email = GeneratedColumn<String>(
-    'email',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    defaultValue: const Constant(''),
-  );
-  static const VerificationMeta _profilePicUrlMeta = const VerificationMeta(
-    'profilePicUrl',
-  );
-  @override
-  late final GeneratedColumn<String> profilePicUrl = GeneratedColumn<String>(
-    'profile_pic_url',
+  late final GeneratedColumn<String> bio = GeneratedColumn<String>(
+    'bio',
     aliasedName,
     true,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _searchedAtMeta = const VerificationMeta(
-    'searchedAt',
-  );
   @override
-  late final GeneratedColumn<int> searchedAt = GeneratedColumn<int>(
-    'searched_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
-  @override
-  List<GeneratedColumn> get $columns => [
-    userId,
-    name,
-    email,
-    profilePicUrl,
-    searchedAt,
-  ];
+  List<GeneratedColumn> get $columns => [chatId, name, bio];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'recent_searches_table';
+  static const String $name = 'group_list_table';
   @override
   VerificationContext validateIntegrity(
-    Insertable<RecentSearchesTableData> instance, {
+    Insertable<GroupListTableData> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
-    if (data.containsKey('user_id')) {
+    if (data.containsKey('chat_id')) {
       context.handle(
-        _userIdMeta,
-        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+        _chatIdMeta,
+        chatId.isAcceptableOrUnknown(data['chat_id']!, _chatIdMeta),
       );
     } else if (isInserting) {
-      context.missing(_userIdMeta);
+      context.missing(_chatIdMeta);
     }
     if (data.containsKey('name')) {
       context.handle(
@@ -3403,247 +3187,172 @@ class $RecentSearchesTableTable extends RecentSearchesTable
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
-    if (data.containsKey('email')) {
+    if (data.containsKey('bio')) {
       context.handle(
-        _emailMeta,
-        email.isAcceptableOrUnknown(data['email']!, _emailMeta),
+        _bioMeta,
+        bio.isAcceptableOrUnknown(data['bio']!, _bioMeta),
       );
-    }
-    if (data.containsKey('profile_pic_url')) {
-      context.handle(
-        _profilePicUrlMeta,
-        profilePicUrl.isAcceptableOrUnknown(
-          data['profile_pic_url']!,
-          _profilePicUrlMeta,
-        ),
-      );
-    }
-    if (data.containsKey('searched_at')) {
-      context.handle(
-        _searchedAtMeta,
-        searchedAt.isAcceptableOrUnknown(data['searched_at']!, _searchedAtMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_searchedAtMeta);
     }
     return context;
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {userId};
+  Set<GeneratedColumn> get $primaryKey => {chatId};
   @override
-  RecentSearchesTableData map(
-    Map<String, dynamic> data, {
-    String? tablePrefix,
-  }) {
+  GroupListTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return RecentSearchesTableData(
-      userId: attachedDatabase.typeMapping.read(
+    return GroupListTableData(
+      chatId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}user_id'],
+        data['${effectivePrefix}chat_id'],
       )!,
       name: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}name'],
       )!,
-      email: attachedDatabase.typeMapping.read(
+      bio: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}email'],
-      )!,
-      profilePicUrl: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}profile_pic_url'],
+        data['${effectivePrefix}bio'],
       ),
-      searchedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}searched_at'],
-      )!,
     );
   }
 
   @override
-  $RecentSearchesTableTable createAlias(String alias) {
-    return $RecentSearchesTableTable(attachedDatabase, alias);
+  $GroupListTableTable createAlias(String alias) {
+    return $GroupListTableTable(attachedDatabase, alias);
   }
 }
 
-class RecentSearchesTableData extends DataClass
-    implements Insertable<RecentSearchesTableData> {
-  final String userId;
+class GroupListTableData extends DataClass
+    implements Insertable<GroupListTableData> {
+  final String chatId;
   final String name;
-  final String email;
-  final String? profilePicUrl;
-  final int searchedAt;
-  const RecentSearchesTableData({
-    required this.userId,
+  final String? bio;
+  const GroupListTableData({
+    required this.chatId,
     required this.name,
-    required this.email,
-    this.profilePicUrl,
-    required this.searchedAt,
+    this.bio,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    map['user_id'] = Variable<String>(userId);
+    map['chat_id'] = Variable<String>(chatId);
     map['name'] = Variable<String>(name);
-    map['email'] = Variable<String>(email);
-    if (!nullToAbsent || profilePicUrl != null) {
-      map['profile_pic_url'] = Variable<String>(profilePicUrl);
+    if (!nullToAbsent || bio != null) {
+      map['bio'] = Variable<String>(bio);
     }
-    map['searched_at'] = Variable<int>(searchedAt);
     return map;
   }
 
-  RecentSearchesTableCompanion toCompanion(bool nullToAbsent) {
-    return RecentSearchesTableCompanion(
-      userId: Value(userId),
+  GroupListTableCompanion toCompanion(bool nullToAbsent) {
+    return GroupListTableCompanion(
+      chatId: Value(chatId),
       name: Value(name),
-      email: Value(email),
-      profilePicUrl: profilePicUrl == null && nullToAbsent
-          ? const Value.absent()
-          : Value(profilePicUrl),
-      searchedAt: Value(searchedAt),
+      bio: bio == null && nullToAbsent ? const Value.absent() : Value(bio),
     );
   }
 
-  factory RecentSearchesTableData.fromJson(
+  factory GroupListTableData.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return RecentSearchesTableData(
-      userId: serializer.fromJson<String>(json['userId']),
+    return GroupListTableData(
+      chatId: serializer.fromJson<String>(json['chatId']),
       name: serializer.fromJson<String>(json['name']),
-      email: serializer.fromJson<String>(json['email']),
-      profilePicUrl: serializer.fromJson<String?>(json['profilePicUrl']),
-      searchedAt: serializer.fromJson<int>(json['searchedAt']),
+      bio: serializer.fromJson<String?>(json['bio']),
     );
   }
   @override
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
-      'userId': serializer.toJson<String>(userId),
+      'chatId': serializer.toJson<String>(chatId),
       'name': serializer.toJson<String>(name),
-      'email': serializer.toJson<String>(email),
-      'profilePicUrl': serializer.toJson<String?>(profilePicUrl),
-      'searchedAt': serializer.toJson<int>(searchedAt),
+      'bio': serializer.toJson<String?>(bio),
     };
   }
 
-  RecentSearchesTableData copyWith({
-    String? userId,
+  GroupListTableData copyWith({
+    String? chatId,
     String? name,
-    String? email,
-    Value<String?> profilePicUrl = const Value.absent(),
-    int? searchedAt,
-  }) => RecentSearchesTableData(
-    userId: userId ?? this.userId,
+    Value<String?> bio = const Value.absent(),
+  }) => GroupListTableData(
+    chatId: chatId ?? this.chatId,
     name: name ?? this.name,
-    email: email ?? this.email,
-    profilePicUrl: profilePicUrl.present
-        ? profilePicUrl.value
-        : this.profilePicUrl,
-    searchedAt: searchedAt ?? this.searchedAt,
+    bio: bio.present ? bio.value : this.bio,
   );
-  RecentSearchesTableData copyWithCompanion(RecentSearchesTableCompanion data) {
-    return RecentSearchesTableData(
-      userId: data.userId.present ? data.userId.value : this.userId,
+  GroupListTableData copyWithCompanion(GroupListTableCompanion data) {
+    return GroupListTableData(
+      chatId: data.chatId.present ? data.chatId.value : this.chatId,
       name: data.name.present ? data.name.value : this.name,
-      email: data.email.present ? data.email.value : this.email,
-      profilePicUrl: data.profilePicUrl.present
-          ? data.profilePicUrl.value
-          : this.profilePicUrl,
-      searchedAt: data.searchedAt.present
-          ? data.searchedAt.value
-          : this.searchedAt,
+      bio: data.bio.present ? data.bio.value : this.bio,
     );
   }
 
   @override
   String toString() {
-    return (StringBuffer('RecentSearchesTableData(')
-          ..write('userId: $userId, ')
+    return (StringBuffer('GroupListTableData(')
+          ..write('chatId: $chatId, ')
           ..write('name: $name, ')
-          ..write('email: $email, ')
-          ..write('profilePicUrl: $profilePicUrl, ')
-          ..write('searchedAt: $searchedAt')
+          ..write('bio: $bio')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(userId, name, email, profilePicUrl, searchedAt);
+  int get hashCode => Object.hash(chatId, name, bio);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is RecentSearchesTableData &&
-          other.userId == this.userId &&
+      (other is GroupListTableData &&
+          other.chatId == this.chatId &&
           other.name == this.name &&
-          other.email == this.email &&
-          other.profilePicUrl == this.profilePicUrl &&
-          other.searchedAt == this.searchedAt);
+          other.bio == this.bio);
 }
 
-class RecentSearchesTableCompanion
-    extends UpdateCompanion<RecentSearchesTableData> {
-  final Value<String> userId;
+class GroupListTableCompanion extends UpdateCompanion<GroupListTableData> {
+  final Value<String> chatId;
   final Value<String> name;
-  final Value<String> email;
-  final Value<String?> profilePicUrl;
-  final Value<int> searchedAt;
+  final Value<String?> bio;
   final Value<int> rowid;
-  const RecentSearchesTableCompanion({
-    this.userId = const Value.absent(),
+  const GroupListTableCompanion({
+    this.chatId = const Value.absent(),
     this.name = const Value.absent(),
-    this.email = const Value.absent(),
-    this.profilePicUrl = const Value.absent(),
-    this.searchedAt = const Value.absent(),
+    this.bio = const Value.absent(),
     this.rowid = const Value.absent(),
   });
-  RecentSearchesTableCompanion.insert({
-    required String userId,
+  GroupListTableCompanion.insert({
+    required String chatId,
     required String name,
-    this.email = const Value.absent(),
-    this.profilePicUrl = const Value.absent(),
-    required int searchedAt,
+    this.bio = const Value.absent(),
     this.rowid = const Value.absent(),
-  }) : userId = Value(userId),
-       name = Value(name),
-       searchedAt = Value(searchedAt);
-  static Insertable<RecentSearchesTableData> custom({
-    Expression<String>? userId,
+  }) : chatId = Value(chatId),
+       name = Value(name);
+  static Insertable<GroupListTableData> custom({
+    Expression<String>? chatId,
     Expression<String>? name,
-    Expression<String>? email,
-    Expression<String>? profilePicUrl,
-    Expression<int>? searchedAt,
+    Expression<String>? bio,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
-      if (userId != null) 'user_id': userId,
+      if (chatId != null) 'chat_id': chatId,
       if (name != null) 'name': name,
-      if (email != null) 'email': email,
-      if (profilePicUrl != null) 'profile_pic_url': profilePicUrl,
-      if (searchedAt != null) 'searched_at': searchedAt,
+      if (bio != null) 'bio': bio,
       if (rowid != null) 'rowid': rowid,
     });
   }
 
-  RecentSearchesTableCompanion copyWith({
-    Value<String>? userId,
+  GroupListTableCompanion copyWith({
+    Value<String>? chatId,
     Value<String>? name,
-    Value<String>? email,
-    Value<String?>? profilePicUrl,
-    Value<int>? searchedAt,
+    Value<String?>? bio,
     Value<int>? rowid,
   }) {
-    return RecentSearchesTableCompanion(
-      userId: userId ?? this.userId,
+    return GroupListTableCompanion(
+      chatId: chatId ?? this.chatId,
       name: name ?? this.name,
-      email: email ?? this.email,
-      profilePicUrl: profilePicUrl ?? this.profilePicUrl,
-      searchedAt: searchedAt ?? this.searchedAt,
+      bio: bio ?? this.bio,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -3651,20 +3360,14 @@ class RecentSearchesTableCompanion
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    if (userId.present) {
-      map['user_id'] = Variable<String>(userId.value);
+    if (chatId.present) {
+      map['chat_id'] = Variable<String>(chatId.value);
     }
     if (name.present) {
       map['name'] = Variable<String>(name.value);
     }
-    if (email.present) {
-      map['email'] = Variable<String>(email.value);
-    }
-    if (profilePicUrl.present) {
-      map['profile_pic_url'] = Variable<String>(profilePicUrl.value);
-    }
-    if (searchedAt.present) {
-      map['searched_at'] = Variable<int>(searchedAt.value);
+    if (bio.present) {
+      map['bio'] = Variable<String>(bio.value);
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -3674,12 +3377,10 @@ class RecentSearchesTableCompanion
 
   @override
   String toString() {
-    return (StringBuffer('RecentSearchesTableCompanion(')
-          ..write('userId: $userId, ')
+    return (StringBuffer('GroupListTableCompanion(')
+          ..write('chatId: $chatId, ')
           ..write('name: $name, ')
-          ..write('email: $email, ')
-          ..write('profilePicUrl: $profilePicUrl, ')
-          ..write('searchedAt: $searchedAt, ')
+          ..write('bio: $bio, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -3689,9 +3390,6 @@ class RecentSearchesTableCompanion
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
-  late final $UserInfoSettingsTable userInfoSettings = $UserInfoSettingsTable(
-    this,
-  );
   late final $MessagesTable messages = $MessagesTable(this);
   late final $ChatListTableTable chatListTable = $ChatListTableTable(this);
   late final $UsersTableTable usersTable = $UsersTableTable(this);
@@ -3703,15 +3401,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $MediaTableTable mediaTable = $MediaTableTable(this);
   late final $RecentSearchesTableTable recentSearchesTable =
       $RecentSearchesTableTable(this);
-  late final RecentSearchesDao recentSearchesDao = RecentSearchesDao(
-    this as AppDatabase,
-  );
+  late final $UserPreferencesTableTable userPreferencesTable =
+      $UserPreferencesTableTable(this);
+  late final $GroupListTableTable groupListTable = $GroupListTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
-    userInfoSettings,
     messages,
     chatListTable,
     usersTable,
@@ -3719,246 +3416,19 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     messageStatusTable,
     mediaTable,
     recentSearchesTable,
+    userPreferencesTable,
+    groupListTable,
   ];
 }
 
-typedef $$UserInfoSettingsTableCreateCompanionBuilder =
-    UserInfoSettingsCompanion Function({
-      required String id,
-      required String name,
-      required String email,
-      required String accessToken,
-      Value<String?> profilePictureUrl,
-      Value<String?> bio,
-      Value<int> rowid,
-    });
-typedef $$UserInfoSettingsTableUpdateCompanionBuilder =
-    UserInfoSettingsCompanion Function({
-      Value<String> id,
-      Value<String> name,
-      Value<String> email,
-      Value<String> accessToken,
-      Value<String?> profilePictureUrl,
-      Value<String?> bio,
-      Value<int> rowid,
-    });
-
-class $$UserInfoSettingsTableFilterComposer
-    extends Composer<_$AppDatabase, $UserInfoSettingsTable> {
-  $$UserInfoSettingsTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get name => $composableBuilder(
-    column: $table.name,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get email => $composableBuilder(
-    column: $table.email,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get accessToken => $composableBuilder(
-    column: $table.accessToken,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get profilePictureUrl => $composableBuilder(
-    column: $table.profilePictureUrl,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get bio => $composableBuilder(
-    column: $table.bio,
-    builder: (column) => ColumnFilters(column),
-  );
-}
-
-class $$UserInfoSettingsTableOrderingComposer
-    extends Composer<_$AppDatabase, $UserInfoSettingsTable> {
-  $$UserInfoSettingsTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get name => $composableBuilder(
-    column: $table.name,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get email => $composableBuilder(
-    column: $table.email,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get accessToken => $composableBuilder(
-    column: $table.accessToken,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get profilePictureUrl => $composableBuilder(
-    column: $table.profilePictureUrl,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get bio => $composableBuilder(
-    column: $table.bio,
-    builder: (column) => ColumnOrderings(column),
-  );
-}
-
-class $$UserInfoSettingsTableAnnotationComposer
-    extends Composer<_$AppDatabase, $UserInfoSettingsTable> {
-  $$UserInfoSettingsTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<String> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<String> get name =>
-      $composableBuilder(column: $table.name, builder: (column) => column);
-
-  GeneratedColumn<String> get email =>
-      $composableBuilder(column: $table.email, builder: (column) => column);
-
-  GeneratedColumn<String> get accessToken => $composableBuilder(
-    column: $table.accessToken,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get profilePictureUrl => $composableBuilder(
-    column: $table.profilePictureUrl,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get bio =>
-      $composableBuilder(column: $table.bio, builder: (column) => column);
-}
-
-class $$UserInfoSettingsTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $UserInfoSettingsTable,
-          UserInfoSetting,
-          $$UserInfoSettingsTableFilterComposer,
-          $$UserInfoSettingsTableOrderingComposer,
-          $$UserInfoSettingsTableAnnotationComposer,
-          $$UserInfoSettingsTableCreateCompanionBuilder,
-          $$UserInfoSettingsTableUpdateCompanionBuilder,
-          (
-            UserInfoSetting,
-            BaseReferences<
-              _$AppDatabase,
-              $UserInfoSettingsTable,
-              UserInfoSetting
-            >,
-          ),
-          UserInfoSetting,
-          PrefetchHooks Function()
-        > {
-  $$UserInfoSettingsTableTableManager(
-    _$AppDatabase db,
-    $UserInfoSettingsTable table,
-  ) : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$UserInfoSettingsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$UserInfoSettingsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$UserInfoSettingsTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback:
-              ({
-                Value<String> id = const Value.absent(),
-                Value<String> name = const Value.absent(),
-                Value<String> email = const Value.absent(),
-                Value<String> accessToken = const Value.absent(),
-                Value<String?> profilePictureUrl = const Value.absent(),
-                Value<String?> bio = const Value.absent(),
-                Value<int> rowid = const Value.absent(),
-              }) => UserInfoSettingsCompanion(
-                id: id,
-                name: name,
-                email: email,
-                accessToken: accessToken,
-                profilePictureUrl: profilePictureUrl,
-                bio: bio,
-                rowid: rowid,
-              ),
-          createCompanionCallback:
-              ({
-                required String id,
-                required String name,
-                required String email,
-                required String accessToken,
-                Value<String?> profilePictureUrl = const Value.absent(),
-                Value<String?> bio = const Value.absent(),
-                Value<int> rowid = const Value.absent(),
-              }) => UserInfoSettingsCompanion.insert(
-                id: id,
-                name: name,
-                email: email,
-                accessToken: accessToken,
-                profilePictureUrl: profilePictureUrl,
-                bio: bio,
-                rowid: rowid,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
-              .toList(),
-          prefetchHooksCallback: null,
-        ),
-      );
-}
-
-typedef $$UserInfoSettingsTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $UserInfoSettingsTable,
-      UserInfoSetting,
-      $$UserInfoSettingsTableFilterComposer,
-      $$UserInfoSettingsTableOrderingComposer,
-      $$UserInfoSettingsTableAnnotationComposer,
-      $$UserInfoSettingsTableCreateCompanionBuilder,
-      $$UserInfoSettingsTableUpdateCompanionBuilder,
-      (
-        UserInfoSetting,
-        BaseReferences<_$AppDatabase, $UserInfoSettingsTable, UserInfoSetting>,
-      ),
-      UserInfoSetting,
-      PrefetchHooks Function()
-    >;
 typedef $$MessagesTableCreateCompanionBuilder =
     MessagesCompanion Function({
       required String id,
       required String chatId,
       required String senderId,
       required String message,
-      Value<String> messageStatus,
       required int createdAt,
+      Value<int?> serverCreatedAt,
       Value<bool> isRead,
       Value<String?> serverId,
       Value<int> rowid,
@@ -3969,8 +3439,8 @@ typedef $$MessagesTableUpdateCompanionBuilder =
       Value<String> chatId,
       Value<String> senderId,
       Value<String> message,
-      Value<String> messageStatus,
       Value<int> createdAt,
+      Value<int?> serverCreatedAt,
       Value<bool> isRead,
       Value<String?> serverId,
       Value<int> rowid,
@@ -4005,13 +3475,13 @@ class $$MessagesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get messageStatus => $composableBuilder(
-    column: $table.messageStatus,
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<int> get createdAt => $composableBuilder(
-    column: $table.createdAt,
+  ColumnFilters<int> get serverCreatedAt => $composableBuilder(
+    column: $table.serverCreatedAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4055,13 +3525,13 @@ class $$MessagesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get messageStatus => $composableBuilder(
-    column: $table.messageStatus,
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get createdAt => $composableBuilder(
-    column: $table.createdAt,
+  ColumnOrderings<int> get serverCreatedAt => $composableBuilder(
+    column: $table.serverCreatedAt,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -4097,13 +3567,13 @@ class $$MessagesTableAnnotationComposer
   GeneratedColumn<String> get message =>
       $composableBuilder(column: $table.message, builder: (column) => column);
 
-  GeneratedColumn<String> get messageStatus => $composableBuilder(
-    column: $table.messageStatus,
-    builder: (column) => column,
-  );
-
   GeneratedColumn<int> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get serverCreatedAt => $composableBuilder(
+    column: $table.serverCreatedAt,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<bool> get isRead =>
       $composableBuilder(column: $table.isRead, builder: (column) => column);
@@ -4144,8 +3614,8 @@ class $$MessagesTableTableManager
                 Value<String> chatId = const Value.absent(),
                 Value<String> senderId = const Value.absent(),
                 Value<String> message = const Value.absent(),
-                Value<String> messageStatus = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
+                Value<int?> serverCreatedAt = const Value.absent(),
                 Value<bool> isRead = const Value.absent(),
                 Value<String?> serverId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -4154,8 +3624,8 @@ class $$MessagesTableTableManager
                 chatId: chatId,
                 senderId: senderId,
                 message: message,
-                messageStatus: messageStatus,
                 createdAt: createdAt,
+                serverCreatedAt: serverCreatedAt,
                 isRead: isRead,
                 serverId: serverId,
                 rowid: rowid,
@@ -4166,8 +3636,8 @@ class $$MessagesTableTableManager
                 required String chatId,
                 required String senderId,
                 required String message,
-                Value<String> messageStatus = const Value.absent(),
                 required int createdAt,
+                Value<int?> serverCreatedAt = const Value.absent(),
                 Value<bool> isRead = const Value.absent(),
                 Value<String?> serverId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -4176,8 +3646,8 @@ class $$MessagesTableTableManager
                 chatId: chatId,
                 senderId: senderId,
                 message: message,
-                messageStatus: messageStatus,
                 createdAt: createdAt,
+                serverCreatedAt: serverCreatedAt,
                 isRead: isRead,
                 serverId: serverId,
                 rowid: rowid,
@@ -4206,29 +3676,23 @@ typedef $$MessagesTableProcessedTableManager =
     >;
 typedef $$ChatListTableTableCreateCompanionBuilder =
     ChatListTableCompanion Function({
-      Value<int> id,
       required String chatId,
-      required String name,
       Value<String?> lastMessage,
       Value<int?> lastMessageTime,
       Value<int> unReadCount,
-      Value<String?> profilePicUrl,
       Value<bool> isDeleted,
-      Value<String?> description,
       required String type,
+      Value<int> rowid,
     });
 typedef $$ChatListTableTableUpdateCompanionBuilder =
     ChatListTableCompanion Function({
-      Value<int> id,
       Value<String> chatId,
-      Value<String> name,
       Value<String?> lastMessage,
       Value<int?> lastMessageTime,
       Value<int> unReadCount,
-      Value<String?> profilePicUrl,
       Value<bool> isDeleted,
-      Value<String?> description,
       Value<String> type,
+      Value<int> rowid,
     });
 
 class $$ChatListTableTableFilterComposer
@@ -4240,18 +3704,8 @@ class $$ChatListTableTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
   ColumnFilters<String> get chatId => $composableBuilder(
     column: $table.chatId,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get name => $composableBuilder(
-    column: $table.name,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4270,18 +3724,8 @@ class $$ChatListTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get profilePicUrl => $composableBuilder(
-    column: $table.profilePicUrl,
-    builder: (column) => ColumnFilters(column),
-  );
-
   ColumnFilters<bool> get isDeleted => $composableBuilder(
     column: $table.isDeleted,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get description => $composableBuilder(
-    column: $table.description,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4300,18 +3744,8 @@ class $$ChatListTableTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<String> get chatId => $composableBuilder(
     column: $table.chatId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get name => $composableBuilder(
-    column: $table.name,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -4330,18 +3764,8 @@ class $$ChatListTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get profilePicUrl => $composableBuilder(
-    column: $table.profilePicUrl,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<bool> get isDeleted => $composableBuilder(
     column: $table.isDeleted,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get description => $composableBuilder(
-    column: $table.description,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -4360,14 +3784,8 @@ class $$ChatListTableTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<int> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
   GeneratedColumn<String> get chatId =>
       $composableBuilder(column: $table.chatId, builder: (column) => column);
-
-  GeneratedColumn<String> get name =>
-      $composableBuilder(column: $table.name, builder: (column) => column);
 
   GeneratedColumn<String> get lastMessage => $composableBuilder(
     column: $table.lastMessage,
@@ -4384,18 +3802,8 @@ class $$ChatListTableTableAnnotationComposer
     builder: (column) => column,
   );
 
-  GeneratedColumn<String> get profilePicUrl => $composableBuilder(
-    column: $table.profilePicUrl,
-    builder: (column) => column,
-  );
-
   GeneratedColumn<bool> get isDeleted =>
       $composableBuilder(column: $table.isDeleted, builder: (column) => column);
-
-  GeneratedColumn<String> get description => $composableBuilder(
-    column: $table.description,
-    builder: (column) => column,
-  );
 
   GeneratedColumn<String> get type =>
       $composableBuilder(column: $table.type, builder: (column) => column);
@@ -4436,51 +3844,39 @@ class $$ChatListTableTableTableManager
               $$ChatListTableTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
-                Value<int> id = const Value.absent(),
                 Value<String> chatId = const Value.absent(),
-                Value<String> name = const Value.absent(),
                 Value<String?> lastMessage = const Value.absent(),
                 Value<int?> lastMessageTime = const Value.absent(),
                 Value<int> unReadCount = const Value.absent(),
-                Value<String?> profilePicUrl = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
-                Value<String?> description = const Value.absent(),
                 Value<String> type = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
               }) => ChatListTableCompanion(
-                id: id,
                 chatId: chatId,
-                name: name,
                 lastMessage: lastMessage,
                 lastMessageTime: lastMessageTime,
                 unReadCount: unReadCount,
-                profilePicUrl: profilePicUrl,
                 isDeleted: isDeleted,
-                description: description,
                 type: type,
+                rowid: rowid,
               ),
           createCompanionCallback:
               ({
-                Value<int> id = const Value.absent(),
                 required String chatId,
-                required String name,
                 Value<String?> lastMessage = const Value.absent(),
                 Value<int?> lastMessageTime = const Value.absent(),
                 Value<int> unReadCount = const Value.absent(),
-                Value<String?> profilePicUrl = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
-                Value<String?> description = const Value.absent(),
                 required String type,
+                Value<int> rowid = const Value.absent(),
               }) => ChatListTableCompanion.insert(
-                id: id,
                 chatId: chatId,
-                name: name,
                 lastMessage: lastMessage,
                 lastMessageTime: lastMessageTime,
                 unReadCount: unReadCount,
-                profilePicUrl: profilePicUrl,
                 isDeleted: isDeleted,
-                description: description,
                 type: type,
+                rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -4509,19 +3905,19 @@ typedef $$ChatListTableTableProcessedTableManager =
     >;
 typedef $$UsersTableTableCreateCompanionBuilder =
     UsersTableCompanion Function({
-      required String id,
+      required String userId,
+      Value<String?> chatId,
       required String name,
       required String email,
-      Value<String?> profilePictureUrl,
       Value<String?> bio,
       Value<int> rowid,
     });
 typedef $$UsersTableTableUpdateCompanionBuilder =
     UsersTableCompanion Function({
-      Value<String> id,
+      Value<String> userId,
+      Value<String?> chatId,
       Value<String> name,
       Value<String> email,
-      Value<String?> profilePictureUrl,
       Value<String?> bio,
       Value<int> rowid,
     });
@@ -4535,8 +3931,13 @@ class $$UsersTableTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get id => $composableBuilder(
-    column: $table.id,
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get chatId => $composableBuilder(
+    column: $table.chatId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4547,11 +3948,6 @@ class $$UsersTableTableFilterComposer
 
   ColumnFilters<String> get email => $composableBuilder(
     column: $table.email,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get profilePictureUrl => $composableBuilder(
-    column: $table.profilePictureUrl,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4570,8 +3966,13 @@ class $$UsersTableTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get id => $composableBuilder(
-    column: $table.id,
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get chatId => $composableBuilder(
+    column: $table.chatId,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -4582,11 +3983,6 @@ class $$UsersTableTableOrderingComposer
 
   ColumnOrderings<String> get email => $composableBuilder(
     column: $table.email,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get profilePictureUrl => $composableBuilder(
-    column: $table.profilePictureUrl,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -4605,19 +4001,17 @@ class $$UsersTableTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<String> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get chatId =>
+      $composableBuilder(column: $table.chatId, builder: (column) => column);
 
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
 
   GeneratedColumn<String> get email =>
       $composableBuilder(column: $table.email, builder: (column) => column);
-
-  GeneratedColumn<String> get profilePictureUrl => $composableBuilder(
-    column: $table.profilePictureUrl,
-    builder: (column) => column,
-  );
 
   GeneratedColumn<String> get bio =>
       $composableBuilder(column: $table.bio, builder: (column) => column);
@@ -4654,33 +4048,33 @@ class $$UsersTableTableTableManager
               $$UsersTableTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
-                Value<String> id = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<String?> chatId = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<String> email = const Value.absent(),
-                Value<String?> profilePictureUrl = const Value.absent(),
                 Value<String?> bio = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UsersTableCompanion(
-                id: id,
+                userId: userId,
+                chatId: chatId,
                 name: name,
                 email: email,
-                profilePictureUrl: profilePictureUrl,
                 bio: bio,
                 rowid: rowid,
               ),
           createCompanionCallback:
               ({
-                required String id,
+                required String userId,
+                Value<String?> chatId = const Value.absent(),
                 required String name,
                 required String email,
-                Value<String?> profilePictureUrl = const Value.absent(),
                 Value<String?> bio = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UsersTableCompanion.insert(
-                id: id,
+                userId: userId,
+                chatId: chatId,
                 name: name,
                 email: email,
-                profilePictureUrl: profilePictureUrl,
                 bio: bio,
                 rowid: rowid,
               ),
@@ -4713,8 +4107,6 @@ typedef $$ChatParticipantsTableCreateCompanionBuilder =
     ChatParticipantsCompanion Function({
       required String chatId,
       required String userId,
-      required String name,
-      Value<String?> profilePicUrl,
       Value<String> role,
       Value<int> rowid,
     });
@@ -4722,8 +4114,6 @@ typedef $$ChatParticipantsTableUpdateCompanionBuilder =
     ChatParticipantsCompanion Function({
       Value<String> chatId,
       Value<String> userId,
-      Value<String> name,
-      Value<String?> profilePicUrl,
       Value<String> role,
       Value<int> rowid,
     });
@@ -4744,16 +4134,6 @@ class $$ChatParticipantsTableFilterComposer
 
   ColumnFilters<String> get userId => $composableBuilder(
     column: $table.userId,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get name => $composableBuilder(
-    column: $table.name,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get profilePicUrl => $composableBuilder(
-    column: $table.profilePicUrl,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4782,16 +4162,6 @@ class $$ChatParticipantsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get name => $composableBuilder(
-    column: $table.name,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get profilePicUrl => $composableBuilder(
-    column: $table.profilePicUrl,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<String> get role => $composableBuilder(
     column: $table.role,
     builder: (column) => ColumnOrderings(column),
@@ -4812,14 +4182,6 @@ class $$ChatParticipantsTableAnnotationComposer
 
   GeneratedColumn<String> get userId =>
       $composableBuilder(column: $table.userId, builder: (column) => column);
-
-  GeneratedColumn<String> get name =>
-      $composableBuilder(column: $table.name, builder: (column) => column);
-
-  GeneratedColumn<String> get profilePicUrl => $composableBuilder(
-    column: $table.profilePicUrl,
-    builder: (column) => column,
-  );
 
   GeneratedColumn<String> get role =>
       $composableBuilder(column: $table.role, builder: (column) => column);
@@ -4864,15 +4226,11 @@ class $$ChatParticipantsTableTableManager
               ({
                 Value<String> chatId = const Value.absent(),
                 Value<String> userId = const Value.absent(),
-                Value<String> name = const Value.absent(),
-                Value<String?> profilePicUrl = const Value.absent(),
                 Value<String> role = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ChatParticipantsCompanion(
                 chatId: chatId,
                 userId: userId,
-                name: name,
-                profilePicUrl: profilePicUrl,
                 role: role,
                 rowid: rowid,
               ),
@@ -4880,15 +4238,11 @@ class $$ChatParticipantsTableTableManager
               ({
                 required String chatId,
                 required String userId,
-                required String name,
-                Value<String?> profilePicUrl = const Value.absent(),
                 Value<String> role = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ChatParticipantsCompanion.insert(
                 chatId: chatId,
                 userId: userId,
-                name: name,
-                profilePicUrl: profilePicUrl,
                 role: role,
                 rowid: rowid,
               ),
@@ -5444,20 +4798,16 @@ typedef $$MediaTableTableProcessedTableManager =
     >;
 typedef $$RecentSearchesTableTableCreateCompanionBuilder =
     RecentSearchesTableCompanion Function({
-      required String userId,
-      required String name,
-      Value<String> email,
-      Value<String?> profilePicUrl,
+      required String actorId,
       required int searchedAt,
+      required String actorType,
       Value<int> rowid,
     });
 typedef $$RecentSearchesTableTableUpdateCompanionBuilder =
     RecentSearchesTableCompanion Function({
-      Value<String> userId,
-      Value<String> name,
-      Value<String> email,
-      Value<String?> profilePicUrl,
+      Value<String> actorId,
       Value<int> searchedAt,
+      Value<String> actorType,
       Value<int> rowid,
     });
 
@@ -5470,28 +4820,18 @@ class $$RecentSearchesTableTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get userId => $composableBuilder(
-    column: $table.userId,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get name => $composableBuilder(
-    column: $table.name,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get email => $composableBuilder(
-    column: $table.email,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get profilePicUrl => $composableBuilder(
-    column: $table.profilePicUrl,
+  ColumnFilters<String> get actorId => $composableBuilder(
+    column: $table.actorId,
     builder: (column) => ColumnFilters(column),
   );
 
   ColumnFilters<int> get searchedAt => $composableBuilder(
     column: $table.searchedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get actorType => $composableBuilder(
+    column: $table.actorType,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -5505,28 +4845,18 @@ class $$RecentSearchesTableTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get userId => $composableBuilder(
-    column: $table.userId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get name => $composableBuilder(
-    column: $table.name,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get email => $composableBuilder(
-    column: $table.email,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get profilePicUrl => $composableBuilder(
-    column: $table.profilePicUrl,
+  ColumnOrderings<String> get actorId => $composableBuilder(
+    column: $table.actorId,
     builder: (column) => ColumnOrderings(column),
   );
 
   ColumnOrderings<int> get searchedAt => $composableBuilder(
     column: $table.searchedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get actorType => $composableBuilder(
+    column: $table.actorType,
     builder: (column) => ColumnOrderings(column),
   );
 }
@@ -5540,24 +4870,16 @@ class $$RecentSearchesTableTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<String> get userId =>
-      $composableBuilder(column: $table.userId, builder: (column) => column);
-
-  GeneratedColumn<String> get name =>
-      $composableBuilder(column: $table.name, builder: (column) => column);
-
-  GeneratedColumn<String> get email =>
-      $composableBuilder(column: $table.email, builder: (column) => column);
-
-  GeneratedColumn<String> get profilePicUrl => $composableBuilder(
-    column: $table.profilePicUrl,
-    builder: (column) => column,
-  );
+  GeneratedColumn<String> get actorId =>
+      $composableBuilder(column: $table.actorId, builder: (column) => column);
 
   GeneratedColumn<int> get searchedAt => $composableBuilder(
     column: $table.searchedAt,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get actorType =>
+      $composableBuilder(column: $table.actorType, builder: (column) => column);
 }
 
 class $$RecentSearchesTableTableTableManager
@@ -5603,34 +4925,26 @@ class $$RecentSearchesTableTableTableManager
               ),
           updateCompanionCallback:
               ({
-                Value<String> userId = const Value.absent(),
-                Value<String> name = const Value.absent(),
-                Value<String> email = const Value.absent(),
-                Value<String?> profilePicUrl = const Value.absent(),
+                Value<String> actorId = const Value.absent(),
                 Value<int> searchedAt = const Value.absent(),
+                Value<String> actorType = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RecentSearchesTableCompanion(
-                userId: userId,
-                name: name,
-                email: email,
-                profilePicUrl: profilePicUrl,
+                actorId: actorId,
                 searchedAt: searchedAt,
+                actorType: actorType,
                 rowid: rowid,
               ),
           createCompanionCallback:
               ({
-                required String userId,
-                required String name,
-                Value<String> email = const Value.absent(),
-                Value<String?> profilePicUrl = const Value.absent(),
+                required String actorId,
                 required int searchedAt,
+                required String actorType,
                 Value<int> rowid = const Value.absent(),
               }) => RecentSearchesTableCompanion.insert(
-                userId: userId,
-                name: name,
-                email: email,
-                profilePicUrl: profilePicUrl,
+                actorId: actorId,
                 searchedAt: searchedAt,
+                actorType: actorType,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -5662,12 +4976,352 @@ typedef $$RecentSearchesTableTableProcessedTableManager =
       RecentSearchesTableData,
       PrefetchHooks Function()
     >;
+typedef $$UserPreferencesTableTableCreateCompanionBuilder =
+    UserPreferencesTableCompanion Function({
+      Value<int> id,
+      required String userId,
+      Value<String?> accessToken,
+    });
+typedef $$UserPreferencesTableTableUpdateCompanionBuilder =
+    UserPreferencesTableCompanion Function({
+      Value<int> id,
+      Value<String> userId,
+      Value<String?> accessToken,
+    });
+
+class $$UserPreferencesTableTableFilterComposer
+    extends Composer<_$AppDatabase, $UserPreferencesTableTable> {
+  $$UserPreferencesTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get accessToken => $composableBuilder(
+    column: $table.accessToken,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$UserPreferencesTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $UserPreferencesTableTable> {
+  $$UserPreferencesTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get accessToken => $composableBuilder(
+    column: $table.accessToken,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$UserPreferencesTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $UserPreferencesTableTable> {
+  $$UserPreferencesTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get accessToken => $composableBuilder(
+    column: $table.accessToken,
+    builder: (column) => column,
+  );
+}
+
+class $$UserPreferencesTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $UserPreferencesTableTable,
+          UserPreferencesTableData,
+          $$UserPreferencesTableTableFilterComposer,
+          $$UserPreferencesTableTableOrderingComposer,
+          $$UserPreferencesTableTableAnnotationComposer,
+          $$UserPreferencesTableTableCreateCompanionBuilder,
+          $$UserPreferencesTableTableUpdateCompanionBuilder,
+          (
+            UserPreferencesTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $UserPreferencesTableTable,
+              UserPreferencesTableData
+            >,
+          ),
+          UserPreferencesTableData,
+          PrefetchHooks Function()
+        > {
+  $$UserPreferencesTableTableTableManager(
+    _$AppDatabase db,
+    $UserPreferencesTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$UserPreferencesTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$UserPreferencesTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$UserPreferencesTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<String?> accessToken = const Value.absent(),
+              }) => UserPreferencesTableCompanion(
+                id: id,
+                userId: userId,
+                accessToken: accessToken,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String userId,
+                Value<String?> accessToken = const Value.absent(),
+              }) => UserPreferencesTableCompanion.insert(
+                id: id,
+                userId: userId,
+                accessToken: accessToken,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$UserPreferencesTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $UserPreferencesTableTable,
+      UserPreferencesTableData,
+      $$UserPreferencesTableTableFilterComposer,
+      $$UserPreferencesTableTableOrderingComposer,
+      $$UserPreferencesTableTableAnnotationComposer,
+      $$UserPreferencesTableTableCreateCompanionBuilder,
+      $$UserPreferencesTableTableUpdateCompanionBuilder,
+      (
+        UserPreferencesTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $UserPreferencesTableTable,
+          UserPreferencesTableData
+        >,
+      ),
+      UserPreferencesTableData,
+      PrefetchHooks Function()
+    >;
+typedef $$GroupListTableTableCreateCompanionBuilder =
+    GroupListTableCompanion Function({
+      required String chatId,
+      required String name,
+      Value<String?> bio,
+      Value<int> rowid,
+    });
+typedef $$GroupListTableTableUpdateCompanionBuilder =
+    GroupListTableCompanion Function({
+      Value<String> chatId,
+      Value<String> name,
+      Value<String?> bio,
+      Value<int> rowid,
+    });
+
+class $$GroupListTableTableFilterComposer
+    extends Composer<_$AppDatabase, $GroupListTableTable> {
+  $$GroupListTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get chatId => $composableBuilder(
+    column: $table.chatId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bio => $composableBuilder(
+    column: $table.bio,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$GroupListTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $GroupListTableTable> {
+  $$GroupListTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get chatId => $composableBuilder(
+    column: $table.chatId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bio => $composableBuilder(
+    column: $table.bio,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$GroupListTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $GroupListTableTable> {
+  $$GroupListTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get chatId =>
+      $composableBuilder(column: $table.chatId, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get bio =>
+      $composableBuilder(column: $table.bio, builder: (column) => column);
+}
+
+class $$GroupListTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $GroupListTableTable,
+          GroupListTableData,
+          $$GroupListTableTableFilterComposer,
+          $$GroupListTableTableOrderingComposer,
+          $$GroupListTableTableAnnotationComposer,
+          $$GroupListTableTableCreateCompanionBuilder,
+          $$GroupListTableTableUpdateCompanionBuilder,
+          (
+            GroupListTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $GroupListTableTable,
+              GroupListTableData
+            >,
+          ),
+          GroupListTableData,
+          PrefetchHooks Function()
+        > {
+  $$GroupListTableTableTableManager(
+    _$AppDatabase db,
+    $GroupListTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$GroupListTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$GroupListTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$GroupListTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> chatId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> bio = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => GroupListTableCompanion(
+                chatId: chatId,
+                name: name,
+                bio: bio,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String chatId,
+                required String name,
+                Value<String?> bio = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => GroupListTableCompanion.insert(
+                chatId: chatId,
+                name: name,
+                bio: bio,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$GroupListTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $GroupListTableTable,
+      GroupListTableData,
+      $$GroupListTableTableFilterComposer,
+      $$GroupListTableTableOrderingComposer,
+      $$GroupListTableTableAnnotationComposer,
+      $$GroupListTableTableCreateCompanionBuilder,
+      $$GroupListTableTableUpdateCompanionBuilder,
+      (
+        GroupListTableData,
+        BaseReferences<_$AppDatabase, $GroupListTableTable, GroupListTableData>,
+      ),
+      GroupListTableData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
-  $$UserInfoSettingsTableTableManager get userInfoSettings =>
-      $$UserInfoSettingsTableTableManager(_db, _db.userInfoSettings);
   $$MessagesTableTableManager get messages =>
       $$MessagesTableTableManager(_db, _db.messages);
   $$ChatListTableTableTableManager get chatListTable =>
@@ -5682,4 +5336,8 @@ class $AppDatabaseManager {
       $$MediaTableTableTableManager(_db, _db.mediaTable);
   $$RecentSearchesTableTableTableManager get recentSearchesTable =>
       $$RecentSearchesTableTableTableManager(_db, _db.recentSearchesTable);
+  $$UserPreferencesTableTableTableManager get userPreferencesTable =>
+      $$UserPreferencesTableTableTableManager(_db, _db.userPreferencesTable);
+  $$GroupListTableTableTableManager get groupListTable =>
+      $$GroupListTableTableTableManager(_db, _db.groupListTable);
 }

@@ -78,7 +78,7 @@ class _HomeScreenState extends ConsumerState<Homescreen> with RouteAware {
                             AppRoutes.message,
                             arguments: MessageScreenArguments(
                               chatId: chat.chatId,
-                              name: chat.name,
+                              name: chat.name ?? "",
                               profilePicUrl: chat.profilePicUrl,
                               isGroupChat: chat.type,
                             ),

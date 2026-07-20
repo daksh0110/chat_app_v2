@@ -1,78 +1,16 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
-import 'package:my_app/providers/database_provider.dart';
-import 'package:my_app/providers/edit_profile_provider.dart';
-import 'package:my_app/providers/settings_user_notifier_provider.dart';
-import 'package:my_app/providers/user_profile_info_procider.dart';
+import 'package:my_app/modal/group_profile_modal.dart';
+import 'package:my_app/modal/user_profile_modal.dart';
+import 'package:my_app/providers/tables/user_preference_table_provider.dart';
 import 'package:my_app/modal/screens/search/search_item.dart';
 import 'package:my_app/modal/screens/search/user_profile_arguments.dart';
+import 'package:my_app/providers/user_profile_provider.dart';
 import 'package:my_app/widgets/comman/primary_container.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
 import 'package:my_app/widgets/comman/user_bubble.dart';
-import 'package:my_app/widgets/screens/userProfile/profile_action_button.dart';
 import 'package:my_app/widgets/screens/userProfile/profile_detail_item.dart';
-
-final groupProfileProvider = FutureProvider.family<GroupProfile, String>((
-  ref,
-  chatId,
-) async {
-  final db = ref.read(databaseProvider);
-  final chat = await db.managers.chatListTable
-      .filter((f) => f.chatId.equals(chatId))
-      .getSingleOrNull();
-  final participants = await db.managers.chatParticipants
-      .filter((f) => f.chatId.equals(chatId))
-      .get();
-
-  return GroupProfile(
-    chatId: chatId,
-    name: chat?.name ?? '',
-    description: chat?.description ?? '',
-    profilePicUrl: chat?.profilePicUrl,
-    members: participants
-        .map(
-          (p) => GroupMember(
-            userId: p.userId,
-            name: p.name,
-            profilePicUrl: p.profilePicUrl,
-            role: p.role,
-          ),
-        )
-        .toList(),
-  );
-});
-
-class GroupProfile {
-  final String chatId;
-  final String name;
-  final String description;
-  final String? profilePicUrl;
-  final List<GroupMember> members;
-
-  GroupProfile({
-    required this.chatId,
-    required this.name,
-    required this.description,
-    this.profilePicUrl,
-    required this.members,
-  });
-}
-
-class GroupMember {
-  final String userId;
-  final String name;
-  final String? profilePicUrl;
-  final String role;
-
-  GroupMember({
-    required this.userId,
-    required this.name,
-    this.profilePicUrl,
-    required this.role,
-  });
-}
 
 class UserProfile extends ConsumerStatefulWidget {
   const UserProfile({super.key});
@@ -95,27 +33,47 @@ class UserProfileState extends ConsumerState<UserProfile> {
         : routeArgs as String;
 
     if (isGroupChat) {
-      final groupArgs = routeArgs as UserProfileArguments;
+      final groupArgs = routeArgs;
+      final currentUserAsync = ref.watch(currentUserIdProvider);
       return ref
-          .watch(groupProfileProvider(id))
+          .watch(groupProfile(id))
           .when(
             loading: () => const Scaffold(
               body: Center(child: CircularProgressIndicator()),
             ),
-            error: (err, stack) =>
-                Scaffold(body: Center(child: Text('Error: $err'))),
-            data: (group) => _buildGroupProfile(context, group, groupArgs),
+            error: (e, s) => Scaffold(body: Center(child: Text(e.toString()))),
+            data: (group) {
+              return currentUserAsync.when(
+                loading: () => const CircularProgressIndicator(),
+                error: (e, s) => Text(e.toString()),
+                data: (currentUser) {
+                  return _buildGroupProfile(
+                    context,
+                    group!,
+                    groupArgs,
+                    currentUser ?? "",
+                  );
+                },
+              );
+            },
           );
     }
 
     return ref
-        .watch(userProfileProvider(id))
+        .watch(userProfile(id))
         .when(
           loading: () =>
               const Scaffold(body: Center(child: CircularProgressIndicator())),
           error: (err, stack) =>
               Scaffold(body: Center(child: Text('Error: $err'))),
-          data: _buildUserProfile,
+          data: (info) {
+            if (info == null) {
+              return const Scaffold(
+                body: Center(child: Text("User not found")),
+              );
+            }
+            return _buildUserProfile(info);
+          },
         );
   }
 
@@ -123,8 +81,8 @@ class UserProfileState extends ConsumerState<UserProfile> {
     BuildContext context,
     GroupProfile group,
     UserProfileArguments args,
+    String currentUser,
   ) {
-    final currentUser = ref.watch(settingsUserProvider);
     final displayName = args.name?.isNotEmpty == true
         ? args.name!
         : group.name.isNotEmpty
@@ -205,7 +163,7 @@ class UserProfileState extends ConsumerState<UserProfile> {
                           textAlign: TextAlign.center,
                         ),
                       ...group.members.map(
-                        (member) => _memberTile(currentUser?.id, member),
+                        (member) => _memberTile(currentUser, member),
                       ),
                       const SizedBox(height: 12),
                     ],
@@ -219,7 +177,7 @@ class UserProfileState extends ConsumerState<UserProfile> {
     );
   }
 
-  Widget _buildUserProfile(SearchItem info) {
+  Widget _buildUserProfile(UserProfileModal info) {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -246,14 +204,14 @@ class UserProfileState extends ConsumerState<UserProfile> {
         children: [
           const SizedBox(height: 10),
           UserBubble(
-            profilePicUrl: info.profilePicUrl,
-            name: info.name,
+            profilePicUrl: info.profilePic,
+            name: info.name ?? "",
             size: 80,
             needActiveIndicator: false,
           ),
           const SizedBox(height: 10),
           PrimaryText(
-            info.name,
+            info.name ?? "",
             fontSize: 20,
             color: Colors.white,
             fontWeight: FontWeight.w600,
@@ -279,7 +237,7 @@ class UserProfileState extends ConsumerState<UserProfile> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      ProfileDetailItem(title: 'Name', value: info.name),
+                      ProfileDetailItem(title: 'Name', value: info.name ?? ""),
                       ProfileDetailItem(
                         title: 'Email',
                         value: info.email ?? '',

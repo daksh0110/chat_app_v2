@@ -32,8 +32,11 @@ class SendMessageAck {
       createdAt: json['created_at'],
       attachments: json['attachments'] != null
           ? (json['attachments'] as List)
-              .map((att) => UploadAttachment.fromJson(Map<String, dynamic>.from(att)))
-              .toList()
+                .map(
+                  (att) =>
+                      UploadAttachment.fromJson(Map<String, dynamic>.from(att)),
+                )
+                .toList()
           : [],
       messageStatuses: (json['message_statuses'] as List)
           .map(
@@ -49,5 +52,18 @@ class SendMessageAck {
           )
           .toList(),
     );
+  }
+  @override
+  String toString() {
+    return 'SendMessageAck('
+        'tempId: $tempId, '
+        'messageId: $messageId, '
+        'chatId: $chatId, '
+        'message: $message, '
+        'senderId: $senderId, '
+        'createdAt: $createdAt, '
+        'messageStatuses: $messageStatuses, '
+        'attachments: $attachments'
+        ')';
   }
 }
