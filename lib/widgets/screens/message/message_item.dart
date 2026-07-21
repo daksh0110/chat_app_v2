@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/core/database.dart';
 import 'package:my_app/modal/screens/message/message_modal.dart';
-import 'package:my_app/modal/tables/media_modal.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
 import 'package:my_app/widgets/screens/message/attachments_list_widget.dart';
+import 'package:my_app/widgets/screens/message/message_bubble.dart';
 
 Widget _statusIcon(MessageStatus status) {
   switch (status) {
@@ -68,81 +67,64 @@ class MessageItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Align(
-      alignment: isSender ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: EdgeInsets.fromLTRB(12, isGrouped ? 1 : 4, 12, 0),
-        padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.7,
-        ),
-        decoration: BoxDecoration(
-          color: isSender
-              ? DefaultColorSheet.green500
-              : const Color(0xFFF2F7FB),
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(isSender ? 16 : 0),
-            topRight: Radius.circular(isSender ? 0 : 16),
-            bottomLeft: const Radius.circular(16),
-            bottomRight: const Radius.circular(16),
-          ),
-        ),
-        child: Stack(
-          children: [
-            Padding(
-              padding: EdgeInsets.only(right: isSender ? 55 : 40, bottom: 14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (!isSender && isGroupChat && !isGrouped) ...[
-                    PrimaryText(
-                      senderName,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: _getSenderColor(senderName),
-                    ),
-
-                    const SizedBox(height: 2),
-                  ],
-
-                  if (attachments.isNotEmpty) ...[
-                    AttachmentsListWidget(attachments: attachments),
-                    if (message.isNotEmpty) const SizedBox(height: 6),
-                  ],
-
-                  if (message.isNotEmpty)
-                    PrimaryText(
-                      message,
-                      color: isSender ? Colors.white : Colors.black,
-                    ),
-                ],
-              ),
-            ),
-
-            Positioned(
-              bottom: 0,
-              right: 0,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
+    return MessageBubble(
+      alignment: isSender ? MessageAlignment.right : MessageAlignment.left,
+      isGrouped: isGrouped,
+      child: Stack(
+        children: [
+          Padding(
+            padding: EdgeInsets.only(right: isSender ? 55 : 40, bottom: 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (!isSender && isGroupChat && !isGrouped) ...[
                   PrimaryText(
-                    DateFormat(
-                      'hh:mm a',
-                    ).format(DateTime.fromMillisecondsSinceEpoch(timestamp)),
-                    fontSize: 8,
-                    color: isSender ? Colors.white70 : Colors.black54,
+                    senderName,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: _getSenderColor(senderName),
                   ),
 
-                  if (isSender && status != null) ...[
-                    const SizedBox(width: 4),
-                    _statusIcon(status!),
-                  ],
+                  const SizedBox(height: 2),
                 ],
-              ),
+
+                if (attachments.isNotEmpty) ...[
+                  AttachmentsListWidget(attachments: attachments),
+                  if (message.isNotEmpty) const SizedBox(height: 6),
+                ],
+
+                if (message.isNotEmpty)
+                  PrimaryText(
+                    message,
+                    color: isSender ? Colors.white : Colors.black,
+                  ),
+              ],
             ),
-          ],
-        ),
+          ),
+
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                PrimaryText(
+                  DateFormat(
+                    'hh:mm a',
+                  ).format(DateTime.fromMillisecondsSinceEpoch(timestamp)),
+                  fontSize: 8,
+                  color: isSender ? Colors.white70 : Colors.black54,
+                ),
+
+                if (isSender && status != null) ...[
+                  const SizedBox(width: 4),
+                  _statusIcon(status!),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

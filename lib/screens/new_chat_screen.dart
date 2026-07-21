@@ -199,7 +199,7 @@ class _ContactTile extends StatelessWidget {
                   if (user.email.isNotEmpty) ...[
                     const SizedBox(height: 2),
                     PrimaryText(
-                      user.email ?? "",
+                      user.email,
                       fontSize: 13,
                       color: DefaultColorSheet.grey500,
                     ),
