@@ -1,12 +1,10 @@
 import 'package:drift/drift.dart';
 
 class RecentSearchesTable extends Table {
-  TextColumn get userId => text()();
-  TextColumn get name => text()();
-  TextColumn get email => text().withDefault(const Constant(''))();
-  TextColumn get profilePicUrl => text().nullable()();
+  TextColumn get actorId => text()();
   IntColumn get searchedAt => integer()();
+  TextColumn get actorType => text()();
 
   @override
-  Set<Column> get primaryKey => {userId};
+  Set<Column> get primaryKey => {actorId};
 }

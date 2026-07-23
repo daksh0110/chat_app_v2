@@ -1,57 +1,62 @@
 import 'dart:typed_data';
 
+import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/core/app_routes.dart';
-import 'package:my_app/core/network/api_client.dart';
-import 'package:my_app/data/services/user_api_service.dart';
-import 'package:my_app/modal/screens/search/search_item.dart';
-import 'package:my_app/services/cloudinary_service.dart';
+import 'package:my_app/providers/profile_setup_provider.dart';
 import 'package:my_app/widgets/comman/primary_button.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
 import 'package:my_app/widgets/comman/toast_notification.dart';
 import 'package:toastification/toastification.dart';
 
-class ProfileSetupScreen extends StatefulWidget {
+class ProfileSetupScreen extends ConsumerStatefulWidget {
   const ProfileSetupScreen({super.key});
 
   @override
-  State<ProfileSetupScreen> createState() => _ProfileSetupScreenState();
+  ConsumerState<ProfileSetupScreen> createState() => _ProfileSetupScreenState();
 }
 
-class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
+class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   final TextEditingController bioController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   Uint8List? _pickedPhotoBytes;
   XFile? _pickedImageFile;
   String? _profilePicUrl;
-  bool _isPickingPhoto = false;
   bool _isUploading = false;
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final args = ModalRoute.of(context)?.settings.arguments as SearchItem?;
+  bool _isLoading = true;
 
-    if (args != null) {
-      if (args.bio != null && args.bio!.isNotEmpty) {
-        bioController.text = args.bio!;
+  Future<void> _loadProfile() async {
+    try {
+      final user = await ref
+          .read(profileScreenProvider.notifier)
+          .fetchUserProfileDetails();
+
+      if (user != null) {
+        bioController.text = user.bio ?? "";
+        _profilePicUrl = user.profilePic;
       }
-      if (args.profilePicUrl != null && args.profilePicUrl!.isNotEmpty) {
+    } catch (e) {
+      debugPrint("Error loading profile: $e");
+    } finally {
+      if (mounted) {
         setState(() {
-          _profilePicUrl = args.profilePicUrl;
+          _isLoading = false;
         });
       }
     }
   }
 
-  Future<void> _pickPhoto() async {
-    setState(() {
-      _isPickingPhoto = true;
-    });
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
 
+  Future<void> _pickPhoto() async {
     try {
       final XFile? pickedImage = await ImagePicker().pickImage(
         source: ImageSource.gallery,
@@ -74,10 +79,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         ).showSnackBar(SnackBar(content: Text('Error picking image: $e')));
       }
     }
-
-    setState(() {
-      _isPickingPhoto = false;
-    });
   }
 
   void _removePhoto() {
@@ -89,53 +90,33 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   void _onContinue() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      _isUploading = true;
-    });
+    setState(() => _isUploading = true);
 
     try {
-      final _storage = const FlutterSecureStorage();
-      final token = await _storage.read(key: 'accessToken');
-      final apiClient = ApiClient();
+      await ref
+          .read(profileScreenProvider.notifier)
+          .updateProfile(
+            bio: bioController.text,
+            pickedImageFile: _pickedImageFile,
+            profilePicUrl: _profilePicUrl,
+          );
 
-      String? cloudinaryUrl;
+      if (!mounted) return;
 
-      if (_pickedImageFile != null) {
-        cloudinaryUrl = await CloudinaryService.uploadImage(_pickedImageFile!);
-      }
-      final result = await UserApiService(apiClient).updateProfile(
-        token: token ?? "",
-        bio: bioController.text.trim().isNotEmpty
-            ? bioController.text.trim()
-            : null,
-        profilePicPath: cloudinaryUrl ?? _profilePicUrl,
-      );
-
-      if (result.success) {
-        if (!mounted) return;
-        Navigator.of(
-          context,
-        ).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
-      } else {
-        ToastHelper.show(
-          context: context,
-          message: result.message,
-          type: ToastificationType.error,
-        );
-      }
+      Navigator.of(
+        context,
+      ).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
     } catch (e) {
-      if (mounted) {
-        ToastHelper.show(
-          context: context,
-          message: 'Failed to update profile: $e',
-          type: ToastificationType.error,
-        );
-      }
+      if (!mounted) return;
+
+      ToastHelper.show(
+        context: context,
+        message: e.toString(),
+        type: ToastificationType.error,
+      );
     } finally {
       if (mounted) {
-        setState(() {
-          _isUploading = false;
-        });
+        setState(() => _isUploading = false);
       }
     }
   }
@@ -169,6 +150,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               color: DefaultColorSheet.primary,
             ),
           );
+
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     return Scaffold(
       backgroundColor: Colors.white,

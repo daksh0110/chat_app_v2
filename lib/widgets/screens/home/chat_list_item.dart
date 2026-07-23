@@ -4,6 +4,7 @@ import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/modal/chat_list_modal.dart';
 import 'package:my_app/providers/message_typing_provider.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
+import 'dart:io';
 
 class ChatListItem extends ConsumerWidget {
   const ChatListItem({
@@ -24,10 +25,7 @@ class ChatListItem extends ConsumerWidget {
     final typingMap = ref.watch(messageTypingProvider);
     final isTyping = typingMap[chat.chatId] ?? false;
     final isProfilePicValid =
-        (chat.profilePicUrl != null &&
-            Uri.tryParse(chat.profilePicUrl!)?.hasAbsolutePath == true)
-        ? true
-        : false;
+        chat.profilePicUrl != null && File(chat.profilePicUrl!).existsSync();
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -50,8 +48,8 @@ class ChatListItem extends ConsumerWidget {
               // Profile Image
               ClipOval(
                 child: isProfilePicValid
-                    ? Image.network(
-                        chat.profilePicUrl!,
+                    ? Image.file(
+                        File(chat.profilePicUrl!),
                         width: 46,
                         height: 46,
                         fit: BoxFit.cover,
@@ -65,9 +63,7 @@ class ChatListItem extends ConsumerWidget {
                         height: 46,
                         alignment: Alignment.center,
                         child: PrimaryText(
-                          chat.name.isNotEmpty
-                              ? chat.name[0].toUpperCase()
-                              : "",
+                          (chat.name ?? "")[0].toUpperCase(),
                           color: Colors.white,
                           fontSize: 26,
                         ),
@@ -81,7 +77,7 @@ class ChatListItem extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     PrimaryText(
-                      chat.name,
+                      chat.name ?? "",
                       fontSize: 20,
                       fontWeight: FontWeight.w500,
                       color: DefaultColorSheet.lightBlack,
@@ -94,7 +90,7 @@ class ChatListItem extends ConsumerWidget {
                             color: DefaultColorSheet.green500,
                           )
                         : PrimaryText(
-                            chat.lastMessage ?? "",
+                            chat.lastMessage,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             fontSize: 12,
@@ -110,7 +106,7 @@ class ChatListItem extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   PrimaryText(
-                    chat.lastMessageTime ?? "",
+                    chat.lastMessageTime,
                     fontSize: 12,
                     color: DefaultColorSheet.grey500,
                   ),

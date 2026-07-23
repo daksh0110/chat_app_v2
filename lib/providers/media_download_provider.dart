@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:my_app/core/database.dart';
@@ -38,7 +39,7 @@ class MediaDownloadNotifier extends Notifier<Map<int, DownloadState>> {
 
   Future<void> downloadMedia(MediaTableData media) async {
     final mediaId = media.id;
-    
+
     // Avoid downloading if already downloading or completed
     if (state[mediaId]?.status == DownloadStatus.downloading) return;
     if (state[mediaId]?.status == DownloadStatus.completed) return;
@@ -50,7 +51,7 @@ class MediaDownloadNotifier extends Notifier<Map<int, DownloadState>> {
 
     try {
       final db = ref.read(databaseProvider);
-      
+
       // Get download URL
       String? downloadUrl = media.url;
       final key = media.key;
@@ -87,7 +88,7 @@ class MediaDownloadNotifier extends Notifier<Map<int, DownloadState>> {
             await db.managers.mediaTable
                 .filter((f) => f.id.equals(mediaId))
                 .update((o) => o(url: Value(downloadUrl)));
-            
+
             final retryRequest = http.Request('GET', Uri.parse(downloadUrl!));
             final retryResponse = await client.send(retryRequest);
             if (retryResponse.statusCode == 200) {
@@ -111,7 +112,10 @@ class MediaDownloadNotifier extends Notifier<Map<int, DownloadState>> {
     }
   }
 
-  Future<void> _saveResponseToFile(http.StreamedResponse response, MediaTableData media) async {
+  Future<void> _saveResponseToFile(
+    http.StreamedResponse response,
+    MediaTableData media,
+  ) async {
     final mediaId = media.id;
     final db = ref.read(databaseProvider);
     final totalBytes = response.contentLength ?? 0;
@@ -124,33 +128,36 @@ class MediaDownloadNotifier extends Notifier<Map<int, DownloadState>> {
     }
 
     final extension = p.extension(media.name ?? '');
-    final filename = '${media.key?.replaceAll('/', '_') ?? media.id.toString()}$extension';
+    final filename =
+        '${media.key?.replaceAll('/', '_') ?? media.id.toString()}$extension';
     final localFile = File('${attachmentsDir.path}/$filename');
 
     final sink = localFile.openWrite();
-    
+
     try {
-      await response.stream.listen(
-        (chunk) {
-          sink.add(chunk);
-          receivedBytes += chunk.length;
-          if (totalBytes > 0) {
-            final progress = receivedBytes / totalBytes;
-            state = {
-              ...state,
-              mediaId: DownloadState(
-                status: DownloadStatus.downloading,
-                progress: progress,
-              ),
-            };
-          }
-        },
-        onError: (e) async {
-          await sink.close();
-          throw e;
-        },
-        cancelOnError: true,
-      ).asFuture();
+      await response.stream
+          .listen(
+            (chunk) {
+              sink.add(chunk);
+              receivedBytes += chunk.length;
+              if (totalBytes > 0) {
+                final progress = receivedBytes / totalBytes;
+                state = {
+                  ...state,
+                  mediaId: DownloadState(
+                    status: DownloadStatus.downloading,
+                    progress: progress,
+                  ),
+                };
+              }
+            },
+            onError: (e) async {
+              await sink.close();
+              throw e;
+            },
+            cancelOnError: true,
+          )
+          .asFuture();
 
       await sink.close();
 
@@ -173,5 +180,36 @@ class MediaDownloadNotifier extends Notifier<Map<int, DownloadState>> {
       }
       rethrow;
     }
+  }
+
+  Future<Uint8List> imageUrlToBytes(String imageUrl) async {
+    final response = await http.get(Uri.parse(imageUrl));
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Failed to download image. Status: ${response.statusCode}',
+      );
+    }
+
+    return response.bodyBytes;
+  }
+
+  Future<XFile> saveImageUrlLocally(String imageUrl) async {
+    final bytes = await imageUrlToBytes(imageUrl);
+
+    final appDir = await getApplicationDocumentsDirectory();
+    final profileDir = Directory('${appDir.path}/profile_photos');
+
+    if (!await profileDir.exists()) {
+      await profileDir.create(recursive: true);
+    }
+
+    final file = File(
+      '${profileDir.path}/profile_${DateTime.now().millisecondsSinceEpoch}.jpg',
+    );
+
+    await file.writeAsBytes(bytes);
+
+    return XFile(file.path);
   }
 }

@@ -3,16 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/providers/server_connection_provider.dart';
 
-class ServerConnectionBanner extends ConsumerStatefulWidget {
-  const ServerConnectionBanner({super.key});
+class OverLayBanner extends ConsumerStatefulWidget {
+  const OverLayBanner({super.key});
 
   @override
-  ConsumerState<ServerConnectionBanner> createState() =>
-      _ServerConnectionBannerState();
+  ConsumerState<OverLayBanner> createState() => _OverLayBannerState();
 }
 
-class _ServerConnectionBannerState
-    extends ConsumerState<ServerConnectionBanner> {
+class _OverLayBannerState extends ConsumerState<OverLayBanner> {
   bool _shouldShow = false;
 
   @override

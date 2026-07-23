@@ -50,10 +50,23 @@ class SearchGroupItem extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                if (item.subtitle.isNotEmpty) ...[
+                if (item.bio != null) ...[
                   const SizedBox(height: 4),
                   PrimaryText(
-                    item.subtitle,
+                    item.bio ?? "",
+                    fontSize: 12,
+                    color: DefaultColorSheet.grey500,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+
+                if (item.email != null &&
+                    item.email!.isNotEmpty &&
+                    item.bio == null) ...[
+                  const SizedBox(height: 4),
+                  PrimaryText(
+                    item.email ?? "",
                     fontSize: 12,
                     color: DefaultColorSheet.grey500,
                     maxLines: 1,

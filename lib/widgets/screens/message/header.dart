@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/modal/screens/search/search_item.dart';
 import 'package:my_app/modal/screens/search/user_profile_arguments.dart';
@@ -82,8 +80,9 @@ class _HeaderState extends State<Header> {
           item: SearchItem(
             id: widget.id,
             name: widget.name,
-            subtitle: widget.subtitle ?? (widget.isOnline ? "active now" : ""),
+            bio: widget.subtitle ?? (widget.isOnline ? "active now" : ""),
             profilePicUrl: widget.profilePicUrl,
+            email: widget.subtitle ?? "",
           ),
         ),
       ),

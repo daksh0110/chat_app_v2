@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
@@ -18,18 +21,28 @@ class UserBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isValidUrl = (profilePicUrl != null &&
-            Uri.tryParse(profilePicUrl!)?.hasAbsolutePath == true)
-        ? true
-        : false;
+    final isNetworkUrl =
+        profilePicUrl != null &&
+        (profilePicUrl!.startsWith('http://') ||
+            profilePicUrl!.startsWith('https://'));
+
+    final isLocalFile =
+        profilePicUrl != null && File(profilePicUrl!).existsSync();
 
     return Stack(
       clipBehavior: Clip.none,
       children: [
         ClipOval(
-          child: isValidUrl
-              ? Image.network(
-                  profilePicUrl!,
+          child: isNetworkUrl
+              ? CachedNetworkImage(
+                  imageUrl: profilePicUrl!,
+                  width: size,
+                  height: size,
+                  fit: BoxFit.cover,
+                )
+              : isLocalFile
+              ? Image.file(
+                  File(profilePicUrl!),
                   width: size,
                   height: size,
                   fit: BoxFit.cover,
@@ -49,7 +62,6 @@ class UserBubble extends StatelessWidget {
                   ),
                 ),
         ),
-
 
         if (needActiveIndicator)
           Positioned(

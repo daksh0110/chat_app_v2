@@ -1,4 +1,6 @@
-import 'package:flutter/rendering.dart';
+import 'dart:async';
+
+import 'package:flutter/cupertino.dart';
 import 'package:my_app/modal/screens/createGroup/create_group_response.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -29,7 +31,7 @@ class SocketService {
       print('✅ Connected');
       _registeredEvents.clear();
       final callbacks = List<void Function()>.from(_onConnectCallbacks);
-      _onConnectCallbacks.clear(); 
+      _onConnectCallbacks.clear();
       for (final cb in callbacks) {
         cb();
       }
@@ -63,7 +65,7 @@ class SocketService {
     socket!.on(event, callback);
   }
 
-  void sendMessage(String event, dynamic data) {
+  void emitEvent(String event, dynamic data) {
     if (socket == null || !socket!.connected) return;
     socket!.emit(event, data);
   }
@@ -98,28 +100,30 @@ class SocketService {
     socket!.on("group_status", callback);
   }
 
-  void createGroup(
-    Map<String, dynamic> data, [
-    Function(CreateGroupResponse)? onAck,
-  ]) {
-    if (socket == null || !socket!.connected) return;
+  Future<CreateGroupResponse> createGroup(Map<String, dynamic> data) {
+    final completer = Completer<CreateGroupResponse>();
+
+    if (socket == null || !socket!.connected) {
+      completer.completeError(Exception("Socket is not connected"));
+      return completer.future;
+    }
 
     socket!.emitWithAck(
       "create-group",
       data,
       ack: (response) {
-        if (onAck != null) {
-          try {
-            final parsed = CreateGroupResponse.fromJson(
-              Map<String, dynamic>.from(response),
-            );
-            onAck(parsed);
-          } catch (e) {
-            debugPrint("CreateGroup parse error: $e");
-          }
+        try {
+          final parsed = CreateGroupResponse.fromJson(
+            Map<String, dynamic>.from(response),
+          );
+          completer.complete(parsed);
+        } catch (e) {
+          completer.completeError(e);
         }
       },
     );
+
+    return completer.future;
   }
 
   void listenGroupCreated(void Function(dynamic data) callback) {
@@ -135,6 +139,14 @@ class SocketService {
   void listenUserOffline(void Function(dynamic data) callback) {
     if (socket == null) return;
     socket!.on("user_offline", callback);
+  }
+
+  void listenUserUpdateDetails(void Function(dynamic data) onUserUpdated) {
+    if (socket == null) return;
+
+    socket!.on("user-info-updated", (data) {
+      onUserUpdated(data);
+    });
   }
 
   void off(String event, [Function(dynamic)? callback]) {

@@ -1,7 +1,14 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:my_app/core/network/api_client.dart';
+import 'package:my_app/data/services/user_api_service.dart';
+import 'package:my_app/modal/upload_responses/upload_attachment.dart';
+import 'package:my_app/modal/user.modal.dart';
 
 import 'package:my_app/providers/socket_provider.dart';
+import 'package:my_app/providers/tables/user_preference_table_provider.dart';
+import 'package:my_app/providers/tables/users_table_provider.dart';
+import 'package:my_app/providers/token_provider.dart';
 
 enum AuthState { authenticated, unauthenticated }
 
@@ -10,11 +17,10 @@ final authProvider = AsyncNotifierProvider<AuthNotifier, AuthState>(
 );
 
 class AuthNotifier extends AsyncNotifier<AuthState> {
-  final _storage = const FlutterSecureStorage();
-
+  @override
   @override
   Future<AuthState> build() async {
-    final token = await _storage.read(key: "accessToken");
+    final token = await ref.watch(tokenProvider.future);
 
     if (token != null && token.isNotEmpty) {
       return AuthState.authenticated;
@@ -24,7 +30,39 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   }
 
   Future<void> login(String token) async {
-    await _storage.write(key: "accessToken", value: token);
+    await ref.read(tokenProvider.notifier).setToken(token);
+
+    final profile = await UserApiService(
+      ApiClient(),
+    ).getMyProfile(token: token);
+
+    if (profile.data == null) {
+      throw Exception("Failed to fetch user profile.");
+    }
+
+    final userTableProvider = ref.read(usersTableProvider.notifier);
+    debugPrint("Updating user profile in local database: ${profile.data!.bio}");
+    await userTableProvider.updateUserProfile(
+      UserModel(
+        id: profile.data!.id,
+        name: profile.data!.name,
+        email: profile.data!.email,
+        bio: profile.data?.bio ?? "",
+      ),
+      profile.data!.media != null
+          ? UploadAttachment(
+              key: profile.data!.media!.key,
+              contentType: profile.data!.media!.contentType,
+              type: profile.data!.media!.type,
+              actorId: profile.data!.id,
+              name: profile.data!.media!.name,
+            )
+          : null,
+    );
+
+    await ref
+        .read(userPreferenceTableProvider.notifier)
+        .setCurrentUser(profile.data!.id, token);
 
     ref.read(socketProvider).connect(token);
 
@@ -32,8 +70,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   }
 
   Future<void> logout() async {
-    await _storage.delete(key: "accessToken");
-
+    await ref.read(tokenProvider.notifier).clear();
     ref.read(socketProvider).disconnect();
 
     state = const AsyncData(AuthState.unauthenticated);

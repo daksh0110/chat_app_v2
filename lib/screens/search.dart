@@ -4,12 +4,9 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/core/network/api_client.dart';
 import 'package:my_app/core/util/debouncer.dart';
-import 'package:my_app/data/services/user_api_service.dart';
-import 'package:my_app/modal/screens/search/search_item_group.dart';
 import 'package:my_app/modal/screens/search/search_item.dart';
-import 'package:my_app/providers/secure_storage_provider.dart';
-import 'package:my_app/providers/recent_searches_provider.dart';
-import 'package:my_app/core/database.dart';
+import 'package:my_app/modal/screens/search/search_item_group.dart';
+import 'package:my_app/providers/search_provider.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
 import 'package:my_app/widgets/screens/search/search_group.dart';
 
@@ -27,41 +24,11 @@ class _SearchState extends ConsumerState<Search> {
   final ApiClient apiClient = ApiClient();
   final TextEditingController _searchInputController = TextEditingController();
   final _debouncer = Debouncer(milliseconds: 500);
-  String _latestQuery = '';
 
   void onSearching(String text) {
-    _latestQuery = text;
-
-    _debouncer.run(() async {
-      final currentQuery = text;
-
-      if (currentQuery.trim().isEmpty) {
-        if (mounted) {
-          setState(() {
-            data.clear();
-          });
-        }
-        return;
-      }
-
-      final token = ref.read(secureStorageProvider).value;
-
-      final result = await UserApiService(
-        apiClient,
-      ).getUsers(page: 1, search: currentQuery, token: token ?? "");
-
-      if (currentQuery != _latestQuery) {
-        return;
-      }
-
-      if (result.data != null && mounted) {
-        setState(() {
-          data.clear();
-
-          data.add(
-            SearchItemGroup(id: "1", name: "People", items: result.data!),
-          );
-        });
+    _debouncer.run(() {
+      if (mounted) {
+        setState(() {});
       }
     });
   }
@@ -75,6 +42,9 @@ class _SearchState extends ConsumerState<Search> {
 
   @override
   Widget build(BuildContext context) {
+    final recentSearches = ref
+        .watch(searchProvider.notifier)
+        .getSearchResults(_searchInputController.text.trim());
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -112,7 +82,6 @@ class _SearchState extends ConsumerState<Search> {
 
               IconButton(
                 onPressed: () {
-                  _latestQuery = '';
                   _searchInputController.clear();
 
                   setState(() {
@@ -131,50 +100,67 @@ class _SearchState extends ConsumerState<Search> {
         child: Column(
           children: [
             Expanded(
-              child: _searchInputController.text.trim().isEmpty
-                  ? StreamBuilder<List<RecentSearchesTableData>>(
-                      stream: ref
-                          .watch(recentSearchesProvider)
-                          .watchRecentSearches(),
-                      builder: (context, snapshot) {
-                        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                          return const Center(
-                            child: PrimaryText(
-                              "No recent searches",
-                              color: DefaultColorSheet.grey500,
-                            ),
-                          );
-                        }
+              child: StreamBuilder<List<SearchItem>>(
+                stream: recentSearches,
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    debugPrint("Search.StreamBuilder error: ${snapshot.error}");
+                    return Center(
+                      child: PrimaryText(
+                        "Search failed: ${snapshot.error}",
+                        color: DefaultColorSheet.grey500,
+                      ),
+                    );
+                  }
 
-                        final recentSearches = snapshot.data!;
-                        final recentGroup = SearchItemGroup(
-                          id: 'recent',
-                          name: 'Recent',
-                          items: recentSearches
-                              .map(
-                                (r) => SearchItem(
-                                  id: r.userId,
-                                  name: r.name,
-                                  email: r.email,
-                                  profilePicUrl: r.profilePicUrl,
-                                ),
-                              )
-                              .toList(),
-                        );
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const Center(
+                      child: PrimaryText(
+                        "No recent searches",
+                        color: DefaultColorSheet.grey500,
+                      ),
+                    );
+                  }
 
-                        return ListView(
-                          children: [SearchGroup(list: recentGroup)],
-                        );
-                      },
-                    )
-                  : ListView.separated(
-                      itemBuilder: (context, index) {
-                        return SearchGroup(list: data[index]);
-                      },
-                      separatorBuilder: (context, index) =>
-                          const SizedBox(height: 20),
-                      itemCount: data.length,
-                    ),
+                  final recentSearches = snapshot.data!;
+                  final usersList = SearchItemGroup(
+                    id: 'users',
+                    name: 'Users',
+                    items: recentSearches
+                        .where((item) => item.actorType == 'USER')
+                        .toList(),
+                  );
+                  final groupsList = SearchItemGroup(
+                    id: 'groups',
+                    name: 'Groups',
+                    items: recentSearches
+                        .where((item) => item.actorType == 'GROUP')
+                        .toList(),
+                  );
+                  final otherList = SearchItemGroup(
+                    id: 'other',
+                    name: 'Other',
+                    items: recentSearches
+                        .where((item) => item.actorType == 'OTHER')
+                        .toList(),
+                  );
+
+                  return ListView(
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    children: [
+                      if (usersList.items.isNotEmpty) ...[
+                        SearchGroup(list: usersList),
+                      ],
+                      if (groupsList.items.isNotEmpty) ...[
+                        SearchGroup(list: groupsList),
+                      ],
+                      if (otherList.items.isNotEmpty) ...[
+                        SearchGroup(list: otherList),
+                      ],
+                    ],
+                  );
+                },
+              ),
             ),
           ],
         ),

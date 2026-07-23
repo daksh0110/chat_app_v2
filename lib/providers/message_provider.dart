@@ -1,44 +1,36 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:developer';
 
 import 'package:drift/drift.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:my_app/core/database.dart';
 import 'package:my_app/core/network/api_client.dart';
 import 'package:my_app/core/util/get_file_type.dart';
-import 'package:my_app/data/services/chat_api_service.dart';
-import 'package:my_app/data/services/chat_sync_service.dart';
+import 'package:my_app/core/util/parse_time.dart';
+import 'package:my_app/core/util/status_rank.dart';
 import 'package:my_app/data/services/upload_service.dart';
-import 'package:my_app/data/services/user_api_service.dart';
+import 'package:my_app/modal/chat_list_modal.dart';
 import 'package:my_app/modal/screens/createGroup/create_group_response.dart';
+import 'package:my_app/modal/screens/message/message_body_request.dart';
 import 'package:my_app/modal/screens/message/message_delivered_response.dart';
 import 'package:my_app/modal/screens/message/message_read_response.dart';
 import 'package:my_app/modal/screens/message/message_status.dart';
 import 'package:my_app/modal/screens/message/send_message_ack.dart';
-import 'package:my_app/modal/upload_responses/presigned_url_response.dart';
+import 'package:my_app/modal/screens/message/send_message_request.dart';
 import 'package:my_app/modal/upload_responses/upload_attachment.dart';
 import 'package:my_app/providers/chat_list_provider.dart';
 import 'package:my_app/providers/database_provider.dart';
 import 'package:my_app/providers/message_typing_provider.dart';
-import 'package:my_app/providers/settings_user_notifier_provider.dart';
 import 'package:my_app/providers/socket_provider.dart';
+import 'package:my_app/providers/tables/chat_list_table_provider.dart';
+import 'package:my_app/providers/tables/chat_participants_table.dart';
+import 'package:my_app/providers/tables/media_table_provider.dart';
+import 'package:my_app/providers/tables/message_status_table_provider.dart';
+import 'package:my_app/providers/tables/messages_table_provider.dart';
+import 'package:my_app/providers/tables/user_preference_table_provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:mime/mime.dart';
-
-int _parseTimestamp(dynamic ts) {
-  if (ts == null) return DateTime.now().millisecondsSinceEpoch;
-  if (ts is int) return ts;
-  if (ts is String) {
-    return DateTime.tryParse(ts)?.millisecondsSinceEpoch ??
-        int.tryParse(ts) ??
-        DateTime.now().millisecondsSinceEpoch;
-  }
-  if (ts is double) return ts.toInt();
-  return DateTime.now().millisecondsSinceEpoch;
-}
 
 final messageProvider = NotifierProvider(MessageNotifer.new);
 
@@ -48,9 +40,19 @@ class MessageNotifer extends Notifier {
     return null;
   }
 
+  void acknowledgeEvent(dynamic data) {
+    if (data is Map && data.containsKey('sequence')) {
+      final sequence = data['sequence'];
+      if (sequence != null) {
+        ref.read(socketProvider).emitEvent('chat_event_ack', {
+          'sequence': sequence,
+        });
+      }
+    }
+  }
+
   final _messageQueue = Queue<dynamic>();
   bool _isProcessing = false;
-  int _serverTimeOffset = 0;
 
   final _statusQueue = Queue<Future<void> Function()>();
   bool _isProcessingStatus = false;
@@ -71,35 +73,9 @@ class MessageNotifer extends Notifier {
     _isProcessingStatus = false;
   }
 
-  int _statusRank(String status) {
-    switch (status) {
-      case "sending":
-        return 0;
-      case "sent":
-        return 1;
-      case "delivered":
-        return 2;
-      case "read":
-        return 3;
-      default:
-        return -1;
-    }
-  }
-
-  void _acknowledgeEvent(dynamic data) {
-    if (data is Map && data.containsKey('sequence')) {
-      final sequence = data['sequence'];
-      if (sequence != null) {
-        ref.read(socketProvider).sendMessage('chat_event_ack', {
-          'sequence': sequence,
-        });
-      }
-    }
-  }
-
   Future<void> receiveMessage() async {
     ref.read(socketProvider).listenOnce("receive_message", (dynamic data) {
-      _acknowledgeEvent(data);
+      acknowledgeEvent(data);
       final chatId = data["chat_id"];
       if (chatId != null) {
         ref.read(messageTypingProvider.notifier).clearTyping(chatId);
@@ -124,306 +100,191 @@ class MessageNotifer extends Notifier {
     _isProcessing = false;
   }
 
-  Future<void> _handleMessage(dynamic data) async {
-    final database = ref.read(databaseProvider);
-    final currentUser = ref.read(settingsUserProvider);
-    final chatSyncService = ChatSyncService(
-      db: database,
-      apiClient: ApiClient(),
-    );
-    if (currentUser == null) return;
-    final senderId = data.senderId;
-    final messageId = data.messageId;
-    final chatId = data.chatId;
-    final tempId = data.tempId;
+  Future<void> _handleMessage(SendMessageAck data) async {
+    log(data.toString());
+    try {
+      final database = ref.read(databaseProvider);
+      final currentUser = ref.watch(userPreferenceTableProvider).value;
 
-    final createdAt = _parseTimestamp(data.createdAt);
-    _serverTimeOffset = createdAt - DateTime.now().millisecondsSinceEpoch;
+      if (currentUser == null || data.senderId == currentUser) return;
+      final senderId = data.senderId;
+      final messageId = data.messageId;
+      final chatId = data.chatId;
 
-    if (senderId == currentUser.id) return;
+      final createdAt = parseTimestamp(data.createdAt);
 
-    if (tempId.isNotEmpty) {
-      final existingTemp = await database.managers.messages
-          .filter((f) => f.id.equals(tempId))
-          .getSingleOrNull();
+      final activeChatId = ref.read(chatListControllerProvider).activeChatId;
 
-      if (existingTemp != null) return;
-    }
+      final isResumed =
+          WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+      final shouldAutoRead = isResumed && activeChatId == chatId;
 
-    final existing = await database.managers.messages
-        .filter((f) => f.serverId.equals(messageId))
-        .getSingleOrNull();
-
-    if (existing != null) return;
-
-    final activeChatId = ref.read(chatListControllerProvider).activeChatId;
-
-    final isResumed =
-        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
-    final shouldAutoRead = isResumed && activeChatId == chatId;
-
-    await database.transaction(() async {
-      await database.managers.messages.create(
-        (o) => o(
-          id: tempId.isNotEmpty ? tempId : const Uuid().v4(),
-          serverId: Value(messageId),
-          chatId: chatId,
-          message: data.message,
-          senderId: senderId,
-          createdAt: createdAt,
-          isRead: Value(shouldAutoRead),
-          messageStatus: Value(shouldAutoRead ? "read" : "delivered"),
-        ),
-        mode: InsertMode.insertOrIgnore,
-      );
-
-      await database.managers.messageStatusTable.bulkCreate(
-        (o) => data.messageStatuses
-            .map<Insertable<MessageStatusTableData>>(
-              (status) => o(
+      await database.transaction(() async {
+        await ref
+            .read(messagesTableProvider.notifier)
+            .createOrUpdateMessage(
+              MessageBodyRequest(
+                chatId: chatId,
+                createdAt: DateTime.now().millisecondsSinceEpoch,
+                isRead: shouldAutoRead,
+                message: data.message,
                 messageId: messageId,
-                userId: status.userId,
-                status: Value(status.status),
-                createdAt: _parseTimestamp(status.createdAt),
-                updatedAt: _parseTimestamp(status.updatedAt),
-                deliveredAt: Value(
-                  status.deliveredAt != null
-                      ? _parseTimestamp(status.deliveredAt)
-                      : null,
-                ),
-                readAt: Value(
-                  status.readAt != null ? _parseTimestamp(status.readAt) : null,
-                ),
-              ),
-            )
-            .toList(),
-        mode: InsertMode.insertOrIgnore,
-      );
-
-      if (data.attachments.isNotEmpty) {
-        await database.managers.mediaTable.bulkCreate(
-          (o) => data.attachments
-              .map<Insertable<MediaTableData>>(
-                (attachment) => o(
-                  createdAt: createdAt,
-                  actorId: Value(messageId),
-                  key: Value(attachment.key),
-                  url: Value(attachment.url),
-                  Type: Value(attachment.type),
-                  contentType: Value(attachment.contentType),
-                  name: Value(attachment.name),
-                  location: const Value(null),
-                ),
-              )
-              .toList(),
-          mode: InsertMode.insertOrIgnore,
-        );
-      }
-
-      final existingChat = await (database.select(
-        database.chatListTable,
-      )..where((c) => c.chatId.equals(chatId))).getSingleOrNull();
-      if (existingChat == null) {
-        final token = currentUser.accessToken;
-        final ApiClient apiClient = ApiClient();
-        final response = await ChatApiService(
-          apiClient,
-        ).getChat(token: token, chatId: chatId);
-
-        final user = response.data?.data;
-        debugPrint("Fetched chat details for new message: ${user}");
-        await database.managers.chatListTable.create(
-          (o) => o(
-            chatId: chatId,
-            name: user?.name ?? "Unknown",
-            type: user?.type ?? "DIRECT",
-            isDeleted: const Value(false),
-            lastMessage: Value(data.message),
-            lastMessageTime: Value(createdAt),
-            profilePicUrl: Value(user?.profilePictureUrl ?? ""),
-            unReadCount: Value(shouldAutoRead ? 0 : 1),
-          ),
-        );
-        final participants = user?.participants;
-        await database.managers.chatParticipants.bulkCreate(
-          (o) =>
-              participants
-                  ?.map(
-                    (p) => o(
-                      chatId: chatId,
-                      userId: p.userId,
-                      name: p.name,
-                      role: Value(p.role),
-                      profilePicUrl: Value(p.profilePictureUrl),
-                    ),
-                  )
-                  .toList() ??
-              [],
-          mode: InsertMode.insertOrIgnore,
-        );
-      } else {
-        final isNewer =
-            existingChat.lastMessageTime == null ||
-            createdAt >= existingChat.lastMessageTime!;
-
-        final unread = shouldAutoRead ? 0 : (existingChat.unReadCount) + 1;
-
-        await database.managers.chatListTable
-            .filter((f) => f.chatId.equals(chatId))
-            .update(
-              (o) => o(
-                lastMessage: isNewer
-                    ? Value(data.message)
-                    : const Value.absent(),
-                lastMessageTime: isNewer
-                    ? Value(createdAt)
-                    : const Value.absent(),
-                unReadCount: Value(unread),
-                isDeleted: const Value(false),
+                senderId: senderId,
+                serverCreatedAt: createdAt,
               ),
             );
-      }
-    });
+        final List<MessageStatus> messageStatuses = data.messageStatuses
+            .map(
+              (e) => MessageStatus(
+                messageId: e.messageId,
+                userId: e.userId,
+                status: e.status,
+                createdAt: parseTimestamp(e.createdAt),
+                updatedAt: parseTimestamp(e.updatedAt),
+              ),
+            )
+            .toList();
+        await ref
+            .read(messageStatusTableProvider.notifier)
+            .bulkCreateMessageStatus(messageStatuses, messageId);
 
-    ref.read(socketProvider).sendMessage("message_delivered", {
-      "message_id": messageId,
-      "chat_id": chatId,
-    });
+        if (data.attachments.isNotEmpty) {
+          final List<UploadAttachment> medias = data.attachments
+              .map(
+                (e) => UploadAttachment(
+                  key: e.key,
+                  contentType: e.contentType,
+                  type: e.type,
+                  actorId: e.actorId,
+                  name: e.name,
+                  url: e.url,
+                ),
+              )
+              .toList();
 
-    if (shouldAutoRead) {
-      ref.read(socketProvider).sendMessage("message_read", {
+          await ref
+              .read(mediaTableProvider.notifier)
+              .bulkAddMediaDocuments(medias, messageId);
+        }
+        final ChatListModal chatData = ChatListModal(
+          id: chatId,
+          chatId: chatId,
+          lastMessage: data.message.isNotEmpty
+              ? data.message
+              : data.attachments.isNotEmpty
+              ? "You recieved media"
+              : "",
+          lastMessageTime: createdAt.toString(),
+          receiverId: data.senderId,
+          type: "",
+        );
+        await ref
+            .read(chatListTableProvider.notifier)
+            .createOrUpdateChatList(
+              chatData,
+              isIncomingMessage: true,
+              shouldAutoRead: shouldAutoRead,
+            );
+      });
+
+      ref.read(socketProvider).emitEvent("message_delivered", {
         "message_id": messageId,
         "chat_id": chatId,
       });
-    }
 
-    unawaited(chatSyncService.cacheUserIfMissing(senderId));
-    unawaited(
-      chatSyncService.updateDmChatItem(userId: senderId, chatId: chatId),
-    );
+      if (shouldAutoRead) {
+        ref.read(socketProvider).emitEvent("message_read", {
+          "message_id": messageId,
+          "chat_id": chatId,
+        });
+      }
+    } catch (e) {
+      debugPrint(e.toString());
+    }
   }
 
-  Future<void> sendMessage({
-    String message = "",
-    required String receiverId,
-    required String receiverName,
-    List<XFile> attachments = const [],
-    String chatId = "",
-    void Function(String realChatId)? onChatResolved,
-  }) async {
+  Future<void> sendMessage(SendMessageRequest request) async {
     try {
+      log(request.toString());
       final database = ref.read(databaseProvider);
-      final user = ref.read(settingsUserProvider);
+      final currentUserId = ref.watch(userPreferenceTableProvider).value;
+      final chatListTableProviderRef = ref.read(chatListTableProvider.notifier);
+      final messagesTableProviderRef = ref.read(messagesTableProvider.notifier);
+      final mediaTableProviderRef = ref.read(mediaTableProvider.notifier);
+      final messageStatusTableProviderRef = ref.read(
+        messageStatusTableProvider.notifier,
+      );
+
       final List<UploadAttachment> uploadedAttachments = [];
 
-      if (user == null) return;
-
-      final now = DateTime.now().millisecondsSinceEpoch + _serverTimeOffset;
+      final now = DateTime.now().millisecondsSinceEpoch;
       final tempId = const Uuid().v4();
       late String currentChatId;
 
       await database.transaction(() async {
-        currentChatId = chatId;
+        currentChatId = request.chatId ?? "";
 
         if (currentChatId.isEmpty || currentChatId.startsWith("local_")) {
-          currentChatId = "local_$receiverId";
-
-          final existingChat = await (database.select(
-            database.chatListTable,
-          )..where((c) => c.chatId.equals(currentChatId))).getSingleOrNull();
-
-          if (existingChat == null) {
-            await database.managers.chatListTable.create(
-              (o) => o(
-                chatId: currentChatId,
-                name: receiverName,
-                type: "DIRECT",
-                isDeleted: const Value(false),
-                lastMessage: Value(message),
-                lastMessageTime: Value(now),
-                profilePicUrl: const Value(null),
-                unReadCount: const Value(0),
-              ),
-            );
-
-            await database.managers.chatParticipants.bulkCreate(
-              (o) => [
-                o(chatId: currentChatId, userId: user.id, name: user.name),
-                o(
-                  chatId: currentChatId,
-                  userId: receiverId,
-                  name: receiverName,
-                ),
-              ],
-            );
-          }
-        } else {
-          await (database.update(
-            database.chatListTable,
-          )..where((c) => c.chatId.equals(currentChatId))).write(
-            ChatListTableCompanion(
-              lastMessage: Value(message),
-              lastMessageTime: Value(now),
-              isDeleted: const Value(false),
-            ),
-          );
+          currentChatId = "local_${request.receiverId}";
         }
 
-        await database.managers.messages.create(
-          (o) => o(
+        await chatListTableProviderRef.createOrUpdateChatList(
+          ChatListModal(
+            id: currentChatId,
             chatId: currentChatId,
-            id: tempId,
-            message: message,
-            senderId: user.id,
-            isRead: const Value(true),
-            messageStatus: const Value("sending"),
-            createdAt: now,
+            name: request.receiverName,
+            lastMessage: (request.message.isNotEmpty)
+                ? request.message
+                : request.attachments.isNotEmpty
+                ? "You sent media"
+                : "",
+            lastMessageTime: now.toString(),
+            unReadCount: 0,
+            type: request.type ?? "DIRECT",
+            receiverId: request.receiverId,
           ),
-
-          mode: InsertMode.insertOrIgnore,
         );
-        for (final attachment in attachments) {
-          final mime =
-              lookupMimeType(attachment.path) ?? "application/octet-stream";
-          await database.managers.mediaTable.create(
-            (o) => o(
-              createdAt: now,
-              actorId: Value(tempId),
-              Type: Value(getMediaType(mime)),
-              contentType: Value(mime),
-              location: Value(attachment.path),
-              name: Value(attachment.name),
-            ),
+
+        await messagesTableProviderRef.createTempMessage(
+          MessageBodyRequest(
+            chatId: currentChatId,
+            isRead: true,
+            message: request.message,
+            senderId: currentUserId,
+            tempId: tempId,
+          ),
+        );
+
+        if (request.attachments.isNotEmpty) {
+          final mediasToInsert = request.attachments.map((attachment) {
+            final mime =
+                lookupMimeType(attachment.path) ?? "application/octet-stream";
+            return UploadAttachment(
+              key: "",
+              contentType: mime,
+              type: getMediaType(mime),
+              location: attachment.path,
+              name: attachment.name,
+              url: "",
+            );
+          }).toList();
+
+          await mediaTableProviderRef.bulkAddMediaDocuments(
+            mediasToInsert,
+            tempId,
           );
         }
 
-        final participants = await database.managers.chatParticipants
-            .filter((f) => f.chatId.equals(currentChatId))
-            .get();
-
-        await database.managers.messageStatusTable.bulkCreate(
-          (o) => participants.map((p) {
-            final isMe = p.userId == user.id;
-
-            return o(
-              messageId: tempId,
-              userId: p.userId,
-
-              status: Value(isMe ? "sent" : "sending"),
-
-              createdAt: now,
-              updatedAt: now,
-
-              deliveredAt: Value(isMe ? now : null),
-
-              readAt: Value(isMe ? now : null),
-            );
-          }).toList(),
+        await messageStatusTableProviderRef.createLocalParticipantsStatus(
+          tempId,
+          currentUserId ?? "",
+          currentChatId,
+          now,
         );
       });
       final isRealChat = !currentChatId.startsWith("local_");
-      if (attachments.isNotEmpty) {
-        final futures = attachments.map((attachment) async {
+      if (request.attachments.isNotEmpty) {
+        final futures = request.attachments.map((attachment) async {
           final mime =
               lookupMimeType(attachment.path) ?? "application/octet-stream";
 
@@ -431,7 +292,7 @@ class MessageNotifer extends Notifier {
             assetType: "chat",
             entityType: "attachments",
             contentType: mime,
-            entityId: chatId,
+            entityId: request.chatId ?? currentChatId,
           );
 
           if (!presignedUrl.success) {
@@ -464,8 +325,8 @@ class MessageNotifer extends Notifier {
       ref.read(socketProvider).sendMessageWithAck(
         "send_message",
         {
-          "message": message,
-          "receiver_id": receiverId,
+          "message": request.message,
+          "receiver_id": request.receiverId,
           "temp_id": tempId,
           "attachments": uploadedAttachments.map((e) => e.toJson()).toList(),
           if (isRealChat) "chat_id": currentChatId,
@@ -474,141 +335,59 @@ class MessageNotifer extends Notifier {
           final payload = SendMessageAck.fromJson(response);
           final realChatId = payload.chatId;
           final messageId = payload.messageId;
-          final createdAt = _parseTimestamp(payload.createdAt);
-          _serverTimeOffset = createdAt - DateTime.now().millisecondsSinceEpoch;
+          final createdAt = parseTimestamp(payload.createdAt);
 
           if (currentChatId.startsWith("local_")) {
-            await database.managers.chatParticipants
-                .filter((f) => f.chatId.equals(currentChatId))
-                .update((o) => o(chatId: Value(realChatId)));
+            await ref
+                .read(chatParticipantsTableProvider.notifier)
+                .updateParticipantsChatId(currentChatId, realChatId);
           }
-          onChatResolved?.call(realChatId);
+          request.onChatResolved?.call(realChatId);
 
-          await database.managers.chatListTable
-              .filter((f) => f.chatId.equals(currentChatId))
-              .update(
-                (o) => o(
-                  chatId: Value(realChatId),
-                  lastMessageTime: Value(createdAt),
-                  lastMessage: Value(message),
-                  isDeleted: const Value(false),
-                ),
-              );
-          await database.managers.messages
-              .filter((f) => f.id.equals(tempId))
-              .update(
-                (o) => o(
-                  serverId: Value(messageId),
-                  chatId: Value(realChatId),
-                  createdAt: Value(createdAt),
-                  messageStatus: const Value("sent"),
-                  id: Value(messageId),
-                ),
-              );
-          await database.managers.mediaTable
-              .filter((f) => f.actorId.equals(tempId))
-              .update((o) => o(actorId: Value(messageId)));
-
-          final ackAttachments = payload.attachments;
-          if (ackAttachments.isNotEmpty) {
-            final localMedias = await database.managers.mediaTable
-                .filter((f) => f.actorId.equals(messageId))
-                .get();
-            for (int i = 0; i < localMedias.length; i++) {
-              if (i < ackAttachments.length) {
-                final att = ackAttachments[i];
-                await database.managers.mediaTable
-                    .filter((f) => f.id.equals(localMedias[i].id))
-                    .update((o) => o(key: Value(att.key), url: Value(att.url)));
-              }
-            }
-          }
-          await database.managers.messageStatusTable
-              .filter((f) => f.messageId.equals(tempId))
-              .delete();
-
-          await database.managers.messageStatusTable.bulkCreate(
-            (o) => payload.messageStatuses.map((status) {
-              return o(
-                messageId: messageId,
-                userId: status.userId,
-                status: Value(status.status),
-                createdAt: _parseTimestamp(status.createdAt),
-                updatedAt: _parseTimestamp(status.updatedAt),
-                deliveredAt: Value(
-                  status.deliveredAt != null
-                      ? _parseTimestamp(status.deliveredAt)
-                      : null,
-                ),
-                readAt: Value(
-                  status.readAt != null ? _parseTimestamp(status.readAt) : null,
-                ),
-              );
-            }).toList(),
-            mode: InsertMode.insertOrReplace,
-          );
-          final chatSyncService = ChatSyncService(
-            db: database,
-            apiClient: ApiClient(),
-          );
-          unawaited(
-            chatSyncService.updateDmChatItem(
-              userId: receiverId,
+          await ref
+              .read(chatListTableProvider.notifier)
+              .updateChatId(currentChatId, realChatId);
+          await messagesTableProviderRef.updateTempMessage(
+            MessageBodyRequest(
               chatId: realChatId,
+              tempId: tempId,
+              createdAt: createdAt,
             ),
+            messageId,
+          );
+
+          await mediaTableProviderRef.updateActorId(tempId, messageId);
+
+          await mediaTableProviderRef.updateUploadedMedia(
+            messageId,
+            payload.attachments,
+          );
+
+          final messageStatusProviderRef = ref.read(
+            messageStatusTableProvider.notifier,
+          );
+          await messageStatusProviderRef.deleteMessageStatus(tempId);
+          await messageStatusProviderRef.bulkCreateMessageStatus(
+            payload.messageStatuses,
+            messageId,
           );
         },
       );
-      final chatSyncService = ChatSyncService(
-        db: database,
-        apiClient: ApiClient(),
-      );
-      unawaited(chatSyncService.cacheUserIfMissing(receiverId));
     } catch (e) {
       debugPrint("Error sending message: $e");
     }
   }
 
   Future<void> messageDelivered() async {
-    final db = ref.read(databaseProvider);
-
     ref.read(socketProvider).listenOnce("message_delivered", (data) async {
-      _acknowledgeEvent(data);
+      acknowledgeEvent(data);
       _statusQueue.add(() async {
         await _retry(() async {
           final payload = MessageDeliveredResponse.fromJson(data);
 
-          final status = payload.messageStatus;
-
-          final existingRow = await db.managers.messageStatusTable
-              .filter(
-                (f) =>
-                    f.messageId.equals(status.messageId) &
-                    f.userId.equals(status.userId),
-              )
-              .getSingleOrNull();
-
-          if (existingRow == null) {
-            throw Exception("Status row not found yet, retrying...");
-          }
-
-          if (_statusRank(status.status) <= _statusRank(existingRow.status)) {
-            return;
-          }
-
-          await db.managers.messageStatusTable
-              .filter(
-                (f) =>
-                    f.messageId.equals(status.messageId) &
-                    f.userId.equals(status.userId),
-              )
-              .update(
-                (o) => o(
-                  status: Value(status.status),
-                  deliveredAt: Value(_parseTimestamp(status.deliveredAt)),
-                  updatedAt: Value(_parseTimestamp(status.updatedAt)),
-                ),
-              );
+          await ref
+              .read(messageStatusTableProvider.notifier)
+              .updateMessageStatus(payload, statusRank);
         });
       });
       _processStatusQueue();
@@ -616,47 +395,19 @@ class MessageNotifer extends Notifier {
   }
 
   Future<void> markRead() async {
-    final db = ref.read(databaseProvider);
-
     ref.read(socketProvider).listenOnce("message_read", (data) async {
-      _acknowledgeEvent(data);
+      acknowledgeEvent(data);
+
       _statusQueue.add(() async {
         await _retry(() async {
           final payload = MessageReadResponse.fromJson(data);
 
-          final status = payload.messageStatus;
-
-          final existingRow = await db.managers.messageStatusTable
-              .filter(
-                (f) =>
-                    f.messageId.equals(status.messageId) &
-                    f.userId.equals(status.userId),
-              )
-              .getSingleOrNull();
-
-          if (existingRow == null) {
-            throw Exception("Status row not found yet, retrying...");
-          }
-
-          if (_statusRank(status.status) <= _statusRank(existingRow.status)) {
-            return;
-          }
-
-          await db.managers.messageStatusTable
-              .filter(
-                (f) =>
-                    f.messageId.equals(status.messageId) &
-                    f.userId.equals(status.userId),
-              )
-              .update(
-                (o) => o(
-                  status: Value(status.status),
-                  readAt: Value(_parseTimestamp(status.readAt)),
-                  updatedAt: Value(_parseTimestamp(status.updatedAt)),
-                ),
-              );
+          await ref
+              .read(messageStatusTableProvider.notifier)
+              .updateMessageReadStatus(payload, statusRank);
         });
       });
+
       _processStatusQueue();
     });
   }
@@ -664,52 +415,32 @@ class MessageNotifer extends Notifier {
   Future<void> markChatMessagesRead(String chatId) async {
     final db = ref.read(databaseProvider);
 
-    final currentUser = ref.read(settingsUserProvider);
-
+    final currentUser = ref.watch(userPreferenceTableProvider).value;
     if (currentUser == null) return;
 
     final now = DateTime.now().millisecondsSinceEpoch;
 
-    final query = db.select(db.messageStatusTable).join([
-      innerJoin(
-        db.messages,
-        db.messages.serverId.equalsExp(db.messageStatusTable.messageId),
-      ),
-    ]);
+    final statusProvider = ref.read(messageStatusTableProvider.notifier);
 
-    query.where(
-      db.messageStatusTable.userId.equals(currentUser.id) &
-          db.messageStatusTable.status.equals("read").not() &
-          db.messages.chatId.equals(chatId),
+    final unreadStatuses = await statusProvider.getUnreadStatusesForChat(
+      chatId: chatId,
+      userId: currentUser,
     );
-
-    final rows = await query.get();
-    final unreadStatuses = rows
-        .map((row) => row.readTable(db.messageStatusTable))
-        .toList();
 
     if (unreadStatuses.isEmpty) return;
 
-    final messageIdsToUpdate = unreadStatuses.map((s) => s.messageId).toList();
+    final messageIds = unreadStatuses.map((e) => e.messageId).toList();
 
-    await (db.update(db.messageStatusTable)..where(
-          (t) =>
-              t.userId.equals(currentUser.id) &
-              t.messageId.isIn(messageIdsToUpdate),
-        ))
-        .write(
-          MessageStatusTableCompanion(
-            status: const Value("read"),
-            readAt: Value(now),
-            updatedAt: Value(now),
-          ),
-        );
+    await statusProvider.bulkUpdateMessageReadStatus(
+      messageIds: messageIds,
+      userId: currentUser,
+      readAt: now,
+    );
 
-    for (final status in unreadStatuses) {
-      ref.read(socketProvider).sendMessage("message_read", {
-        "message_id": status.messageId,
-        "chat_id": chatId,
-      });
+    final socket = ref.read(socketProvider);
+
+    for (final id in messageIds) {
+      socket.emitEvent("message_read", {"message_id": id, "chat_id": chatId});
     }
 
     await db.managers.chatListTable
@@ -718,19 +449,19 @@ class MessageNotifer extends Notifier {
   }
 
   void sendChatSyncEvent() {
-    ref.read(socketProvider).sendMessage("chat_sync", null);
+    ref.read(socketProvider).emitEvent("chat_sync", null);
   }
 
   Future<void> sendQueueMessages() async {
     final db = ref.read(databaseProvider);
     final socketService = ref.read(socketProvider);
-    final currentUser = ref.read(settingsUserProvider);
+    final currentUser = ref.watch(userPreferenceTableProvider).value;
 
     if (currentUser == null) return;
     if (!socketService.isConnected) return;
 
     final messages = await db.managers.messages
-        .filter((f) => f.messageStatus.equals("sending"))
+        .filter((f) => f.message.equals("sending"))
         .get();
 
     for (final msg in messages) {
@@ -740,9 +471,7 @@ class MessageNotifer extends Notifier {
           .filter((f) => f.chatId.equals(msg.chatId))
           .get();
 
-      final receiver = participants.firstWhere(
-        (p) => p.userId != currentUser.id,
-      );
+      final receiver = participants.firstWhere((p) => p.userId != currentUser);
 
       final receiverId = receiver.userId;
 
@@ -759,7 +488,7 @@ class MessageNotifer extends Notifier {
         (response) async {
           final messageId = response["message_id"];
           final chatId = response["chat_id"];
-          final createdAt = _parseTimestamp(response["created_at"]);
+          final createdAt = parseTimestamp(response["created_at"]);
 
           if (msg.chatId.startsWith("local_")) {
             await db.managers.chatParticipants
@@ -784,7 +513,6 @@ class MessageNotifer extends Notifier {
                   serverId: Value(messageId),
                   chatId: Value(chatId),
                   createdAt: Value(createdAt),
-                  messageStatus: const Value("sent"),
                   id: Value(messageId),
                 ),
               );
@@ -810,7 +538,7 @@ class MessageNotifer extends Notifier {
 
   void sendTypingEvent(String chatId) {
     if (!chatId.startsWith("local_")) {
-      ref.read(socketProvider).sendMessage("is_typing", {"chat_id": chatId});
+      ref.read(socketProvider).emitEvent("is_typing", {"chat_id": chatId});
     }
   }
 
@@ -836,7 +564,7 @@ class MessageNotifer extends Notifier {
     _isTyping = false;
 
     if (!chatId.startsWith("local_")) {
-      ref.read(socketProvider).sendMessage("stop_typing", {"chat_id": chatId});
+      ref.read(socketProvider).emitEvent("stop_typing", {"chat_id": chatId});
     }
   }
 
@@ -854,65 +582,32 @@ class MessageNotifer extends Notifier {
       ref.read(socketProvider).listenOnce("group-created", (
         dynamic data,
       ) async {
-        _acknowledgeEvent(data);
-        final db = ref.read(databaseProvider);
-        final currentUser = ref.read(settingsUserProvider);
-        if (currentUser == null || currentUser.accessToken.isEmpty) return;
+        acknowledgeEvent(data);
+        final currentUser = ref.watch(userPreferenceTableProvider).value;
+        debugPrint("current USer Exist: $currentUser");
+        if (currentUser == null) return;
 
-        if (data is Map) {
-          final payload = CreateGroupResponse.fromJson(
-            Map<String, dynamic>.from(data),
-          );
+        final payload = CreateGroupResponse.fromJson(
+          Map<String, dynamic>.from(data),
+        );
+        log(payload.toString());
 
-          if (payload.data?.chatId.isEmpty ?? true) return;
-          {
-            await ChatSyncService(
-              db: db,
-              apiClient: ApiClient(),
-            ).syncCreatedGroupEventPayload(
-              rawPayload: payload,
-              currentUserId: currentUser.id,
+        if (payload.data?.chatId.isEmpty ?? true) return;
+        ref
+            .read(chatListTableProvider.notifier)
+            .createOrUpdateChatList(
+              ChatListModal(
+                id: currentUser,
+                chatId: payload.data!.chatId,
+                lastMessage: "",
+                lastMessageTime: DateTime.now().millisecondsSinceEpoch
+                    .toString(),
+                bio: payload.data?.bio,
+                type: "GROUP",
+              ),
             );
-            return;
-          }
-        }
       });
     } catch (_) {}
-  }
-
-  Future<void> groupsCountSync() async {
-    try {
-      ref.read(socketProvider).listenOnce("group-sync", (dynamic data) async {
-        try {
-          final db = ref.read(databaseProvider);
-          final currentUser = ref.read(settingsUserProvider);
-          if (currentUser == null || currentUser.accessToken.isEmpty) return;
-
-          final flatMap = Map<String, dynamic>.from(data);
-          final chatId = flatMap['chat_id'] as String? ?? '';
-          if (chatId.isEmpty) return;
-
-          final wrappedPayload = CreateGroupResponse.fromJson({
-            'success': true,
-            'message': 'sync',
-            ...flatMap,
-          });
-          if (wrappedPayload.data?.chatId.isEmpty ?? true) return;
-
-          await ChatSyncService(
-            db: db,
-            apiClient: ApiClient(),
-          ).syncCreatedGroupEventPayload(
-            rawPayload: wrappedPayload,
-            currentUserId: currentUser.id,
-          );
-        } catch (e) {
-          debugPrint('group-sync handler error: $e');
-        }
-      });
-    } catch (e) {
-      debugPrint(e.toString());
-    }
   }
 
   Future<void> _retry(

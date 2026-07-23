@@ -8,6 +8,7 @@ import 'package:my_app/core/network/api_client.dart';
 import 'package:my_app/core/network/api_constant.dart';
 import 'package:my_app/modal/api_response.dart';
 import 'package:my_app/modal/upload_responses/presigned_url_response.dart';
+import 'package:my_app/modal/upload_responses/upload_attachment.dart';
 import 'package:my_app/modal/upload_responses/upload_response.dart';
 
 class UploadService {
@@ -128,5 +129,19 @@ class UploadService {
     } catch (e) {
       throw Exception('Get download URL failed: $e');
     }
+  }
+
+  Future<String> resolveDownloadUrl(UploadAttachment media) async {
+    if (media.url != null && media.url!.isNotEmpty) {
+      return media.url!;
+    }
+
+    final res = await getDownloadUrl(media.key);
+
+    if (!res.success || res.data == null) {
+      throw Exception('Failed to get download URL');
+    }
+
+    return res.data!;
   }
 }

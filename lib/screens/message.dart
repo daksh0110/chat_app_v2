@@ -3,22 +3,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:my_app/core/util/getDatelabel.dart';
 import 'package:my_app/core/util/status_map.dart';
+import 'package:my_app/modal/screens/message/message_screen_data.dart';
+import 'package:my_app/modal/screens/message/send_message_request.dart';
 import 'package:my_app/modal/screens/search/message_screen_arguments.dart';
 import 'package:my_app/providers/chat_list_provider.dart';
 import 'package:my_app/providers/chat_message_provider.dart';
 import 'package:my_app/providers/database_provider.dart';
 import 'package:my_app/providers/message_provider.dart';
+import 'package:my_app/providers/message_screen_provider.dart';
 import 'package:my_app/providers/message_typing_provider.dart';
-import 'package:my_app/providers/settings_user_notifier_provider.dart';
 import 'package:my_app/providers/socket_provider.dart';
-import 'package:my_app/core/network/api_client.dart';
-import 'package:my_app/data/services/chat_sync_service.dart';
+import 'package:my_app/providers/tables/user_preference_table_provider.dart';
 import 'package:my_app/widgets/screens/message/chat_input_box.dart';
 import 'package:my_app/widgets/screens/message/date_banner.dart';
 import 'package:my_app/widgets/screens/message/header.dart';
 import 'package:my_app/widgets/screens/message/message_item.dart';
 import 'package:my_app/widgets/screens/message/typing_indicator.dart';
-import 'package:drift/drift.dart' hide Column;
 
 class MessageScreen extends ConsumerStatefulWidget {
   const MessageScreen({super.key});
@@ -37,6 +37,7 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
   String? profilePicUrl;
   String? _lastActiveUserId;
   bool _isOnline = false;
+  late bool isGroup = false;
   late final ChatListController _chatListController;
   final Set<String> _onlineGroupMembers = {};
   List<String> _groupParticipantIds = [];
@@ -64,6 +65,7 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+
     if (_initialized) return;
     _initialized = true;
 
@@ -74,17 +76,14 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
     receiverId = args.receiverId;
     name = args.name;
     profilePicUrl = args.profilePicUrl;
-    final isGroup = args.isGroupChat == "GROUP";
+    isGroup = args.isGroupChat == "GROUP";
 
-    if (name.isEmpty) {
-      _resolveChatInfo(isGroup);
-    }
+    _loadChatData();
 
-    if (_lastActiveUserId != chatId) {
-      _lastActiveUserId = chatId;
-      _chatListController.setActiveChatId(chatId);
-    }
+    _initialiseSockets();
+  }
 
+  void _initialiseSockets() {
     final socketService = ref.watch(socketProvider);
 
     socketService.getUserStatus((data) {
@@ -138,29 +137,7 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
       _loadGroupParticipants().then((_) {
         socketService.checkGroupStatus(chatId);
       });
-    } else {
-      if (receiverId.isEmpty) {
-        _resolveReceiverId(chatId).then((id) {
-          if (id != null && mounted) {
-            setState(() {
-              receiverId = id;
-            });
-
-            socketService.checkUserStatus(receiverId);
-          }
-        });
-      } else {
-        socketService.checkUserStatus(receiverId);
-      }
-    }
-
-    if (chatId.isEmpty && receiverId.isNotEmpty) {
-      _resolveChatId();
-    } else {
-      Future.microtask(() {
-        ref.read(messageProvider.notifier).markChatMessagesRead(chatId);
-      });
-    }
+    } else {}
   }
 
   @override
@@ -174,22 +151,25 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
     ref
         .read(messageProvider.notifier)
         .sendMessage(
-          message: text,
-          receiverId: receiverId,
-          receiverName: name,
-          chatId: chatId,
-          attachments: attachments,
-          onChatResolved: (realId) {
-            if (mounted) {
-              setState(() {
-                chatId = realId;
-              });
-              if (_lastActiveUserId != realId) {
-                _lastActiveUserId = realId;
-                _chatListController.setActiveChatId(realId);
+          SendMessageRequest(
+            receiverId: receiverId,
+            receiverName: name,
+            attachments: attachments,
+            chatId: chatId,
+            message: text,
+            type: isGroup ? "GROUP" : "DIRECT",
+            onChatResolved: (realId) {
+              if (mounted) {
+                setState(() {
+                  chatId = realId;
+                });
+                if (_lastActiveUserId != realId) {
+                  _lastActiveUserId = realId;
+                  _chatListController.setActiveChatId(realId);
+                }
               }
-            }
-          },
+            },
+          ),
         );
   }
 
@@ -201,120 +181,44 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
     ref.read(messageProvider.notifier).sendStopTypingEvent(chatId);
   }
 
-  Future<String?> _resolveReceiverId(String chatId) async {
-    final db = ref.read(databaseProvider);
-    final currentUser = ref.read(settingsUserProvider);
-    if (currentUser == null) return null;
+  Future<void> _loadChatData() async {
+    MessageScreenData? data;
 
-    final participants = await db.managers.chatParticipants
-        .filter((f) => f.chatId.equals(chatId))
-        .get();
-
-    try {
-      return participants.firstWhere((p) => p.userId != currentUser.id).userId;
-    } catch (_) {
-      return null;
+    if (chatId.isNotEmpty) {
+      data = await ref
+          .read(messageScreenProvider.notifier)
+          .fetchChatDetailsFromChatId(chatId);
+    } else if (receiverId.isNotEmpty) {
+      data = await ref
+          .read(messageScreenProvider.notifier)
+          .fetchChatDetailsFromReceiverId(receiverId);
     }
-  }
 
-  Future<void> _resolveChatId() async {
-    final db = ref.read(databaseProvider);
-    final currentUser = ref.read(settingsUserProvider);
-    if (currentUser == null || receiverId.isEmpty) return;
+    if (!mounted || data == null) return;
 
-    final participantRows = await db.managers.chatParticipants
-        .filter((f) => f.userId.equals(receiverId))
-        .get();
+    setState(() {
+      chatId = data?.chatId ?? "";
+      receiverId = data?.receiverId ?? receiverId;
+      name = data?.name ?? name;
+      profilePicUrl = data?.profilePic ?? profilePicUrl;
+      isGroup = data?.type == "GROUP" ? true : false;
+    });
 
-    for (final p in participantRows) {
-      final chat = await db.managers.chatListTable
-          .filter((f) => f.chatId.equals(p.chatId) & f.type.equals("DIRECT"))
-          .getSingleOrNull();
+    _chatListController.setActiveChatId(chatId);
 
-      if (chat != null && mounted) {
-        setState(() {
-          chatId = chat.chatId;
-        });
-
-        if (_lastActiveUserId != chatId) {
-          _lastActiveUserId = chatId;
-          _chatListController.setActiveChatId(chatId);
-        }
-
-        Future.microtask(() {
-          ref.read(messageProvider.notifier).markChatMessagesRead(chatId);
-        });
-        break;
-      }
-    }
-  }
-
-  Future<void> _resolveChatInfo(bool isGroup) async {
-    final db = ref.read(databaseProvider);
-    final apiClient = ApiClient();
-    final chatSyncService = ChatSyncService(db: db, apiClient: apiClient);
-
-    if (isGroup) {
-      if (chatId.isEmpty) return;
-      var chat = await db.managers.chatListTable
-          .filter((f) => f.chatId.equals(chatId))
-          .getSingleOrNull();
-
-      if (chat == null || chat.name.isEmpty) {
-        final currentUser = ref.read(settingsUserProvider);
-        if (currentUser != null) {
-          await chatSyncService.syncCreatedGroupById(
-            incomingChatId: chatId,
-            accessToken: currentUser.accessToken,
-            currentUserId: currentUser.id,
-          );
-          chat = await db.managers.chatListTable
-              .filter((f) => f.chatId.equals(chatId))
-              .getSingleOrNull();
-        }
-      }
-
-      if (chat != null && mounted) {
-        setState(() {
-          name = chat?.name ?? '';
-          profilePicUrl = chat?.profilePicUrl;
-        });
-      }
-    } else {
-      if (receiverId.isEmpty) return;
-
-      var user = await db.managers.usersTable
-          .filter((f) => f.id.equals(receiverId))
-          .getSingleOrNull();
-
-      if (user == null || user.name.isEmpty) {
-        await chatSyncService.cacheUserIfMissing(receiverId);
-        user = await db.managers.usersTable
-            .filter((f) => f.id.equals(receiverId))
-            .getSingleOrNull();
-      }
-
-      if (user != null && mounted) {
-        setState(() {
-          name = user?.name ?? '';
-          profilePicUrl = user?.profilePictureUrl;
-        });
-      }
+    if (chatId.isNotEmpty) {
+      ref.read(messageProvider.notifier).markChatMessagesRead(chatId);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final typingMap = ref.watch(messageTypingProvider);
-    final args =
-        ModalRoute.of(context)!.settings.arguments as MessageScreenArguments;
-    final String isGroupChat = args.isGroupChat;
-    final isGroup = isGroupChat == "GROUP";
-    final currentUser = ref.watch(settingsUserProvider);
+    final currentUser = ref.watch(userPreferenceTableProvider).value;
     final isTyping = typingMap[chatId] == true;
 
     final onlineCount = currentUser != null
-        ? _onlineGroupMembers.where((id) => id != currentUser.id).length
+        ? _onlineGroupMembers.where((id) => id != currentUser).length
         : _onlineGroupMembers.length;
     final totalMembers = _groupParticipantIds.length;
 
@@ -322,14 +226,18 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
         ? (onlineCount > 0 ? "$onlineCount online" : "$totalMembers members")
         : null;
 
+    debugPrint(
+      "MessageScreen.build: chatId=$chatId, receiverId=$receiverId, name=$name, profilePicUrl=$profilePicUrl, isGroup=$isGroup, subtitle=$subtitle",
+    );
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: Header(
-        id: isGroupChat == "GROUP" ? chatId : receiverId,
+        id: isGroup ? chatId : receiverId,
         name: name,
         isOnline: _isOnline,
         profilePicUrl: profilePicUrl,
-        isGroupChat: isGroupChat == "GROUP",
+        isGroupChat: isGroup,
         subtitle: subtitle,
       ),
       body: SafeArea(
@@ -348,7 +256,7 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
                   return messagesAsync.when(
                     data: (messages) {
                       if (currentUser == null) {
-                        return const Center(child: CircularProgressIndicator());
+                        throw Exception("Current user is not Set");
                       }
 
                       return ListView.builder(
@@ -393,15 +301,15 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
                               MessageItem(
                                 attachments: item.attachments,
                                 message: msg.message,
-                                isSender: msg.senderId == currentUser.id,
-                                status: msg.senderId == currentUser.id
+                                isSender: msg.senderId == currentUser,
+                                status: msg.senderId == currentUser
                                     ? statusMap(item.overallStatus)
                                     : statusMap("sending"),
                                 timestamp: msg.createdAt,
-                                senderName: sender.userId == currentUser.id
+                                senderName: sender.userId == currentUser
                                     ? "You"
-                                    : sender.name,
-                                isGroupChat: isGroupChat == "GROUP",
+                                    : name,
+                                isGroupChat: isGroup,
                                 isGrouped: isGrouped,
                               ),
                             ],

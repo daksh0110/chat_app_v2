@@ -3,16 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
-import 'package:my_app/core/database.dart';
 import 'package:my_app/core/network/api_client.dart';
 import 'package:my_app/data/services/user_api_service.dart';
-import 'package:my_app/providers/database_provider.dart';
+import 'package:my_app/modal/user.modal.dart';
 import 'package:my_app/providers/secure_storage_provider.dart';
+import 'package:my_app/providers/tables/users_table_provider.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
 import 'package:my_app/widgets/comman/user_bubble.dart';
 
 class SelectMembersScreen extends ConsumerStatefulWidget {
-  final List<UsersTableData> initialSelected;
+  final List<UserModel> initialSelected;
 
   const SelectMembersScreen({super.key, required this.initialSelected});
 
@@ -22,11 +22,10 @@ class SelectMembersScreen extends ConsumerStatefulWidget {
 }
 
 class _SelectMembersScreenState extends ConsumerState<SelectMembersScreen> {
-  final List<UsersTableData> _selectedUsers = [];
-  final List<UsersTableData> _searchResults = [];
+  final List<UserModel> _selectedUsers = [];
+  final List<UserModel> _searchResults = [];
   bool _isSearching = false;
   bool _isLoadingResults = false;
-  late Stream<List<UsersTableData>> _contactsStream;
   final ApiClient _apiClient = ApiClient();
   Timer? _debounce;
 
@@ -34,7 +33,6 @@ class _SelectMembersScreenState extends ConsumerState<SelectMembersScreen> {
   void initState() {
     super.initState();
     _selectedUsers.addAll(widget.initialSelected);
-    _contactsStream = ref.read(databaseProvider).getAllUsers();
   }
 
   @override
@@ -74,11 +72,11 @@ class _SelectMembersScreenState extends ConsumerState<SelectMembersScreen> {
           _searchResults.clear();
           _searchResults.addAll(
             result.data!.map(
-              (item) => UsersTableData(
+              (item) => UserModel(
                 id: item.id,
                 name: item.name,
-                email: item.email ?? "",
-                profilePictureUrl: item.profilePicUrl,
+                email: item.email,
+                profilePic: item.profilePic,
                 bio: item.bio,
               ),
             ),
@@ -93,7 +91,7 @@ class _SelectMembersScreenState extends ConsumerState<SelectMembersScreen> {
     }
   }
 
-  void _toggleUser(UsersTableData user) {
+  void _toggleUser(UserModel user) {
     setState(() {
       final index = _selectedUsers.indexWhere((u) => u.id == user.id);
       if (index != -1) {
@@ -198,24 +196,22 @@ class _SelectMembersScreenState extends ConsumerState<SelectMembersScreen> {
   }
 
   Widget _buildContactsList() {
-    return StreamBuilder<List<UsersTableData>>(
-      stream: _contactsStream,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting &&
-            !snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
+    final usersAsync = ref.watch(allUsersProvider);
 
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+    return usersAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, stack) => Center(child: Text(err.toString())),
+      data: (users) {
+        if (users.isEmpty) {
           return const Center(child: PrimaryText("No contacts found"));
         }
 
-        return _buildList(snapshot.data!);
+        return _buildList(users);
       },
     );
   }
 
-  Widget _buildList(List<UsersTableData> users) {
+  Widget _buildList(List<UserModel> users) {
     return ListView.builder(
       itemCount: users.length,
       itemBuilder: (context, index) {
@@ -225,7 +221,7 @@ class _SelectMembersScreenState extends ConsumerState<SelectMembersScreen> {
         return ListTile(
           onTap: () => _toggleUser(user),
           leading: UserBubble(
-            profilePicUrl: user.profilePictureUrl,
+            profilePicUrl: user.profilePic,
             name: user.name,
             size: 44,
           ),

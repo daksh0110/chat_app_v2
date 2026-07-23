@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/core/database.dart';
-import 'package:my_app/modal/upload_responses/upload_attachment.dart';
 import 'package:my_app/providers/database_provider.dart';
 import 'package:drift/drift.dart';
 
@@ -11,6 +10,7 @@ class MessageWithSender {
   final List<MediaTableData> attachments;
   final String overallStatus;
   final bool isGroupChat;
+  final String? name;
 
   MessageWithSender({
     required this.message,
@@ -19,6 +19,7 @@ class MessageWithSender {
     required this.attachments,
     required this.overallStatus,
     this.isGroupChat = false,
+    this.name = "",
   });
 }
 
@@ -96,6 +97,10 @@ final chatMessagesProvider =
             db.mediaTable.actorId.equalsExp(db.messages.serverId) |
                 db.mediaTable.actorId.equalsExp(db.messages.id),
           ),
+          leftOuterJoin(
+            db.usersTable,
+            db.usersTable.userId.equalsExp(db.messages.senderId),
+          ),
         ]);
 
         query.where(
@@ -115,7 +120,7 @@ final chatMessagesProvider =
 
             final status = row.readTableOrNull(db.messageStatusTable);
             final media = row.readTableOrNull(db.mediaTable);
-
+            final user = row.readTable(db.usersTable);
             final key = message.id;
 
             if (!grouped.containsKey(key)) {
@@ -126,6 +131,7 @@ final chatMessagesProvider =
                 attachments: [],
                 overallStatus: "sent",
                 isGroupChat: false,
+                name: user.name,
               );
             }
 
@@ -147,7 +153,6 @@ final chatMessagesProvider =
               overallStatus: getOverallStatus(
                 item.statuses,
                 senderId: item.message.senderId,
-                fallback: item.message.messageStatus,
               ),
               isGroupChat: item.isGroupChat,
             );
