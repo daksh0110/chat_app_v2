@@ -27,8 +27,9 @@ import 'package:my_app/screens/user_profile.dart';
 import 'package:my_app/screens/verify_email.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:my_app/services/socket/misc_socket.dart';
 import 'firebase_options.dart';
-import 'package:my_app/widgets/comman/server_connection_banner.dart';
+import 'package:my_app/widgets/comman/overlay_banner.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -97,6 +98,9 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
             notifier.receiveStopTypingEvent();
             notifier.sendQueueMessages();
             notifier.groupChatCreatedListener();
+            await ref
+                .read(miscellaneousNotifierProvider.notifier)
+                .listenUserUpdateDetails();
             // notifier.groupsCountSync();
 
             await NotificationService.handleInitialMessage();
@@ -115,7 +119,7 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(fontFamily: "Caros"),
       builder: (context, child) {
-        return Stack(children: [child!, const ServerConnectionBanner()]);
+        return Stack(children: [child!, const OverLayBanner()]);
       },
       home: authState.when(
         loading: () =>

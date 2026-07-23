@@ -6,6 +6,7 @@ import 'package:my_app/modal/upload_responses/upload_attachment.dart';
 import 'package:my_app/modal/user.modal.dart';
 import 'package:my_app/providers/notifiers/aws_notifier.dart';
 import 'package:my_app/providers/secure_storage_provider.dart';
+import 'package:my_app/providers/socket_provider.dart';
 import 'package:my_app/providers/tables/users_table_provider.dart';
 
 final profileEditProvider = AsyncNotifierProvider<ProfileEditProvider, void>(
@@ -69,5 +70,10 @@ class ProfileEditProvider extends AsyncNotifier<void> {
       state = AsyncError(e, st);
       rethrow;
     }
+  }
+
+  Future<void> sendUpdateUserEvent(String userId) async {
+    final data = {"user_id": userId};
+    ref.read(socketProvider).emitEvent("user-info-updated", data);
   }
 }

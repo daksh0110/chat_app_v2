@@ -21,11 +21,11 @@ class ProfileEdit extends ConsumerStatefulWidget {
   const ProfileEdit({super.key});
   @override
   ConsumerState<ConsumerStatefulWidget> createState() {
-    return _profileEditState();
+    return ProfileEditState();
   }
 }
 
-class _profileEditState extends ConsumerState<ProfileEdit> {
+class ProfileEditState extends ConsumerState<ProfileEdit> {
   late final TextEditingController nameController;
   late final TextEditingController emailController;
   late final TextEditingController bioController;
@@ -97,7 +97,7 @@ class _profileEditState extends ConsumerState<ProfileEdit> {
             profileChanged:
                 profilePhotoController.text != _originalProfilePhoto,
           );
-
+      ref.read(profileEditProvider.notifier).sendUpdateUserEvent(userId);
       if (!mounted) return;
 
       ToastHelper.show(

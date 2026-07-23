@@ -40,6 +40,17 @@ class MessageNotifer extends Notifier {
     return null;
   }
 
+  void acknowledgeEvent(dynamic data) {
+    if (data is Map && data.containsKey('sequence')) {
+      final sequence = data['sequence'];
+      if (sequence != null) {
+        ref.read(socketProvider).emitEvent('chat_event_ack', {
+          'sequence': sequence,
+        });
+      }
+    }
+  }
+
   final _messageQueue = Queue<dynamic>();
   bool _isProcessing = false;
 
@@ -62,20 +73,9 @@ class MessageNotifer extends Notifier {
     _isProcessingStatus = false;
   }
 
-  void _acknowledgeEvent(dynamic data) {
-    if (data is Map && data.containsKey('sequence')) {
-      final sequence = data['sequence'];
-      if (sequence != null) {
-        ref.read(socketProvider).emitEvent('chat_event_ack', {
-          'sequence': sequence,
-        });
-      }
-    }
-  }
-
   Future<void> receiveMessage() async {
     ref.read(socketProvider).listenOnce("receive_message", (dynamic data) {
-      _acknowledgeEvent(data);
+      acknowledgeEvent(data);
       final chatId = data["chat_id"];
       if (chatId != null) {
         ref.read(messageTypingProvider.notifier).clearTyping(chatId);
@@ -380,7 +380,7 @@ class MessageNotifer extends Notifier {
 
   Future<void> messageDelivered() async {
     ref.read(socketProvider).listenOnce("message_delivered", (data) async {
-      _acknowledgeEvent(data);
+      acknowledgeEvent(data);
       _statusQueue.add(() async {
         await _retry(() async {
           final payload = MessageDeliveredResponse.fromJson(data);
@@ -396,7 +396,7 @@ class MessageNotifer extends Notifier {
 
   Future<void> markRead() async {
     ref.read(socketProvider).listenOnce("message_read", (data) async {
-      _acknowledgeEvent(data);
+      acknowledgeEvent(data);
 
       _statusQueue.add(() async {
         await _retry(() async {
@@ -582,7 +582,7 @@ class MessageNotifer extends Notifier {
       ref.read(socketProvider).listenOnce("group-created", (
         dynamic data,
       ) async {
-        _acknowledgeEvent(data);
+        acknowledgeEvent(data);
         final currentUser = ref.watch(userPreferenceTableProvider).value;
         debugPrint("current USer Exist: $currentUser");
         if (currentUser == null) return;

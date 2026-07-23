@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart';
 import 'package:my_app/modal/screens/createGroup/create_group_response.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -138,6 +139,14 @@ class SocketService {
   void listenUserOffline(void Function(dynamic data) callback) {
     if (socket == null) return;
     socket!.on("user_offline", callback);
+  }
+
+  void listenUserUpdateDetails(void Function(dynamic data) onUserUpdated) {
+    if (socket == null) return;
+
+    socket!.on("user-info-updated", (data) {
+      onUserUpdated(data);
+    });
   }
 
   void off(String event, [Function(dynamic)? callback]) {
