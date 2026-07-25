@@ -10,6 +10,7 @@ import 'package:my_app/providers/user_profile_provider.dart';
 import 'package:my_app/widgets/comman/primary_container.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
 import 'package:my_app/widgets/comman/user_bubble.dart';
+import 'package:my_app/widgets/screens/userProfile/media_shared_list.dart';
 import 'package:my_app/widgets/screens/userProfile/profile_detail_item.dart';
 
 class UserProfile extends ConsumerStatefulWidget {
@@ -34,7 +35,7 @@ class UserProfileState extends ConsumerState<UserProfile> {
 
     if (isGroupChat) {
       final groupArgs = routeArgs;
-      final currentUserAsync = ref.watch(currentUserIdProvider);
+      final currentUser = ref.watch(userPreferenceTableProvider).value;
       return ref
           .watch(groupProfile(id))
           .when(
@@ -43,17 +44,11 @@ class UserProfileState extends ConsumerState<UserProfile> {
             ),
             error: (e, s) => Scaffold(body: Center(child: Text(e.toString()))),
             data: (group) {
-              return currentUserAsync.when(
-                loading: () => const CircularProgressIndicator(),
-                error: (e, s) => Text(e.toString()),
-                data: (currentUser) {
-                  return _buildGroupProfile(
-                    context,
-                    group!,
-                    groupArgs,
-                    currentUser ?? "",
-                  );
-                },
+              return _buildGroupProfile(
+                context,
+                group!,
+                groupArgs,
+                currentUser ?? "",
               );
             },
           );
@@ -91,6 +86,8 @@ class UserProfileState extends ConsumerState<UserProfile> {
     final adminCount = group.members
         .where((member) => member.role.toUpperCase() == 'ADMIN')
         .length;
+    final media = group.mediaShared;
+    final mediaCount = group.totalMediaCount;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -149,7 +146,6 @@ class UserProfileState extends ConsumerState<UserProfile> {
                         title: 'Members',
                         value: '${group.members.length} participants',
                       ),
-                      ProfileDetailItem(title: 'Admins', value: '$adminCount'),
                       const PrimaryText(
                         'Group Members',
                         fontSize: 18,
@@ -166,6 +162,35 @@ class UserProfileState extends ConsumerState<UserProfile> {
                         (member) => _memberTile(currentUser, member),
                       ),
                       const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          PrimaryText(
+                            'Media Shared',
+                            fontSize: 18,
+                            fontWeight: FontWeight.w500,
+                            color: DefaultColorSheet.grey500,
+                          ),
+                          const Spacer(),
+                          InkWell(
+                            child: PrimaryText(
+                              mediaCount > media.length
+                                  ? 'View all ($mediaCount)'
+                                  : 'View all',
+                              color: DefaultColorSheet.green500,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (media.isEmpty) ...[
+                        const PrimaryText(
+                          'No media found',
+                          textAlign: TextAlign.center,
+                        ),
+                      ] else ...[
+                        const SizedBox(height: 12),
+                        MediaSharedList(media: media),
+                      ],
                     ],
                   ),
                 ),
@@ -178,6 +203,8 @@ class UserProfileState extends ConsumerState<UserProfile> {
   }
 
   Widget _buildUserProfile(UserProfileModal info) {
+    final media = info.mediaShared;
+    final mediaCount = info.totalMediaCount;
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -259,17 +286,24 @@ class UserProfileState extends ConsumerState<UserProfile> {
                           const Spacer(),
                           InkWell(
                             child: PrimaryText(
-                              'View all',
+                              mediaCount > media.length
+                                  ? 'View all ($mediaCount)'
+                                  : 'View all',
                               color: DefaultColorSheet.green500,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
                       ),
-                      const PrimaryText(
-                        'No media found',
-                        textAlign: TextAlign.center,
-                      ),
+                      if (media.isEmpty) ...[
+                        const PrimaryText(
+                          'No media found',
+                          textAlign: TextAlign.center,
+                        ),
+                      ] else ...[
+                        const SizedBox(height: 12),
+                        MediaSharedList(media: media),
+                      ],
                     ],
                   ),
                 ),

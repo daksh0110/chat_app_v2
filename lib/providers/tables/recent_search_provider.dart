@@ -16,7 +16,6 @@ class RecentSearchProvider extends Notifier {
   build() {}
 
   Stream<List<SearchItem>> getRecentSearches() {
-    debugPrint("Fetching recent searches");
     final db = ref.read(databaseProvider);
     final query = db.select(db.recentSearchesTable).join([
       leftOuterJoin(

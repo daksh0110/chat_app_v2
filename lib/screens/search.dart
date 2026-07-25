@@ -103,6 +103,9 @@ class _SearchState extends ConsumerState<Search> {
               child: StreamBuilder<List<SearchItem>>(
                 stream: recentSearches,
                 builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
                   if (snapshot.hasError) {
                     debugPrint("Search.StreamBuilder error: ${snapshot.error}");
                     return Center(

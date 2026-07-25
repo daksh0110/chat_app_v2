@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/core/network/api_client.dart';
 import 'package:my_app/data/services/user_api_service.dart';
 import 'package:my_app/modal/upload_responses/upload_attachment.dart';
 import 'package:my_app/modal/user.modal.dart';
+import 'package:my_app/providers/database_provider.dart';
 
 import 'package:my_app/providers/socket_provider.dart';
 import 'package:my_app/providers/tables/user_preference_table_provider.dart';
@@ -41,7 +41,6 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     }
 
     final userTableProvider = ref.read(usersTableProvider.notifier);
-    debugPrint("Updating user profile in local database: ${profile.data!.bio}");
     await userTableProvider.updateUserProfile(
       UserModel(
         id: profile.data!.id,
@@ -70,6 +69,9 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   }
 
   Future<void> logout() async {
+    final db = ref.read(databaseProvider);
+
+    await db.clearAllData();
     await ref.read(tokenProvider.notifier).clear();
     ref.read(socketProvider).disconnect();
 

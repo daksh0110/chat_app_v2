@@ -54,7 +54,7 @@ class GroupData {
       chatId: json['chat_id'] ?? '',
       name: json['name'] ?? '',
       profilePictureUrl: json['profile_pic_url'] ?? '',
-      description: json['description'] ?? '',
+      description: json['bio'] ?? '',
       type: json['type'] ?? 'GROUP',
       participants: (json['participants'] as List? ?? [])
           .map((e) => Participant.fromJson(e))

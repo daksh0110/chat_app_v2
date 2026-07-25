@@ -10,10 +10,6 @@ final userPreferenceTableProvider =
       UserPreferenceTableProvider.new,
     );
 
-final currentUserIdProvider = FutureProvider<String?>((ref) async {
-  return ref.read(userPreferenceTableProvider.notifier).getCurrentUserId();
-});
-
 final userProvider = StreamProvider<UserModel?>((ref) {
   return ref.read(userPreferenceTableProvider.notifier).getUser();
 });

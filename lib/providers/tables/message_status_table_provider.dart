@@ -21,7 +21,6 @@ class MessageStatusTableProvider extends Notifier {
     List<MessageStatus> statuses,
     String messageId,
   ) async {
-    debugPrint("reached at bulkCreateMessageStatus");
     final db = ref.read(databaseProvider);
     await db.managers.messageStatusTable.bulkCreate(
       (o) => statuses.map((status) {

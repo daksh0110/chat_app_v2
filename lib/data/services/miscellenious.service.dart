@@ -9,12 +9,9 @@ class MiscelleniousService {
   MiscelleniousService(this.apiClient);
 
   Future<ServerStatusResponse> verifyServerConnection() async {
-    debugPrint("verifyServerConnection CALLED");
 
     try {
-      debugPrint(ApiConstants.backendUrl);
       final response = await apiClient.get(ApiConstants.backendUrl);
-      debugPrint("DATA: $response");
       if (response is Map<String, dynamic>) {
         return ServerStatusResponse.fromJson(response);
       } else {

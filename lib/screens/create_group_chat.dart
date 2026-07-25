@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
+import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/modal/group_creation_modal.dart';
 import 'package:my_app/modal/upload_responses/upload_attachment.dart';
 import 'package:my_app/modal/user.modal.dart';
@@ -126,7 +127,11 @@ class _createGroupChatState extends ConsumerState<CreateGroupChat> {
 
       if (!mounted) return;
 
-      Navigator.pop(context);
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.home,
+        (route) => false,
+      );
     } catch (e) {
       if (!mounted) return;
 

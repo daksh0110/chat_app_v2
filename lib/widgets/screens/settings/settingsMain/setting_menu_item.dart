@@ -10,7 +10,9 @@ class SettingMenuItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () {},
+      onTap: () {
+        Navigator.pushNamed(context, item.link);
+      },
       child: Row(
         children: [
           Container(

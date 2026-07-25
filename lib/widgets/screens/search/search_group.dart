@@ -36,9 +36,7 @@ class SearchGroup extends ConsumerWidget {
             final item = list.items[index];
             final media = item.media;
             final profilePicUrl = item.profilePicUrl;
-            debugPrint(
-              "Building SearchGroupItem for ${item.name}, profilePicUrl: $profilePicUrl, media key: ${media?.key}",
-            );
+
             return FutureBuilder<ApiResponse<String>>(
               future:
                   (profilePicUrl == null || profilePicUrl.isEmpty) &&

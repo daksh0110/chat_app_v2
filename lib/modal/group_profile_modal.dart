@@ -1,9 +1,13 @@
+import 'package:my_app/modal/user_profile_modal.dart';
+
 class GroupProfile {
   final String chatId;
   final String name;
   final String description;
   final String? profilePicUrl;
   final List<GroupMember> members;
+  final List<MediaShared> mediaShared;
+  final int totalMediaCount;
 
   GroupProfile({
     required this.chatId,
@@ -11,6 +15,8 @@ class GroupProfile {
     required this.description,
     this.profilePicUrl,
     required this.members,
+    this.mediaShared = const [],
+    this.totalMediaCount = 0,
   });
 }
 

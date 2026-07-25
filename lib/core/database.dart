@@ -40,6 +40,22 @@ class AppDatabase extends _$AppDatabase {
   // }
 
   // --- Recent Searches ---
+
+  Future<void> clearAllData() async {
+    await transaction(() async {
+      await batch((batch) {
+        batch.deleteAll(messages);
+        batch.deleteAll(chatListTable);
+        batch.deleteAll(usersTable);
+        batch.deleteAll(chatParticipants);
+        batch.deleteAll(messageStatusTable);
+        batch.deleteAll(mediaTable);
+        batch.deleteAll(recentSearchesTable);
+        batch.deleteAll(userPreferencesTable);
+        batch.deleteAll(groupListTable);
+      });
+    });
+  }
 }
 
 LazyDatabase _openConnection() {

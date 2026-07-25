@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/core/app_routes.dart';
+import 'package:my_app/data/settins_main_data.dart';
 import 'package:my_app/modal/screens/search/search_item.dart';
 import 'package:my_app/modal/user.modal.dart';
 import 'package:my_app/providers/tables/user_preference_table_provider.dart';
 import 'package:my_app/widgets/comman/primary_container.dart';
 import 'package:my_app/widgets/screens/search/search_group_item.dart';
+import 'package:my_app/widgets/screens/settings/settingsMain/setting_menu_item.dart';
 
 class SettingsMain extends ConsumerWidget {
   const SettingsMain({super.key});
@@ -14,7 +16,6 @@ class SettingsMain extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userStream = ref.read(userPreferenceTableProvider.notifier).getUser();
-
     return PrimaryContainer(
       children: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
@@ -53,18 +54,18 @@ class SettingsMain extends ConsumerWidget {
             ),
 
             const SizedBox(height: 20),
-            Divider(color: DefaultColorSheet.grey600),
-            const SizedBox(height: 30),
-            // Expanded(
-            //   child: ListView.separated(
-            //     shrinkWrap: true,
-            //     itemBuilder: (context, index) {
-            //       return SettingMenuItem(item: settingMenuData[index]);
-            //     },
-            //     separatorBuilder: (context, index) => SizedBox(height: 30),
-            //     itemCount: settingMenuData.length,
-            //   ),
-            // ),
+            Divider(color: const Color(0xFFF5F6F6)),
+            const SizedBox(height: 10),
+            Expanded(
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemBuilder: (context, index) {
+                  return SettingMenuItem(item: settingMenuData[index]);
+                },
+                separatorBuilder: (context, index) => SizedBox(height: 30),
+                itemCount: settingMenuData.length,
+              ),
+            ),
           ],
         ),
       ),
