@@ -4,6 +4,7 @@ import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/modal/chat_list_modal.dart';
 import 'package:my_app/providers/message_typing_provider.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
+import 'package:my_app/widgets/screens/home/image_preview.dart';
 import 'dart:io';
 
 class ChatListItem extends ConsumerWidget {
@@ -46,28 +47,41 @@ class ChatListItem extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // Profile Image
-              ClipOval(
-                child: isProfilePicValid
-                    ? Image.file(
-                        File(chat.profilePicUrl!),
-                        width: 46,
-                        height: 46,
-                        fit: BoxFit.cover,
-                      )
-                    : Container(
-                        decoration: BoxDecoration(
-                          color: Color(0xFF075E54),
-                          shape: BoxShape.circle,
+              GestureDetector(
+                onTap: isProfilePicValid
+                    ? () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => ProfileImagePreview(
+                            imagePath: chat.profilePicUrl!,
+                          ),
+                        );
+                      }
+                    : null,
+                child: ClipOval(
+                  child: isProfilePicValid
+                      ? Image.file(
+                          File(chat.profilePicUrl!),
+                          width: 46,
+                          height: 46,
+                          fit: BoxFit.cover,
+                        )
+                      : Container(
+                          decoration: BoxDecoration(
+                            color: Color(0xFF075E54),
+
+                            shape: BoxShape.circle,
+                          ),
+                          width: 46,
+                          height: 46,
+                          alignment: Alignment.center,
+                          child: PrimaryText(
+                            (chat.name ?? "")[0].toUpperCase(),
+                            color: Colors.white,
+                            fontSize: 26,
+                          ),
                         ),
-                        width: 46,
-                        height: 46,
-                        alignment: Alignment.center,
-                        child: PrimaryText(
-                          (chat.name ?? "")[0].toUpperCase(),
-                          color: Colors.white,
-                          fontSize: 26,
-                        ),
-                      ),
+                ),
               ),
 
               const SizedBox(width: 12),

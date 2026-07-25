@@ -67,7 +67,6 @@ class CreateGroupChatProvider extends Notifier {
     }
 
     final chatId = response.data?.chatId;
-    debugPrint("recieved chatId here in createGroup Provider: ${chatId}");
     if (chatId == null) {
       throw Exception("Chat ID not received");
     }

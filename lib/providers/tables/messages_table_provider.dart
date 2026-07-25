@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/core/database.dart';
 import 'package:my_app/modal/screens/message/message_body_request.dart';
+import 'package:my_app/modal/user_profile_modal.dart';
 import 'package:my_app/providers/database_provider.dart';
 
 final messagesTableProvider = NotifierProvider<MessagesTableProvider, void>(
@@ -72,5 +73,66 @@ class MessagesTableProvider extends Notifier {
     } catch (e) {
       debugPrint(e.toString());
     }
+  }
+
+  Future<({List<MediaShared> media, int count})> fetchMessagesImages({
+    required String chatId,
+    int limit = 4,
+  }) async {
+    final db = ref.read(databaseProvider);
+
+    final rows =
+        await (db.select(db.messages)
+              ..where((tbl) => tbl.chatId.equals(chatId))
+              ..orderBy([
+                (tbl) => OrderingTerm(
+                  expression: tbl.createdAt,
+                  mode: OrderingMode.desc,
+                ),
+              ]))
+            .join([
+              leftOuterJoin(
+                db.mediaTable,
+                db.mediaTable.actorId.equalsExp(db.messages.id),
+              ),
+              leftOuterJoin(
+                db.usersTable,
+                db.usersTable.userId.equalsExp(db.messages.senderId),
+              ),
+            ])
+            .get();
+
+    final media = rows
+        .map((row) {
+          final mediaRow = row.readTableOrNull(db.mediaTable);
+          final user = row.readTableOrNull(db.usersTable);
+          if (mediaRow == null) return null;
+
+          return MediaShared(
+            key: mediaRow.key ?? "",
+            contentType: mediaRow.contentType ?? "",
+            type: mediaRow.Type ?? "",
+            name: mediaRow.name ?? "",
+            location: mediaRow.location,
+            actorId: mediaRow.actorId,
+            userId: user?.userId ?? "",
+            userName: user?.name ?? "",
+          );
+        })
+        .whereType<MediaShared>()
+        .toList();
+
+    return (media: media.take(limit).toList(), count: media.length);
+  }
+
+  Future<int> unreadCount(String chatId) async {
+    final db = ref.read(databaseProvider);
+    final messages =
+        await (db.select(db.messages)..where(
+              (tbl) => tbl.chatId.equals(chatId) & tbl.isRead.equals(false),
+            ))
+            .get();
+
+    return messages.length;
   }
 }

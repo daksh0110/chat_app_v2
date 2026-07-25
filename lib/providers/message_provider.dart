@@ -101,7 +101,6 @@ class MessageNotifer extends Notifier {
   }
 
   Future<void> _handleMessage(SendMessageAck data) async {
-    log(data.toString());
     try {
       final database = ref.read(databaseProvider);
       final currentUser = ref.watch(userPreferenceTableProvider).value;
@@ -166,6 +165,11 @@ class MessageNotifer extends Notifier {
               .read(mediaTableProvider.notifier)
               .bulkAddMediaDocuments(medias, messageId);
         }
+
+        final unreadCount = await ref
+            .read(messagesTableProvider.notifier)
+            .unreadCount(chatId);
+
         final ChatListModal chatData = ChatListModal(
           id: chatId,
           chatId: chatId,
@@ -177,6 +181,7 @@ class MessageNotifer extends Notifier {
           lastMessageTime: createdAt.toString(),
           receiverId: data.senderId,
           type: "",
+          unReadCount: unreadCount,
         );
         await ref
             .read(chatListTableProvider.notifier)
@@ -205,7 +210,6 @@ class MessageNotifer extends Notifier {
 
   Future<void> sendMessage(SendMessageRequest request) async {
     try {
-      log(request.toString());
       final database = ref.read(databaseProvider);
       final currentUserId = ref.watch(userPreferenceTableProvider).value;
       final chatListTableProviderRef = ref.read(chatListTableProvider.notifier);
@@ -584,13 +588,11 @@ class MessageNotifer extends Notifier {
       ) async {
         acknowledgeEvent(data);
         final currentUser = ref.watch(userPreferenceTableProvider).value;
-        debugPrint("current USer Exist: $currentUser");
         if (currentUser == null) return;
 
         final payload = CreateGroupResponse.fromJson(
           Map<String, dynamic>.from(data),
         );
-        log(payload.toString());
 
         if (payload.data?.chatId.isEmpty ?? true) return;
         ref

@@ -11,6 +11,7 @@ import 'package:my_app/providers/tables/chat_participants_table.dart';
 import 'package:my_app/providers/tables/groups_table_provider.dart';
 import 'package:my_app/providers/tables/user_preference_table_provider.dart';
 import 'package:my_app/providers/tables/users_table_provider.dart';
+import 'package:my_app/providers/tables/messages_table_provider.dart';
 import 'package:my_app/modal/user.modal.dart';
 import 'package:my_app/providers/token_provider.dart';
 
@@ -34,6 +35,10 @@ class ChatListTableProvider extends Notifier {
     if (chatquery == null) {
       return null;
     }
+
+    final unreadMessages = await ref
+        .read(messagesTableProvider.notifier)
+        .unreadCount(chatId);
 
     if (chatquery.type == "DIRECT") {
       final participant =
@@ -73,7 +78,7 @@ class ChatListTableProvider extends Notifier {
         id: chatId, // Using chatId as the unique identifier
         lastMessage: chatquery.lastMessage ?? "",
         lastMessageTime: chatquery.lastMessageTime?.toString() ?? "",
-        unReadCount: chatquery.unReadCount,
+        unReadCount: unreadMessages,
       );
     } else {
       final groupQuery = await (db.select(db.chatListTable).join([
@@ -101,7 +106,7 @@ class ChatListTableProvider extends Notifier {
         id: chatId,
         lastMessage: chatquery.lastMessage ?? "",
         lastMessageTime: chatquery.lastMessageTime?.toString() ?? "",
-        unReadCount: chatquery.unReadCount,
+        unReadCount: unreadMessages,
       );
     }
   }
@@ -124,9 +129,12 @@ class ChatListTableProvider extends Notifier {
     );
   }
 
+  Future<int> unreadCount(String chatId) async {
+    return await ref.read(messagesTableProvider.notifier).unreadCount(chatId);
+  }
+
   Future<void> createChat(ChatListModal chat) async {
     final db = ref.read(databaseProvider);
-    debugPrint(chat.chatId);
     final currentUser = ref.watch(userPreferenceTableProvider).value;
     if (currentUser == null) {
       throw Exception("Current user ID is null");
@@ -134,7 +142,6 @@ class ChatListTableProvider extends Notifier {
     String finalType;
     if (chat.type == "") {
       final token = ref.read(tokenProvider).value;
-      debugPrint("reached creatChat token: $token");
       final ApiClient apiClient = ApiClient();
       final response = await ChatApiService(
         apiClient,
@@ -223,7 +230,10 @@ class ChatListTableProvider extends Notifier {
           final isNewer =
               existingChat.lastMessageTime == null ||
               (newTime != null && newTime >= existingChat.lastMessageTime!);
-          final unread = shouldAutoRead ? 0 : (existingChat.unReadCount) + 1;
+
+          final unreadMessages = shouldAutoRead
+              ? 0
+              : await unreadCount(chat.chatId);
 
           await (db.update(
             db.chatListTable,
@@ -233,7 +243,7 @@ class ChatListTableProvider extends Notifier {
                   ? Value(chat.lastMessage)
                   : const Value.absent(),
               lastMessageTime: isNewer ? Value(newTime) : const Value.absent(),
-              unReadCount: Value(unread),
+              unReadCount: Value(unreadMessages),
               isDeleted: const Value(false),
             ),
           );

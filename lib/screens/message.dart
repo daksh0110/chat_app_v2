@@ -226,14 +226,10 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
         ? (onlineCount > 0 ? "$onlineCount online" : "$totalMembers members")
         : null;
 
-    debugPrint(
-      "MessageScreen.build: chatId=$chatId, receiverId=$receiverId, name=$name, profilePicUrl=$profilePicUrl, isGroup=$isGroup, subtitle=$subtitle",
-    );
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: Header(
-        id: isGroup ? chatId : receiverId,
+        id: chatId.isNotEmpty ? chatId : receiverId,
         name: name,
         isOnline: _isOnline,
         profilePicUrl: profilePicUrl,

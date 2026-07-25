@@ -76,7 +76,6 @@ class UploadService {
         body,
         token: token,
       );
-      debugPrint("url ${ApiConstants.baseUrl}${ApiConstants.uploadEndpoint}");
 
       final apiResponse = ApiResponse<PresignedUrlResponse>.fromJson(
         response,

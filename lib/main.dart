@@ -16,6 +16,7 @@ import 'package:my_app/screens/message.dart';
 import 'package:my_app/screens/new_chat_screen.dart';
 import 'package:my_app/screens/onboarding_screen.dart';
 import 'package:my_app/screens/search.dart';
+import 'package:my_app/screens/settings/account/accounts_main.dart';
 import 'package:my_app/screens/settings/profile/profile_edit.dart';
 import 'package:my_app/screens/settings/settings_main.dart';
 import 'package:my_app/screens/sign_up.dart';
@@ -153,6 +154,7 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
         AppRoutes.createGroupChat: (context) => CreateGroupChat(),
         AppRoutes.newChat: (context) => const NewChatScreen(),
         AppRoutes.profileEdit: (context) => const ProfileEdit(),
+        AppRoutes.accountsMain: (context) => const AccountsPage(),
       },
     );
   }
