@@ -78,9 +78,11 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
     profilePicUrl = args.profilePicUrl;
     isGroup = args.isGroupChat == "GROUP";
 
-    _loadChatData();
-
-    _initialiseSockets();
+    _loadChatData().then((_) {
+      if (mounted) {
+        _initialiseSockets();
+      }
+    });
   }
 
   void _initialiseSockets() {
@@ -137,7 +139,9 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
       _loadGroupParticipants().then((_) {
         socketService.checkGroupStatus(chatId);
       });
-    } else {}
+    } else {
+      socketService.checkUserStatus(receiverId);
+    }
   }
 
   @override

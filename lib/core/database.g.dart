@@ -2114,6 +2114,7 @@ class $MediaTableTable extends MediaTable
     true,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
   );
   static const VerificationMeta _urlMeta = const VerificationMeta('url');
   @override

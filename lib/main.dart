@@ -8,24 +8,10 @@ import 'package:my_app/providers/message_provider.dart';
 import 'package:my_app/providers/server_connection_provider.dart';
 import 'package:my_app/providers/socket_provider.dart';
 import 'package:my_app/providers/token_provider.dart';
-import 'package:my_app/screens/change_password.dart';
-import 'package:my_app/screens/create_group_chat.dart';
 import 'package:my_app/screens/main_screen.dart';
-import 'package:my_app/screens/log_in.dart';
-import 'package:my_app/screens/message.dart';
-import 'package:my_app/screens/new_chat_screen.dart';
 import 'package:my_app/screens/onboarding_screen.dart';
-import 'package:my_app/screens/search.dart';
-import 'package:my_app/screens/settings/account/accounts_main.dart';
-import 'package:my_app/screens/settings/profile/profile_edit.dart';
-import 'package:my_app/screens/settings/settings_main.dart';
-import 'package:my_app/screens/sign_up.dart';
-import 'package:my_app/screens/google_password_setup.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:my_app/screens/profile_setup.dart';
-import 'package:my_app/screens/user_profile.dart';
-import 'package:my_app/screens/verify_email.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:my_app/services/socket/misc_socket.dart';
@@ -138,24 +124,7 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
         },
       ),
 
-      routes: {
-        AppRoutes.home: (context) => MainScreen(),
-        AppRoutes.onboarding: (context) => const OnboardingScreen(),
-        AppRoutes.logIn: (context) => const LogIn(),
-        AppRoutes.signUp: (context) => const SignUp(),
-        AppRoutes.googlePasswordSetup: (context) => const GooglePasswordSetup(),
-        AppRoutes.search: (context) => const Search(),
-        AppRoutes.message: (context) => const MessageScreen(),
-        AppRoutes.settingsMain: (context) => const SettingsMain(),
-        AppRoutes.changePassword: (context) => const ChangePassword(),
-        AppRoutes.verifyEmail: (context) => const VerifyEmailScreen(),
-        AppRoutes.profileSetup: (context) => const ProfileSetupScreen(),
-        AppRoutes.userProfile: (context) => UserProfile(),
-        AppRoutes.createGroupChat: (context) => CreateGroupChat(),
-        AppRoutes.newChat: (context) => const NewChatScreen(),
-        AppRoutes.profileEdit: (context) => const ProfileEdit(),
-        AppRoutes.accountsMain: (context) => const AccountsPage(),
-      },
+      routes: AppRoutes.routes,
     );
   }
 }

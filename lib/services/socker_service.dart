@@ -30,9 +30,8 @@ class SocketService {
     socket!.onConnect((_) {
       print('✅ Connected');
       _registeredEvents.clear();
-      final callbacks = List<void Function()>.from(_onConnectCallbacks);
-      _onConnectCallbacks.clear();
-      for (final cb in callbacks) {
+
+      for (final cb in _onConnectCallbacks) {
         cb();
       }
     });
@@ -51,10 +50,10 @@ class SocketService {
   }
 
   void onConnect(void Function() callback) {
+    _onConnectCallbacks.add(callback);
+
     if (socket?.connected == true) {
       callback();
-    } else {
-      _onConnectCallbacks.add(callback);
     }
   }
 

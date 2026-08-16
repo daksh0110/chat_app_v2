@@ -79,6 +79,7 @@ class ChatListTableProvider extends Notifier {
         lastMessage: chatquery.lastMessage ?? "",
         lastMessageTime: chatquery.lastMessageTime?.toString() ?? "",
         unReadCount: unreadMessages,
+        receiverId: otherParticipant,
       );
     } else {
       final groupQuery = await (db.select(db.chatListTable).join([

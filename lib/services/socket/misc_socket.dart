@@ -1,5 +1,5 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:my_app/providers/global_queue_provider.dart';
 import 'package:my_app/providers/socket_provider.dart';
 import 'package:my_app/providers/tables/users_table_provider.dart';
 import 'package:my_app/providers/message_provider.dart';
@@ -16,8 +16,19 @@ class MiscellaneousNotifier extends Notifier<void> {
     socketService.listenUserUpdateDetails((data) {
       ref.read(messageProvider.notifier).acknowledgeEvent(data);
       ref
-          .read(usersTableProvider.notifier)
-          .fetchAndUpdateUserProfile(data["user_id"]);
+          .read(globalQueueProvider.notifier)
+          .add<Map<String, dynamic>>(
+            value: Map<String, dynamic>.from(data),
+            process: (data) async {
+              final userId = data["user_id"];
+
+              if (userId == null) return;
+
+              await ref
+                  .read(usersTableProvider.notifier)
+                  .fetchAndUpdateUserProfile(userId);
+            },
+          );
     });
   }
 }
