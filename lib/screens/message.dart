@@ -231,7 +231,7 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
         : null;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFECE5DD),
       appBar: Header(
         id: chatId.isNotEmpty ? chatId : receiverId,
         name: name,

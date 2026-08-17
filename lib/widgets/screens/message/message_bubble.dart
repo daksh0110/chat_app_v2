@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:my_app/colors/defaullt_color_sheet.dart';
 
 enum MessageAlignment { left, center, right }
 
@@ -29,6 +28,24 @@ class MessageBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final isLeft = alignment == MessageAlignment.left;
     final isRight = alignment == MessageAlignment.right;
+    final resolvedColor =
+        backgroundColor ??
+        (isRight
+            ? const Color(0xFFDCF8C6)
+            : isLeft
+            ? Colors.white
+            : Colors.transparent);
+    final isMediaOnly = resolvedColor == Colors.transparent;
+
+    // Tail-style border radius: small nub on the "sender" corner
+    final resolvedRadius =
+        borderRadius ??
+        BorderRadius.only(
+          topLeft: Radius.circular(isRight ? 18 : (isGrouped ? 18 : 4)),
+          topRight: Radius.circular(isLeft ? 18 : (isGrouped ? 18 : 4)),
+          bottomLeft: const Radius.circular(18),
+          bottomRight: const Radius.circular(18),
+        );
 
     return Align(
       alignment: switch (alignment) {
@@ -37,27 +54,30 @@ class MessageBubble extends StatelessWidget {
         MessageAlignment.right => Alignment.centerRight,
       },
       child: Container(
-        margin: margin ?? EdgeInsets.fromLTRB(12, isGrouped ? 1 : 4, 12, 0),
-        padding: padding ?? const EdgeInsets.fromLTRB(10, 8, 10, 8),
+        margin:
+            margin ??
+            EdgeInsets.fromLTRB(
+              isLeft ? 8 : 60,
+              isGrouped ? 1 : 3,
+              isRight ? 8 : 60,
+              0,
+            ),
+        padding: padding ?? const EdgeInsets.fromLTRB(10, 7, 10, 7),
         constraints: BoxConstraints(
-          maxWidth: MediaQuery.sizeOf(context).width * (maxWidthFactor ?? .7),
+          maxWidth: MediaQuery.sizeOf(context).width * (maxWidthFactor ?? .75),
         ),
         decoration: BoxDecoration(
-          color:
-              backgroundColor ??
-              (isRight
-                  ? DefaultColorSheet.green500
-                  : isLeft
-                  ? const Color(0xFFF2F7FB)
-                  : Colors.transparent),
-          borderRadius:
-              borderRadius ??
-              BorderRadius.only(
-                topLeft: Radius.circular(isRight ? 16 : 0),
-                topRight: Radius.circular(isLeft ? 16 : 0),
-                bottomLeft: const Radius.circular(16),
-                bottomRight: const Radius.circular(16),
-              ),
+          color: resolvedColor,
+          boxShadow: isMediaOnly
+              ? null
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 6,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+          borderRadius: resolvedRadius,
         ),
         child: child,
       ),

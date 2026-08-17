@@ -7,8 +7,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mime/mime.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/core/util/media_file_helper.dart';
-import 'package:my_app/widgets/screens/message/attachment_modal.dart';
-import 'package:popover/popover.dart';
+import 'package:my_app/widgets/screens/message/attachment_bottom_sheet.dart';
+import 'package:my_app/widgets/screens/message/media_picker_sheet.dart';
 
 class ChatInputBox extends StatefulWidget {
   final Function(String, List<XFile>) onSend;
@@ -31,13 +31,7 @@ class _ChatInputBoxState extends State<ChatInputBox> {
   final List<XFile> attachments = [];
   final ImagePicker _picker = ImagePicker();
 
-  bool _isTyping = false;
-
   void onTyping(String text) {
-    setState(() {
-      _isTyping = text.isNotEmpty;
-    });
-
     if (text.isEmpty) {
       widget.onStopTyping();
       return;
@@ -56,37 +50,34 @@ class _ChatInputBoxState extends State<ChatInputBox> {
     return mime.startsWith('video/');
   }
 
+  Future<void> _addAttachments(Iterable<XFile> files) async {
+    final permanentFiles = await Future.wait(
+      files.map((file) async {
+        final permanentPath = await MediaFileHelper.copyPickedFileToAppDir(
+          file,
+        );
+        return XFile(permanentPath);
+      }),
+    );
+
+    if (!mounted) return;
+    setState(() => attachments.addAll(permanentFiles));
+  }
+
+  Future<void> _openMediaPicker() async {
+    await MediaPickerSheet.show(
+      context,
+      onSelected: (files) =>
+          _addAttachments(files.map((file) => XFile(file.path))),
+    );
+  }
+
   Future<void> handleAttachment(String key) async {
     switch (key) {
-      case "gallery":
-        final images = await _picker.pickMultiImage(requestFullMetadata: true);
-        if (images.isEmpty) return;
-
-        // Copy each picked image from the volatile cache to permanent storage.
-        final permanentImages = await Future.wait(
-          images.map((img) async {
-            final permanentPath =
-                await MediaFileHelper.copyPickedFileToAppDir(img);
-            return XFile(permanentPath);
-          }),
-        );
-
-        setState(() {
-          attachments.addAll(permanentImages);
-        });
-        return;
-
-      case "video":
-        final video = await _picker.pickVideo(source: ImageSource.gallery);
-        if (video == null) return;
-
-        // Copy video from cache to permanent storage.
-        final permanentVideoPath =
-            await MediaFileHelper.copyPickedFileToAppDir(video);
-
-        setState(() {
-          attachments.add(XFile(permanentVideoPath));
-        });
+      case "camera":
+        final image = await _picker.pickImage(source: ImageSource.camera);
+        if (image == null) return;
+        await _addAttachments([image]);
         return;
 
       case "file":
@@ -101,18 +92,7 @@ class _ChatInputBoxState extends State<ChatInputBox> {
               .map((f) => XFile(f.path!))
               .toList();
 
-          // Copy each file from its picker path to permanent storage.
-          final permanentFiles = await Future.wait(
-            pickedXFiles.map((f) async {
-              final permanentPath =
-                  await MediaFileHelper.copyPickedFileToAppDir(f);
-              return XFile(permanentPath);
-            }),
-          );
-
-          setState(() {
-            attachments.addAll(permanentFiles);
-          });
+          await _addAttachments(pickedXFiles);
         }
         return;
 
@@ -142,7 +122,7 @@ class _ChatInputBoxState extends State<ChatInputBox> {
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 2),
                 itemCount: attachments.length,
-                separatorBuilder: (_, __) {
+                separatorBuilder: (_, index) {
                   return const SizedBox(width: 8);
                 },
                 itemBuilder: (context, index) {
@@ -163,7 +143,7 @@ class _ChatInputBoxState extends State<ChatInputBox> {
                               ? Colors.transparent
                               : Colors.grey[100],
                           border: Border.all(
-                            color: Colors.black.withOpacity(0.06),
+                            color: Colors.black.withValues(alpha: 0.06),
                             width: 1,
                           ),
                           image: isImage
@@ -231,14 +211,11 @@ class _ChatInputBoxState extends State<ChatInputBox> {
                   padding: EdgeInsets.zero,
                   splashRadius: 21,
                   onPressed: () {
-                    showPopover(
-                      context: context,
-                      direction: PopoverDirection.top,
-                      width: 220,
-                      bodyBuilder: (context) => AttachmentPopover(
-                        onTap: (key) => handleAttachment(key),
-                      ),
-                      arrowDxOffset: -80,
+                    AttachmentBottomSheet.show(
+                      context,
+                      onCamera: () => handleAttachment('camera'),
+                      onMedia: _openMediaPicker,
+                      onDocuments: () => handleAttachment('file'),
                     );
                   },
                   icon: const Icon(
@@ -322,10 +299,7 @@ class _ChatInputBoxState extends State<ChatInputBox> {
 
                       widget.onStopTyping();
 
-                      setState(() {
-                        _isTyping = false;
-                        attachments.clear();
-                      });
+                      setState(attachments.clear);
 
                       chatMessageController.clear();
                     },
