@@ -1,10 +1,8 @@
 import 'dart:async';
-import 'dart:collection';
-import 'dart:developer';
-
 import 'package:drift/drift.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:my_app/core/network/api_client.dart';
 import 'package:my_app/core/util/get_file_type.dart';
 import 'package:my_app/core/util/parse_time.dart';
@@ -21,6 +19,7 @@ import 'package:my_app/modal/screens/message/send_message_request.dart';
 import 'package:my_app/modal/upload_responses/upload_attachment.dart';
 import 'package:my_app/providers/chat_list_provider.dart';
 import 'package:my_app/providers/database_provider.dart';
+import 'package:my_app/providers/global_queue_provider.dart';
 import 'package:my_app/providers/message_typing_provider.dart';
 import 'package:my_app/providers/socket_provider.dart';
 import 'package:my_app/providers/tables/chat_list_table_provider.dart';
@@ -51,28 +50,6 @@ class MessageNotifer extends Notifier {
     }
   }
 
-  final _messageQueue = Queue<dynamic>();
-  bool _isProcessing = false;
-
-  final _statusQueue = Queue<Future<void> Function()>();
-  bool _isProcessingStatus = false;
-
-  Future<void> _processStatusQueue() async {
-    if (_isProcessingStatus) return;
-    _isProcessingStatus = true;
-
-    while (_statusQueue.isNotEmpty) {
-      final action = _statusQueue.removeFirst();
-      try {
-        await action();
-      } catch (e) {
-        debugPrint("Error in status queue: $e");
-      }
-    }
-
-    _isProcessingStatus = false;
-  }
-
   Future<void> receiveMessage() async {
     ref.read(socketProvider).listenOnce("receive_message", (dynamic data) {
       acknowledgeEvent(data);
@@ -82,23 +59,18 @@ class MessageNotifer extends Notifier {
       }
       final payload = SendMessageAck.fromJson(data);
 
-      _messageQueue.add(payload);
-      _processQueue();
+      ref
+          .read(globalQueueProvider.notifier)
+          .add<SendMessageAck>(
+            value: payload,
+            process: (msg) async {
+              await _handleMessage(msg);
+            },
+          );
     });
   }
 
-  Future<void> _processQueue() async {
-    if (_isProcessing) return;
-
-    _isProcessing = true;
-
-    while (_messageQueue.isNotEmpty) {
-      final data = _messageQueue.removeFirst();
-      await _handleMessage(data);
-    }
-
-    _isProcessing = false;
-  }
+  //
 
   Future<void> _handleMessage(SendMessageAck data) async {
     try {
@@ -385,16 +357,19 @@ class MessageNotifer extends Notifier {
   Future<void> messageDelivered() async {
     ref.read(socketProvider).listenOnce("message_delivered", (data) async {
       acknowledgeEvent(data);
-      _statusQueue.add(() async {
-        await _retry(() async {
-          final payload = MessageDeliveredResponse.fromJson(data);
 
-          await ref
-              .read(messageStatusTableProvider.notifier)
-              .updateMessageStatus(payload, statusRank);
-        });
-      });
-      _processStatusQueue();
+      ref
+          .read(globalQueueProvider.notifier)
+          .add(
+            value: MessageDeliveredResponse.fromJson(data),
+            process: (payload) async {
+              await _retry(() async {
+                await ref
+                    .read(messageStatusTableProvider.notifier)
+                    .updateMessageStatus(payload, statusRank);
+              });
+            },
+          );
     });
   }
 
@@ -402,17 +377,18 @@ class MessageNotifer extends Notifier {
     ref.read(socketProvider).listenOnce("message_read", (data) async {
       acknowledgeEvent(data);
 
-      _statusQueue.add(() async {
-        await _retry(() async {
-          final payload = MessageReadResponse.fromJson(data);
-
-          await ref
-              .read(messageStatusTableProvider.notifier)
-              .updateMessageReadStatus(payload, statusRank);
-        });
-      });
-
-      _processStatusQueue();
+      ref
+          .read(globalQueueProvider.notifier)
+          .add(
+            value: MessageReadResponse.fromJson(data),
+            process: (payload) async {
+              await _retry(() async {
+                await ref
+                    .read(messageStatusTableProvider.notifier)
+                    .updateMessageReadStatus(payload, statusRank);
+              });
+            },
+          );
     });
   }
 
@@ -456,72 +432,159 @@ class MessageNotifer extends Notifier {
     ref.read(socketProvider).emitEvent("chat_sync", null);
   }
 
+  bool _isSendingQueue = false;
+
   Future<void> sendQueueMessages() async {
-    final db = ref.read(databaseProvider);
-    final socketService = ref.read(socketProvider);
-    final currentUser = ref.watch(userPreferenceTableProvider).value;
+    if (_isSendingQueue) return;
+    _isSendingQueue = true;
+    try {
+      final db = ref.read(databaseProvider);
+      final socketService = ref.read(socketProvider);
+      final currentUser = ref.watch(userPreferenceTableProvider).value;
+      final chatListTableProviderRef = ref.read(chatListTableProvider.notifier);
+      final messagesTableProviderRef = ref.read(messagesTableProvider.notifier);
+      final mediaTableProviderRef = ref.read(mediaTableProvider.notifier);
+      final chatParticipantsTableProviderRef = ref.read(
+        chatParticipantsTableProvider.notifier,
+      );
+      final messageStatusTableProviderRef = ref.read(
+        messageStatusTableProvider.notifier,
+      );
 
-    if (currentUser == null) return;
-    if (!socketService.isConnected) return;
+      if (currentUser == null) return;
+      if (!socketService.isConnected) return;
+      debugPrint(currentUser);
+      final rows = await (db.select(db.messageStatusTable).join([
+        innerJoin(
+          db.messages,
+          db.messages.id.equalsExp(db.messageStatusTable.messageId),
+        ),
+      ])..where(db.messageStatusTable.status.equals('sending'))).get();
 
-    final messages = await db.managers.messages
-        .filter((f) => f.message.equals("sending"))
-        .get();
+      final queuedMessageIds = <String>{};
+      final messages = rows
+          .map((r) => r.readTable(db.messages))
+          .where((message) => queuedMessageIds.add(message.id))
+          .toList();
+      debugPrint("unsend Messages : $messages");
+      for (final msg in messages) {
+        if (msg.serverId != null) continue;
 
-    for (final msg in messages) {
-      if (msg.serverId != null) continue;
+        final participants = await db.managers.chatParticipants
+            .filter((f) => f.chatId.equals(msg.chatId))
+            .get();
 
-      final participants = await db.managers.chatParticipants
-          .filter((f) => f.chatId.equals(msg.chatId))
-          .get();
+        final receiver = participants.firstWhere(
+          (p) => p.userId != currentUser,
+        );
 
-      final receiver = participants.firstWhere((p) => p.userId != currentUser);
+        final receiverId = receiver.userId;
 
-      final receiverId = receiver.userId;
+        final isRealChat = !msg.chatId.startsWith("local_");
+        final localAttachments = await (db.select(
+          db.mediaTable,
+        )..where((media) => media.actorId.equals(msg.id))).get();
+        final uploadedAttachments = <UploadAttachment>[];
 
-      final isRealChat = !msg.chatId.startsWith("local_");
-
-      socketService.sendMessageWithAck(
-        "send_message",
-        {
-          "message": msg.message,
-          "receiver_id": receiverId,
-          "temp_id": msg.id,
-          if (isRealChat) "chat_id": msg.chatId,
-        },
-        (response) async {
-          final messageId = response["message_id"];
-          final chatId = response["chat_id"];
-          final createdAt = parseTimestamp(response["created_at"]);
-
-          if (msg.chatId.startsWith("local_")) {
-            await db.managers.chatParticipants
-                .filter((f) => f.chatId.equals(msg.chatId))
-                .update((o) => o(chatId: Value(chatId)));
+        for (final attachment in localAttachments) {
+          if (attachment.key?.isNotEmpty == true) {
+            uploadedAttachments.add(
+              UploadAttachment(
+                key: attachment.key!,
+                contentType:
+                    attachment.contentType ?? 'application/octet-stream',
+                type: attachment.Type ?? '',
+                name: attachment.name ?? '',
+                url: attachment.url,
+              ),
+            );
+            continue;
           }
 
-          await db.managers.chatListTable
-              .filter((f) => f.chatId.equals(msg.chatId))
-              .update(
-                (o) => o(
-                  chatId: Value(chatId),
-                  lastMessage: Value(msg.message),
-                  lastMessageTime: Value(createdAt),
-                ),
-              );
+          final localPath = attachment.location;
+          if (localPath == null || localPath.isEmpty) continue;
 
-          await db.managers.messages
-              .filter((f) => f.id.equals(msg.id))
-              .update(
-                (o) => o(
-                  serverId: Value(messageId),
-                  chatId: Value(chatId),
-                  createdAt: Value(createdAt),
-                  id: Value(messageId),
-                ),
+          final contentType =
+              attachment.contentType ??
+              lookupMimeType(localPath) ??
+              'application/octet-stream';
+          final presignedUrl = await UploadService(ApiClient()).getPresignedUrl(
+            assetType: 'chat',
+            entityType: 'attachments',
+            contentType: contentType,
+            entityId: msg.chatId,
+          );
+          if (!presignedUrl.success) continue;
+
+          final upload = presignedUrl.data!;
+          final statusCode = await UploadService(ApiClient()).uploadToSignedUrl(
+            await XFile(localPath).readAsBytes(),
+            upload.url,
+            contentType,
+          );
+          if (statusCode != 200) continue;
+
+          uploadedAttachments.add(
+            UploadAttachment(
+              key: upload.key ?? '',
+              contentType: contentType,
+              type: attachment.Type ?? getMediaType(contentType),
+              name: attachment.name ?? '',
+            ),
+          );
+        }
+
+        socketService.sendMessageWithAck(
+          "send_message",
+          {
+            "message": msg.message,
+            "receiver_id": receiverId,
+            "temp_id": msg.id,
+            "attachments": uploadedAttachments
+                .map((item) => item.toJson())
+                .toList(),
+            if (isRealChat) "chat_id": msg.chatId,
+          },
+          (response) async {
+            final payload = SendMessageAck.fromJson(response);
+            final realChatId = payload.chatId;
+            final messageId = payload.messageId;
+            final createdAt = parseTimestamp(payload.createdAt);
+
+            if (msg.chatId.startsWith("local_")) {
+              await chatParticipantsTableProviderRef.updateParticipantsChatId(
+                msg.chatId,
+                realChatId,
               );
-        },
-      );
+            }
+
+            await chatListTableProviderRef.updateChatId(msg.chatId, realChatId);
+            await messagesTableProviderRef.updateTempMessage(
+              MessageBodyRequest(
+                chatId: realChatId,
+                tempId: msg.id,
+                createdAt: createdAt,
+              ),
+              messageId,
+            );
+
+            await mediaTableProviderRef.updateActorId(msg.id, messageId);
+
+            await mediaTableProviderRef.updateUploadedMedia(
+              messageId,
+              payload.attachments,
+            );
+
+            await messageStatusTableProviderRef.deleteMessageStatus(msg.id);
+            await messageStatusTableProviderRef.bulkCreateMessageStatus(
+              payload.messageStatuses,
+              messageId,
+            );
+          },
+        );
+      }
+    } finally {
+      _isSendingQueue = false;
     }
   }
 
@@ -596,17 +659,24 @@ class MessageNotifer extends Notifier {
 
         if (payload.data?.chatId.isEmpty ?? true) return;
         ref
-            .read(chatListTableProvider.notifier)
-            .createOrUpdateChatList(
-              ChatListModal(
-                id: currentUser,
-                chatId: payload.data!.chatId,
-                lastMessage: "",
-                lastMessageTime: DateTime.now().millisecondsSinceEpoch
-                    .toString(),
-                bio: payload.data?.bio,
-                type: "GROUP",
-              ),
+            .read(globalQueueProvider.notifier)
+            .add<CreateGroupResponse>(
+              value: payload,
+              process: (CreateGroupResponse payload) async {
+                await ref
+                    .read(chatListTableProvider.notifier)
+                    .createOrUpdateChatList(
+                      ChatListModal(
+                        id: currentUser,
+                        chatId: payload.data!.chatId,
+                        lastMessage: "",
+                        lastMessageTime: DateTime.now().millisecondsSinceEpoch
+                            .toString(),
+                        bio: payload.data?.bio,
+                        type: "GROUP",
+                      ),
+                    );
+              },
             );
       });
     } catch (_) {}

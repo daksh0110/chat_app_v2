@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'package:my_app/core/util/media_file_helper.dart';
 import 'package:my_app/modal/upload_responses/upload_attachment.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -17,6 +18,21 @@ class FileService {
     }
 
     return _writeBytesToProfileDir(response.bodyBytes, actorId, media);
+  }
+
+  /// Downloads a **chat media attachment** and saves it into the permanent
+  /// `chat_media/<type>/` directory via [MediaFileHelper].
+  ///
+  /// Use this instead of [downloadAndSave] for message attachments so the
+  /// file lands in the correct, organized app-documents folder.
+  Future<String> downloadChatMedia({
+    required String downloadUrl,
+    required UploadAttachment media,
+  }) async {
+    return MediaFileHelper.downloadMediaToAppDir(
+      url: downloadUrl,
+      media: media,
+    );
   }
 
   Future<String> _writeBytesToProfileDir(

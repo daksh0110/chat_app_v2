@@ -29,9 +29,8 @@ class MediaTableProvider extends Notifier {
 
       final downloadUrl = await uploadService.resolveDownloadUrl(media);
 
-      localPath = await fileService.downloadAndSave(
+      localPath = await fileService.downloadChatMedia(
         downloadUrl: downloadUrl,
-        actorId: actorId,
         media: media,
       );
     }

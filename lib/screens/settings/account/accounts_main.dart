@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
+import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/providers/auth_notifier_provider.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
 
@@ -33,7 +34,14 @@ class AccountsPage extends ConsumerWidget {
           child: ElevatedButton.icon(
             onPressed: () async {
               await ref.read(authProvider.notifier).logout();
-              Navigator.pop(context);
+
+              if (!context.mounted) return;
+
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                AppRoutes.onboarding,
+                (route) => false,
+              );
             },
             icon: const Icon(Icons.logout),
             label: const Text("Logout"),
