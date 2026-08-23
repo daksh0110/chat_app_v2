@@ -21,12 +21,6 @@ import 'package:my_app/widgets/comman/overlay_banner.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-
-  await NotificationService.initialize();
-
   await dotenv.load(fileName: ".env");
 
   runApp(const ProviderScope(child: MyApp()));
@@ -72,6 +66,15 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
     ref.listen(authProvider, (previous, next) async {
       next.whenData((state) async {
         if (state == AuthState.authenticated) {
+          await Firebase.initializeApp(
+            options: DefaultFirebaseOptions.currentPlatform,
+          );
+
+          FirebaseMessaging.onBackgroundMessage(
+            firebaseMessagingBackgroundHandler,
+          );
+
+          await NotificationService.initialize();
           final token = await ref.read(tokenProvider.future);
 
           if (token == null) return;

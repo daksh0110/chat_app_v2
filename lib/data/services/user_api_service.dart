@@ -151,6 +151,19 @@ class UserApiService {
     }
   }
 
+  Future<ApiResponse<void>> authenticate({required String token}) async {
+    try {
+      final response = await apiClient.get(
+        "${ApiConstants.baseUrl}${ApiConstants.users}/auth",
+        token: token,
+      );
+
+      return ApiResponse<void>.fromJson(response, (_) => {});
+    } catch (e) {
+      throw Exception("Authentication check failed: $e");
+    }
+  }
+
   Future<ApiResponse<SearchItem>> getUserById(String userId) async {
     try {
       final response = await apiClient.get(
