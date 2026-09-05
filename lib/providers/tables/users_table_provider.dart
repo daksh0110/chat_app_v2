@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/core/database.dart';
 import 'package:my_app/core/network/api_client.dart';
@@ -7,6 +8,7 @@ import 'package:my_app/modal/upload_responses/upload_attachment.dart';
 import 'package:my_app/modal/user.modal.dart';
 import 'package:my_app/providers/database_provider.dart';
 import 'package:my_app/providers/tables/media_table_provider.dart';
+import 'package:my_app/providers/tables/request_user_provider.dart';
 import 'package:my_app/providers/tables/user_preference_table_provider.dart';
 
 final usersTableProvider = NotifierProvider<UsersTableProvider, void>(
@@ -78,24 +80,45 @@ class UsersTableProvider extends Notifier {
     return getUserById(userData.id);
   }
 
-  Future<UserModel?> getUserById(String userId) async {
+  Future<bool> doesUserExistInDb(String userId) async {
     final db = ref.read(databaseProvider);
-    final mediaRef = ref.read(mediaTableProvider.notifier);
-    final media = await mediaRef.getMediaByActorId(userId);
 
     final user = await (db.select(
       db.usersTable,
-    )..where((t) => t.userId.equals(userId))).getSingleOrNull();
-    if (user != null) {
-      return UserModel(
-        id: user.userId,
-        name: user.name,
-        email: user.email,
-        bio: user.bio,
-        profilePic: media?.location,
-      );
+    )..where((tbl) => tbl.userId.equals(userId))).getSingleOrNull();
+
+    return user != null;
+  }
+
+  Future<UserModel?> getUserById(String userId) async {
+    final db = ref.read(databaseProvider);
+    final mediaRef = ref.read(mediaTableProvider.notifier);
+
+    final media = await mediaRef.getMediaByActorId(userId);
+
+    final query = db.select(db.usersTable).join([
+      leftOuterJoin(
+        db.friendsTable,
+        db.friendsTable.userId.equalsExp(db.usersTable.userId),
+      ),
+    ])..where(db.usersTable.userId.equals(userId));
+
+    final result = await query.getSingleOrNull();
+
+    if (result == null) {
+      return null;
     }
-    return null;
+
+    final user = result.readTable(db.usersTable);
+    final friend = result.readTableOrNull(db.friendsTable);
+    return UserModel(
+      id: user.userId,
+      name: user.name,
+      email: user.email,
+      bio: user.bio,
+      profilePic: media?.location,
+      relationshipStatus: friend?.status,
+    );
   }
 
   Future<void> updateUserBio(String userId, String newBio) async {
@@ -107,13 +130,17 @@ class UsersTableProvider extends Notifier {
   Future<UserModel?> fetchAndUpdateUserProfile(String userId) async {
     final profile = await UserApiService(ApiClient()).getUserById(userId);
 
-    if (profile.data == null) {
-      throw Exception("Failed to fetch user profile.");
+    if (!profile.success || profile.data == null) {
+      throw Exception(profile.message);
     }
-    final data = profile.data;
+    final data = profile.data!;
+    await ref
+        .read(requestUserProvider.notifier)
+        .insertOrUpdateRequest(data.id, data.relationshipStatus ?? "NONE");
+
     return await updateUserProfile(
       UserModel(
-        id: data!.id,
+        id: data.id,
         name: data.name,
         email: data.email ?? "",
         bio: data.bio ?? "",

@@ -3388,6 +3388,268 @@ class GroupListTableCompanion extends UpdateCompanion<GroupListTableData> {
   }
 }
 
+class $FriendsTableTable extends FriendsTable
+    with TableInfo<$FriendsTableTable, FriendsTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FriendsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isReadMeta = const VerificationMeta('isRead');
+  @override
+  late final GeneratedColumn<bool> isRead = GeneratedColumn<bool>(
+    'is_read',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_read" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [userId, status, isRead];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'friends_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<FriendsTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    if (data.containsKey('is_read')) {
+      context.handle(
+        _isReadMeta,
+        isRead.isAcceptableOrUnknown(data['is_read']!, _isReadMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {userId};
+  @override
+  FriendsTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return FriendsTableData(
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      isRead: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_read'],
+      )!,
+    );
+  }
+
+  @override
+  $FriendsTableTable createAlias(String alias) {
+    return $FriendsTableTable(attachedDatabase, alias);
+  }
+}
+
+class FriendsTableData extends DataClass
+    implements Insertable<FriendsTableData> {
+  final String userId;
+  final String status;
+  final bool isRead;
+  const FriendsTableData({
+    required this.userId,
+    required this.status,
+    required this.isRead,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['user_id'] = Variable<String>(userId);
+    map['status'] = Variable<String>(status);
+    map['is_read'] = Variable<bool>(isRead);
+    return map;
+  }
+
+  FriendsTableCompanion toCompanion(bool nullToAbsent) {
+    return FriendsTableCompanion(
+      userId: Value(userId),
+      status: Value(status),
+      isRead: Value(isRead),
+    );
+  }
+
+  factory FriendsTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return FriendsTableData(
+      userId: serializer.fromJson<String>(json['userId']),
+      status: serializer.fromJson<String>(json['status']),
+      isRead: serializer.fromJson<bool>(json['isRead']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'userId': serializer.toJson<String>(userId),
+      'status': serializer.toJson<String>(status),
+      'isRead': serializer.toJson<bool>(isRead),
+    };
+  }
+
+  FriendsTableData copyWith({String? userId, String? status, bool? isRead}) =>
+      FriendsTableData(
+        userId: userId ?? this.userId,
+        status: status ?? this.status,
+        isRead: isRead ?? this.isRead,
+      );
+  FriendsTableData copyWithCompanion(FriendsTableCompanion data) {
+    return FriendsTableData(
+      userId: data.userId.present ? data.userId.value : this.userId,
+      status: data.status.present ? data.status.value : this.status,
+      isRead: data.isRead.present ? data.isRead.value : this.isRead,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FriendsTableData(')
+          ..write('userId: $userId, ')
+          ..write('status: $status, ')
+          ..write('isRead: $isRead')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(userId, status, isRead);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is FriendsTableData &&
+          other.userId == this.userId &&
+          other.status == this.status &&
+          other.isRead == this.isRead);
+}
+
+class FriendsTableCompanion extends UpdateCompanion<FriendsTableData> {
+  final Value<String> userId;
+  final Value<String> status;
+  final Value<bool> isRead;
+  final Value<int> rowid;
+  const FriendsTableCompanion({
+    this.userId = const Value.absent(),
+    this.status = const Value.absent(),
+    this.isRead = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  FriendsTableCompanion.insert({
+    required String userId,
+    required String status,
+    this.isRead = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : userId = Value(userId),
+       status = Value(status);
+  static Insertable<FriendsTableData> custom({
+    Expression<String>? userId,
+    Expression<String>? status,
+    Expression<bool>? isRead,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (userId != null) 'user_id': userId,
+      if (status != null) 'status': status,
+      if (isRead != null) 'is_read': isRead,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  FriendsTableCompanion copyWith({
+    Value<String>? userId,
+    Value<String>? status,
+    Value<bool>? isRead,
+    Value<int>? rowid,
+  }) {
+    return FriendsTableCompanion(
+      userId: userId ?? this.userId,
+      status: status ?? this.status,
+      isRead: isRead ?? this.isRead,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (isRead.present) {
+      map['is_read'] = Variable<bool>(isRead.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FriendsTableCompanion(')
+          ..write('userId: $userId, ')
+          ..write('status: $status, ')
+          ..write('isRead: $isRead, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3405,6 +3667,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $UserPreferencesTableTable userPreferencesTable =
       $UserPreferencesTableTable(this);
   late final $GroupListTableTable groupListTable = $GroupListTableTable(this);
+  late final $FriendsTableTable friendsTable = $FriendsTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3419,6 +3682,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     recentSearchesTable,
     userPreferencesTable,
     groupListTable,
+    friendsTable,
   ];
 }
 
@@ -5319,6 +5583,168 @@ typedef $$GroupListTableTableProcessedTableManager =
       GroupListTableData,
       PrefetchHooks Function()
     >;
+typedef $$FriendsTableTableCreateCompanionBuilder =
+    FriendsTableCompanion Function({
+      required String userId,
+      required String status,
+      Value<bool> isRead,
+      Value<int> rowid,
+    });
+typedef $$FriendsTableTableUpdateCompanionBuilder =
+    FriendsTableCompanion Function({
+      Value<String> userId,
+      Value<String> status,
+      Value<bool> isRead,
+      Value<int> rowid,
+    });
+
+class $$FriendsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $FriendsTableTable> {
+  $$FriendsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isRead => $composableBuilder(
+    column: $table.isRead,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$FriendsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $FriendsTableTable> {
+  $$FriendsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isRead => $composableBuilder(
+    column: $table.isRead,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$FriendsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FriendsTableTable> {
+  $$FriendsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<bool> get isRead =>
+      $composableBuilder(column: $table.isRead, builder: (column) => column);
+}
+
+class $$FriendsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $FriendsTableTable,
+          FriendsTableData,
+          $$FriendsTableTableFilterComposer,
+          $$FriendsTableTableOrderingComposer,
+          $$FriendsTableTableAnnotationComposer,
+          $$FriendsTableTableCreateCompanionBuilder,
+          $$FriendsTableTableUpdateCompanionBuilder,
+          (
+            FriendsTableData,
+            BaseReferences<_$AppDatabase, $FriendsTableTable, FriendsTableData>,
+          ),
+          FriendsTableData,
+          PrefetchHooks Function()
+        > {
+  $$FriendsTableTableTableManager(_$AppDatabase db, $FriendsTableTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FriendsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FriendsTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FriendsTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> userId = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<bool> isRead = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => FriendsTableCompanion(
+                userId: userId,
+                status: status,
+                isRead: isRead,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String userId,
+                required String status,
+                Value<bool> isRead = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => FriendsTableCompanion.insert(
+                userId: userId,
+                status: status,
+                isRead: isRead,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$FriendsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $FriendsTableTable,
+      FriendsTableData,
+      $$FriendsTableTableFilterComposer,
+      $$FriendsTableTableOrderingComposer,
+      $$FriendsTableTableAnnotationComposer,
+      $$FriendsTableTableCreateCompanionBuilder,
+      $$FriendsTableTableUpdateCompanionBuilder,
+      (
+        FriendsTableData,
+        BaseReferences<_$AppDatabase, $FriendsTableTable, FriendsTableData>,
+      ),
+      FriendsTableData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5341,4 +5767,6 @@ class $AppDatabaseManager {
       $$UserPreferencesTableTableTableManager(_db, _db.userPreferencesTable);
   $$GroupListTableTableTableManager get groupListTable =>
       $$GroupListTableTableTableManager(_db, _db.groupListTable);
+  $$FriendsTableTableTableManager get friendsTable =>
+      $$FriendsTableTableTableManager(_db, _db.friendsTable);
 }

@@ -3,6 +3,7 @@ import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/core/util/route_observer.dart';
 import 'package:my_app/data/services/notification_service.dart';
 import 'package:my_app/providers/auth_notifier_provider.dart';
+import 'package:my_app/providers/friend_requests_provider.dart';
 import 'package:my_app/providers/message_provider.dart';
 
 import 'package:my_app/providers/server_connection_provider.dart';
@@ -14,6 +15,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:my_app/services/socket/friend_request_socket.dart';
 import 'package:my_app/services/socket/misc_socket.dart';
 import 'firebase_options.dart';
 import 'package:my_app/widgets/comman/overlay_banner.dart';
@@ -91,11 +93,13 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
             await ref
                 .read(miscellaneousNotifierProvider.notifier)
                 .listenUserUpdateDetails();
+            ref.read(friendRequestSocketProvider.notifier).listen();
             // notifier.groupsCountSync();
 
             await NotificationService.handleInitialMessage();
           });
           ref.read(socketProvider).connect(token);
+          await seedFriendRequestsFromRest(ref);
         }
       });
     });

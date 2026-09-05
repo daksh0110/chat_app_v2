@@ -1,6 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
+import 'package:my_app/core/app_routes.dart';
+import 'package:my_app/modal/screens/search/message_screen_arguments.dart';
+import 'package:my_app/providers/user_relationship_provider.dart';
 import 'package:my_app/modal/group_profile_modal.dart';
 import 'package:my_app/modal/user_profile_modal.dart';
 import 'package:my_app/providers/tables/user_preference_table_provider.dart';
@@ -9,9 +13,12 @@ import 'package:my_app/modal/screens/search/user_profile_arguments.dart';
 import 'package:my_app/providers/user_profile_provider.dart';
 import 'package:my_app/widgets/comman/primary_container.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
+import 'package:my_app/widgets/comman/toast_notification.dart';
 import 'package:my_app/widgets/comman/user_bubble.dart';
+import 'package:my_app/widgets/screens/userProfile/build_relationship_button.dart';
 import 'package:my_app/widgets/screens/userProfile/media_shared_list.dart';
 import 'package:my_app/widgets/screens/userProfile/profile_detail_item.dart';
+import 'package:toastification/toastification.dart';
 
 class UserProfile extends ConsumerStatefulWidget {
   const UserProfile({super.key});
@@ -22,6 +29,22 @@ class UserProfile extends ConsumerStatefulWidget {
 
 class UserProfileState extends ConsumerState<UserProfile> {
   SearchItem? user;
+  String? _refreshedProfileId;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final routeArgs = ModalRoute.of(context)?.settings.arguments;
+    if (routeArgs is! UserProfileArguments || routeArgs.isGroupChat) return;
+
+    final profileId = routeArgs.id;
+    if (_refreshedProfileId == profileId) return;
+
+    _refreshedProfileId = profileId;
+    ref.invalidate(userProfile(profileId));
+    ref.invalidate(userRelationshipProvider(profileId));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -205,6 +228,24 @@ class UserProfileState extends ConsumerState<UserProfile> {
   Widget _buildUserProfile(UserProfileModal info) {
     final media = info.mediaShared;
     final mediaCount = info.totalMediaCount;
+    final relationshipProvider = userRelationshipProvider(info.id ?? "");
+
+    final relationshipStatus = ref.watch(relationshipProvider);
+
+    final relationshipNotifier = ref.read(relationshipProvider.notifier);
+
+    ref.listen(relationshipProvider, (previous, next) {
+      next.whenOrNull(
+        error: (error, stackTrace) {
+          ToastHelper.show(
+            context: context,
+            message: error.toString().replaceFirst('Exception: ', ''),
+            type: ToastificationType.error,
+          );
+        },
+      );
+    });
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -215,17 +256,23 @@ class UserProfileState extends ConsumerState<UserProfile> {
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back, color: Colors.white),
         ),
-        // actions: [
-        //   Padding(
-        //     padding: const EdgeInsets.only(right: 8),
-        //     child: ProfileActionButton(
-        //       icon: LucideIcons.ellipsis,
-        //       onTap: () {},
-        //       size: 35,
-        //       iconSize: 20,
-        //     ),
-        //   ),
-        // ],
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(LucideIcons.ellipsisVertical, color: Colors.white),
+            color: Colors.grey[900],
+            onSelected: (value) {
+              if (value == 'block') {
+                relationshipNotifier.blockUser();
+              }
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: 'block',
+                child: Text('Block', style: TextStyle(color: Colors.red)),
+              ),
+            ],
+          ),
+        ],
       ),
       body: _buildProfileBody(
         children: [
@@ -243,18 +290,27 @@ class UserProfileState extends ConsumerState<UserProfile> {
             color: Colors.white,
             fontWeight: FontWeight.w600,
           ),
-          const SizedBox(height: 10),
-          // Row(
-          //   mainAxisAlignment: MainAxisAlignment.center,
-          //   children: const [
-          //     ProfileActionButton(icon: LucideIcons.messageCircleMore),
-          //     SizedBox(width: 20),
-          //     ProfileActionButton(icon: LucideIcons.phone),
-          //     SizedBox(width: 20),
-          //     ProfileActionButton(icon: LucideIcons.video),
-          //   ],
-          // ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
+          buildRelationshipButton(
+            relationshipStatus.value ?? RelationshipStatus.none,
+            relationshipNotifier,
+            relationshipStatus.isLoading,
+            context: context,
+            userName: info.name ?? "User",
+            profilePicUrl: info.profilePic,
+            onMessageTap: () {
+              Navigator.pushNamed(
+                context,
+                AppRoutes.message,
+                arguments: MessageScreenArguments(
+                  receiverId: info.id ?? "",
+                  name: info.name ?? "",
+                  profilePicUrl: info.profilePic,
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 18),
           Expanded(
             child: PrimaryContainer(
               children: SingleChildScrollView(

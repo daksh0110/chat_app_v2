@@ -15,6 +15,7 @@ import 'package:my_app/screens/settings/settings_main.dart';
 import 'package:my_app/screens/sign_up.dart';
 import 'package:my_app/screens/user_profile.dart';
 import 'package:my_app/screens/verify_email.dart';
+import 'package:my_app/screens/notifications_screen.dart';
 
 class AppRoutes {
   static const String home = '/home';
@@ -34,6 +35,8 @@ class AppRoutes {
   static const String createGroupChat = "/create-group";
   static const String newChat = "/new-chat";
 
+  static const String notifications = "/notifications";
+
   static Map<String, WidgetBuilder> get routes => {
     home: (context) => MainScreen(),
     onboarding: (context) => const OnboardingScreen(),
@@ -51,5 +54,6 @@ class AppRoutes {
     newChat: (context) => const NewChatScreen(),
     profileEdit: (context) => const ProfileEdit(),
     accountsMain: (context) => const AccountsPage(),
+    notifications: (context) => const NotificationsScreen(),
   };
 }

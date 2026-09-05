@@ -9,6 +9,7 @@ class UserProfileModal {
   final String? id;
   final List<MediaShared> mediaShared;
   final int totalMediaCount;
+  final String? relationshipStatus;
 
   UserProfileModal({
     this.chatId,
@@ -19,7 +20,23 @@ class UserProfileModal {
     this.id,
     this.mediaShared = const [],
     this.totalMediaCount = 0,
+    this.relationshipStatus,
   });
+
+  @override
+  String toString() {
+    return 'UserProfileModal('
+        'chatId: $chatId, '
+        'name: $name, '
+        'profilePic: $profilePic, '
+        'email: $email, '
+        'bio: $bio, '
+        'id: $id, '
+        'mediaShared: $mediaShared, '
+        'totalMediaCount: $totalMediaCount, '
+        'relationshipStatus: $relationshipStatus'
+        ')';
+  }
 }
 
 class MediaShared extends UploadAttachment {
@@ -36,4 +53,18 @@ class MediaShared extends UploadAttachment {
     super.location,
     super.type = "",
   });
+
+  @override
+  String toString() {
+    return 'MediaShared('
+        'userId: $userId, '
+        'userName: $userName, '
+        'actorId: $actorId, '
+        'contentType: $contentType, '
+        'key: $key, '
+        'name: $name, '
+        'location: $location, '
+        'type: $type'
+        ')';
+  }
 }

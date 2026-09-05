@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/core/network/api_client.dart';
 import 'package:my_app/data/services/user_api_service.dart';
+import 'package:my_app/data/services/notification_service.dart';
 import 'package:my_app/modal/upload_responses/upload_attachment.dart';
 import 'package:my_app/modal/user.modal.dart';
 import 'package:my_app/providers/database_provider.dart';
@@ -23,6 +25,15 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     final token = await ref.watch(tokenProvider.future);
 
     if (token != null && token.isNotEmpty) {
+      final authResponse = await UserApiService(
+        ApiClient(),
+      ).authenticate(token: token);
+
+      if (!authResponse.success) {
+        await logout();
+        return AuthState.unauthenticated;
+      }
+
       return AuthState.authenticated;
     }
 
@@ -76,5 +87,9 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     ref.read(socketProvider).disconnect();
 
     state = const AsyncData(AuthState.unauthenticated);
+    navigatorKey.currentState?.pushNamedAndRemoveUntil(
+      AppRoutes.onboarding,
+      (route) => false,
+    );
   }
 }

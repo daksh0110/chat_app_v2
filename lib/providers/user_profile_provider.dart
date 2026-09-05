@@ -129,14 +129,23 @@ class UserProfileProvider extends Notifier {
       userId = participant.userId;
     }
 
-    var user = await ref.read(usersTableProvider.notifier).getUserById(userId);
+    final usersTable = ref.read(usersTableProvider.notifier);
+    // var user = await usersTable.getUserById(userId);
 
-    user ??= await ref
-        .read(usersTableProvider.notifier)
-        .fetchAndUpdateUserProfile(userId);
+    // if (user == null) {
+    //   final userExistsInDb = await usersTable.doesUserExistInDb(userId);
+
+    //   if (userExistsInDb) {
+    //     user = await usersTable.getUserById(userId);
+    //   } else {
+    //     user = await usersTable.fetchAndUpdateUserProfile(userId);
+    //   }
+    // }
+
+    final user = await usersTable.fetchAndUpdateUserProfile(userId);
 
     if (user == null) return null;
-
+    debugPrint("Fetching new user, : $user");
     final media = await ref
         .read(mediaTableProvider.notifier)
         .getMediaByActorId(userId);
@@ -152,6 +161,7 @@ class UserProfileProvider extends Notifier {
       profilePic: media?.location ?? user.profilePic,
       mediaShared: mediaShared.media,
       totalMediaCount: mediaShared.count,
+      relationshipStatus: user.relationshipStatus,
     );
   }
 }

@@ -35,6 +35,20 @@ class ApiClient {
     return jsonDecode(response.body);
   }
 
+  Future<dynamic> delete(String url, {String? token}) async {
+    final response = await http.delete(
+      Uri.parse(url),
+      headers: token != null
+          ? {
+              "Authorization": "Bearer $token",
+              "Content-Type": "application/json",
+            }
+          : {"Content-Type": "application/json"},
+    );
+
+    return jsonDecode(response.body);
+  }
+
   Future<dynamic> patch(String url, Map<String, dynamic> body) async {
     final response = await http.patch(
       Uri.parse(url),

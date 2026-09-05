@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:my_app/modal/tables/chat_list_table.dart';
 import 'package:my_app/modal/tables/chat_participant_table.dart';
+import 'package:my_app/modal/tables/friends_table.dart';
 import 'package:my_app/modal/tables/groups_table.dart';
 import 'package:my_app/modal/tables/media_modal.dart';
 import 'package:my_app/modal/tables/message_status_table.dart';
@@ -26,13 +27,14 @@ part 'database.g.dart';
     RecentSearchesTable,
     UserPreferencesTable,
     GroupListTable,
+    FriendsTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 8;
 
   // --- Queries ---
   // Stream<List<UsersTableData>> getAllUsers() {
@@ -40,6 +42,22 @@ class AppDatabase extends _$AppDatabase {
   // }
 
   // --- Recent Searches ---
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (Migrator m) async {
+      await m.createAll();
+    },
+
+    onUpgrade: (Migrator m, int from, int to) async {
+      if (from < 7) {
+        await m.createTable(friendsTable);
+      }
+      if (from < 8) {
+        await m.addColumn(friendsTable, friendsTable.isRead);
+      }
+    },
+  );
 
   Future<void> clearAllData() async {
     await transaction(() async {
@@ -53,6 +71,7 @@ class AppDatabase extends _$AppDatabase {
         batch.deleteAll(recentSearchesTable);
         batch.deleteAll(userPreferencesTable);
         batch.deleteAll(groupListTable);
+        batch.deleteAll(friendsTable);
       });
     });
   }
