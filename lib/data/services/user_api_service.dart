@@ -1,3 +1,4 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:my_app/core/network/api_client.dart';
 import 'package:my_app/core/network/api_constant.dart';
 import 'package:my_app/modal/api_response.dart';
@@ -166,8 +167,11 @@ class UserApiService {
 
   Future<ApiResponse<SearchItem>> getUserById(String userId) async {
     try {
+      final storage = const FlutterSecureStorage();
+      final token = await storage.read(key: 'accessToken');
       final response = await apiClient.get(
         "${ApiConstants.baseUrl}${ApiConstants.users}/$userId",
+        token: token,
       );
 
       return ApiResponse<SearchItem>.fromJson(
@@ -355,6 +359,21 @@ class UserApiService {
       return ApiResponse<void>.fromJson(response, (_) => {});
     } catch (e) {
       throw Exception("Block user failed: $e");
+    }
+  }
+
+  Future<ApiResponse<void>> unblockUser({
+    required String token,
+    required String targetUserId,
+  }) async {
+    try {
+      final response = await apiClient.delete(
+        "${ApiConstants.baseUrl}${ApiConstants.users}/$targetUserId/block",
+        token: token,
+      );
+      return ApiResponse<void>.fromJson(response, (_) => {});
+    } catch (e) {
+      throw Exception("Unblock user failed: $e");
     }
   }
 

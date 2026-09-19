@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:my_app/modal/tables/blocks_table.dart';
+import 'package:my_app/modal/tables/chat_events_table.dart';
 import 'package:my_app/modal/tables/chat_list_table.dart';
 import 'package:my_app/modal/tables/chat_participant_table.dart';
 import 'package:my_app/modal/tables/friends_table.dart';
@@ -6,6 +8,7 @@ import 'package:my_app/modal/tables/groups_table.dart';
 import 'package:my_app/modal/tables/media_modal.dart';
 import 'package:my_app/modal/tables/message_status_table.dart';
 import 'package:my_app/modal/tables/messages_table.dart';
+import 'package:my_app/modal/tables/notifications_table.dart';
 import 'package:my_app/modal/tables/recent_searches_table.dart';
 import 'package:my_app/modal/tables/user_preferences_table.dart';
 import 'package:my_app/modal/tables/users_table.dart';
@@ -28,13 +31,16 @@ part 'database.g.dart';
     UserPreferencesTable,
     GroupListTable,
     FriendsTable,
+    BlocksTable,
+    NotificationsTable,
+    ChatEventsTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 11;
 
   // --- Queries ---
   // Stream<List<UsersTableData>> getAllUsers() {
@@ -56,6 +62,15 @@ class AppDatabase extends _$AppDatabase {
       if (from < 8) {
         await m.addColumn(friendsTable, friendsTable.isRead);
       }
+      if (from < 9) {
+        await m.createTable(blocksTable);
+      }
+      if (from < 10) {
+        await m.createTable(notificationsTable);
+      }
+      if (from < 11) {
+        await m.createTable(chatEventsTable);
+      }
     },
   );
 
@@ -72,6 +87,9 @@ class AppDatabase extends _$AppDatabase {
         batch.deleteAll(userPreferencesTable);
         batch.deleteAll(groupListTable);
         batch.deleteAll(friendsTable);
+        batch.deleteAll(blocksTable);
+        batch.deleteAll(notificationsTable);
+        batch.deleteAll(chatEventsTable);
       });
     });
   }

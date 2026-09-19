@@ -341,32 +341,14 @@ class ProfileActionBar extends StatelessWidget {
         return Row(
           children: [
             Expanded(
-              child: Container(
-                height: 48,
-                decoration: BoxDecoration(
-                  color: DefaultColorSheet.error.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: DefaultColorSheet.error.withValues(alpha: 0.4),
-                  ),
-                ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      LucideIcons.ban,
-                      size: 18,
-                      color: DefaultColorSheet.error,
-                    ),
-                    SizedBox(width: 8),
-                    PrimaryText(
-                      "Blocked",
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: DefaultColorSheet.error,
-                    ),
-                  ],
-                ),
+              child: _CustomProfileButton(
+                onPressed: isLoading ? null : () => notifier.unblockUser(),
+                isLoading: isLoading,
+                icon: LucideIcons.ban,
+                label: "Unblock",
+                backgroundColor: DefaultColorSheet.green200,
+                borderColor: DefaultColorSheet.error.withValues(alpha: 0.4),
+                textColor: DefaultColorSheet.error,
               ),
             ),
           ],

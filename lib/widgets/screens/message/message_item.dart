@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:my_app/core/database.dart';
+import 'package:my_app/modal/screens/message/message_item_model.dart';
 import 'package:my_app/modal/screens/message/message_modal.dart';
+import 'package:my_app/modal/tables/chat_events_table.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
 import 'package:my_app/widgets/screens/message/attachments_list_widget.dart';
 import 'package:my_app/widgets/screens/message/message_bubble.dart';
@@ -24,10 +25,18 @@ Widget _statusIcon(MessageStatus status) {
       );
 
     case MessageStatus.read:
-      return const Icon(LucideIcons.checkCheck, size: 12, color: Color(0xFF4FC3F7));
+      return const Icon(
+        LucideIcons.checkCheck,
+        size: 12,
+        color: Color(0xFF4FC3F7),
+      );
 
     case MessageStatus.failed:
-      return const Icon(LucideIcons.circleAlert, size: 12, color: Colors.redAccent);
+      return const Icon(
+        LucideIcons.circleAlert,
+        size: 12,
+        color: Colors.redAccent,
+      );
   }
 }
 
@@ -46,54 +55,65 @@ Color _getSenderColor(String name) {
   return colors[name.hashCode.abs() % colors.length];
 }
 
+MessageAlignment _resolveAlignment(
+  ChatEventAlignment? eventAlignment,
+  bool isSender,
+) {
+  if (eventAlignment == null) {
+    return isSender ? MessageAlignment.right : MessageAlignment.left;
+  }
+
+  return switch (eventAlignment) {
+    ChatEventAlignment.left => MessageAlignment.left,
+    ChatEventAlignment.center => MessageAlignment.center,
+    ChatEventAlignment.right => MessageAlignment.right,
+  };
+}
+
+EdgeInsets _visualMediaMargin(MessageAlignment alignment, bool isGrouped) {
+  final horizontal = switch (alignment) {
+    MessageAlignment.left => (8.0, 60.0),
+    MessageAlignment.center => (24.0, 24.0),
+    MessageAlignment.right => (60.0, 8.0),
+  };
+
+  return EdgeInsets.fromLTRB(
+    horizontal.$1,
+    isGrouped ? 1 : 4,
+    horizontal.$2,
+    0,
+  );
+}
+
 class MessageItem extends ConsumerWidget {
-  final String message;
-  final bool isSender;
-  final MessageStatus? status;
-  final int timestamp;
-  final String senderName;
-  final bool isGroupChat;
-  final List<MediaTableData> attachments;
+  final MessageItemModel data;
 
-  final bool isGrouped;
-
-  const MessageItem({
-    super.key,
-    required this.message,
-    required this.isSender,
-    this.status,
-    required this.timestamp,
-    required this.senderName,
-    this.isGroupChat = false,
-    this.attachments = const [],
-    this.isGrouped = false,
-  });
+  const MessageItem({super.key, required this.data});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isMediaOnly = attachments.isNotEmpty && message.isEmpty;
-    final hasVisualMedia = attachments.any(
+    final isMediaOnly = data.attachments.isNotEmpty && data.message.isEmpty;
+    final hasVisualMedia = data.attachments.any(
       (attachment) =>
           attachment.contentType?.startsWith('image/') == true ||
           attachment.contentType?.startsWith('video/') == true,
     );
 
-    final timeStr = DateFormat('hh:mm a').format(
-      DateTime.fromMillisecondsSinceEpoch(timestamp),
+    final timeStr = DateFormat(
+      'hh:mm a',
+    ).format(DateTime.fromMillisecondsSinceEpoch(data.timestamp));
+    final bubbleAlignment = _resolveAlignment(
+      data.eventAlignment,
+      data.isSender,
     );
 
     return MessageBubble(
-      alignment: isSender ? MessageAlignment.right : MessageAlignment.left,
-      isGrouped: isGrouped,
+      alignment: bubbleAlignment,
+      isGrouped: data.isGrouped,
       padding: isMediaOnly ? const EdgeInsets.all(3) : null,
       backgroundColor: isMediaOnly ? Colors.transparent : null,
       margin: hasVisualMedia
-          ? EdgeInsets.fromLTRB(
-              isSender ? 60 : 8,
-              isGrouped ? 1 : 4,
-              isSender ? 8 : 60,
-              0,
-            )
+          ? _visualMediaMargin(bubbleAlignment, data.isGrouped)
           : null,
       maxWidthFactor: hasVisualMedia ? .82 : null,
       child: Column(
@@ -101,33 +121,33 @@ class MessageItem extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           // Group sender name
-          if (!isSender && isGroupChat && !isGrouped) ...[
+          if (!data.isSender && data.isGroupChat && !data.isGrouped) ...[
             PrimaryText(
-              senderName,
+              data.senderName,
               fontSize: 11.5,
               fontWeight: FontWeight.w700,
-              color: _getSenderColor(senderName),
+              color: _getSenderColor(data.senderName),
             ),
             const SizedBox(height: 2),
           ],
 
           // Attachments
-          if (attachments.isNotEmpty) ...[
+          if (data.attachments.isNotEmpty) ...[
             AttachmentsListWidget(
-              attachments: attachments,
-              senderName: senderName,
-              sentAt: timestamp,
+              attachments: data.attachments,
+              senderName: data.senderName,
+              sentAt: data.timestamp,
             ),
-            if (message.isNotEmpty) const SizedBox(height: 5),
+            if (data.message.isNotEmpty) const SizedBox(height: 5),
           ],
 
           // Text + timestamp row
-          if (message.isNotEmpty || !isMediaOnly)
+          if (data.message.isNotEmpty || !isMediaOnly)
             _TextWithTimestamp(
-              message: message,
+              message: data.message,
               timeStr: timeStr,
-              isSender: isSender,
-              status: status,
+              isSender: data.isSender,
+              status: data.status,
               isMediaOnly: isMediaOnly,
             ),
 
@@ -139,8 +159,8 @@ class MessageItem extends ConsumerWidget {
                 padding: const EdgeInsets.only(top: 3, right: 2, bottom: 2),
                 child: _TimestampChip(
                   timeStr: timeStr,
-                  isSender: isSender,
-                  status: status,
+                  isSender: data.isSender,
+                  status: data.status,
                   overlayOnMedia: true,
                 ),
               ),

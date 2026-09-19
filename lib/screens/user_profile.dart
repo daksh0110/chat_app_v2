@@ -263,12 +263,26 @@ class UserProfileState extends ConsumerState<UserProfile> {
             onSelected: (value) {
               if (value == 'block') {
                 relationshipNotifier.blockUser();
+              } else if (value == 'unblock') {
+                relationshipNotifier.unblockUser();
               }
             },
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              const PopupMenuItem<String>(
-                value: 'block',
-                child: Text('Block', style: TextStyle(color: Colors.red)),
+            itemBuilder: (BuildContext context) => [
+              PopupMenuItem<String>(
+                value: relationshipStatus.value == RelationshipStatus.blocked
+                    ? 'unblock'
+                    : 'block',
+                child: Text(
+                  relationshipStatus.value == RelationshipStatus.blocked
+                      ? 'Unblock'
+                      : 'Block',
+                  style: TextStyle(
+                    color:
+                        relationshipStatus.value == RelationshipStatus.blocked
+                        ? Colors.white
+                        : Colors.red,
+                  ),
+                ),
               ),
             ],
           ),

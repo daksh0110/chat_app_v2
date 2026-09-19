@@ -32,6 +32,14 @@ class RequestUserProvider extends Notifier {
   Future<RelationshipStatus> getRelationshipStatus(String userId) async {
     final db = ref.read(databaseProvider);
 
+    final isBlocked = await (db.select(
+      db.blocksTable,
+    )..where((t) => t.userId.equals(userId))).getSingleOrNull();
+
+    if (isBlocked != null) {
+      return RelationshipStatus.blocked;
+    }
+
     final friendRow = await (db.select(
       db.friendsTable,
     )..where((t) => t.userId.equals(userId))).getSingleOrNull();

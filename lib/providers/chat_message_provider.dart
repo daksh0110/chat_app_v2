@@ -11,6 +11,7 @@ class MessageWithSender {
   final String overallStatus;
   final bool isGroupChat;
   final String? name;
+  final ChatEventsTableData? event;
 
   MessageWithSender({
     required this.message,
@@ -20,7 +21,11 @@ class MessageWithSender {
     required this.overallStatus,
     this.isGroupChat = false,
     this.name = "",
+    this.event,
   });
+
+  int get timelineTimestamp =>
+      event?.createdAt.millisecondsSinceEpoch ?? message.createdAt;
 }
 
 String getOverallStatus(
@@ -101,6 +106,11 @@ final chatMessagesProvider =
             db.usersTable,
             db.usersTable.userId.equalsExp(db.messages.senderId),
           ),
+          leftOuterJoin(
+            db.chatEventsTable,
+            db.chatEventsTable.contentId.equalsExp(db.messages.id) |
+                db.chatEventsTable.contentId.equalsExp(db.messages.serverId),
+          ),
         ]);
 
         query.where(
@@ -121,6 +131,7 @@ final chatMessagesProvider =
             final status = row.readTableOrNull(db.messageStatusTable);
             final media = row.readTableOrNull(db.mediaTable);
             final user = row.readTable(db.usersTable);
+            final event = row.readTableOrNull(db.chatEventsTable);
             final key = message.id;
 
             if (!grouped.containsKey(key)) {
@@ -132,6 +143,7 @@ final chatMessagesProvider =
                 overallStatus: "sent",
                 isGroupChat: false,
                 name: user.name,
+                event: event,
               );
             }
 
@@ -155,8 +167,17 @@ final chatMessagesProvider =
                 senderId: item.message.senderId,
               ),
               isGroupChat: item.isGroupChat,
+              event: item.event,
             );
-          }).toList();
+          }).toList()..sort((a, b) {
+            final aDate =
+                a.event?.createdAt ??
+                DateTime.fromMillisecondsSinceEpoch(a.message.createdAt);
+            final bDate =
+                b.event?.createdAt ??
+                DateTime.fromMillisecondsSinceEpoch(b.message.createdAt);
+            return aDate.compareTo(bDate);
+          });
         });
       } catch (e, st) {
         // Log error and return an empty list stream to prevent indefinite loading

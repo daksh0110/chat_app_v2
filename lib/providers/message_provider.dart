@@ -8,7 +8,9 @@ import 'package:my_app/core/util/get_file_type.dart';
 import 'package:my_app/core/util/parse_time.dart';
 import 'package:my_app/core/util/status_rank.dart';
 import 'package:my_app/data/services/upload_service.dart';
+import 'package:my_app/modal/chat_event_model.dart';
 import 'package:my_app/modal/chat_list_modal.dart';
+import 'package:my_app/modal/tables/chat_events_table.dart';
 import 'package:my_app/modal/screens/createGroup/create_group_response.dart';
 import 'package:my_app/modal/screens/message/message_body_request.dart';
 import 'package:my_app/modal/screens/message/message_delivered_response.dart';
@@ -23,6 +25,7 @@ import 'package:my_app/providers/global_queue_provider.dart';
 import 'package:my_app/providers/message_typing_provider.dart';
 import 'package:my_app/providers/socket_provider.dart';
 import 'package:my_app/providers/tables/chat_list_table_provider.dart';
+import 'package:my_app/providers/tables/chat_events_table_provider.dart';
 import 'package:my_app/providers/tables/chat_participants_table.dart';
 import 'package:my_app/providers/tables/media_table_provider.dart';
 import 'package:my_app/providers/tables/message_status_table_provider.dart';
@@ -102,6 +105,18 @@ class MessageNotifer extends Notifier {
                 messageId: messageId,
                 senderId: senderId,
                 serverCreatedAt: createdAt,
+              ),
+            );
+        await ref
+            .read(chatEventsTableProvider.notifier)
+            .createOrUpdateChatEvent(
+              ChatEventModel(
+                id: messageId,
+                chatId: chatId,
+                type: ChatEventType.message,
+                contentId: messageId,
+                alignment: ChatEventAlignment.left,
+                createdAt: DateTime.fromMillisecondsSinceEpoch(createdAt),
               ),
             );
         final List<MessageStatus> messageStatuses = data.messageStatuses
@@ -230,6 +245,18 @@ class MessageNotifer extends Notifier {
             tempId: tempId,
           ),
         );
+        await ref
+            .read(chatEventsTableProvider.notifier)
+            .createOrUpdateChatEvent(
+              ChatEventModel(
+                id: tempId,
+                chatId: currentChatId,
+                type: ChatEventType.message,
+                contentId: tempId,
+                alignment: ChatEventAlignment.right,
+                createdAt: DateTime.fromMillisecondsSinceEpoch(now),
+              ),
+            );
 
         if (request.attachments.isNotEmpty) {
           final mediasToInsert = request.attachments.map((attachment) {
@@ -331,6 +358,19 @@ class MessageNotifer extends Notifier {
             ),
             messageId,
           );
+
+          await ref
+              .read(chatEventsTableProvider.notifier)
+              .createOrUpdateChatEvent(
+                ChatEventModel(
+                  id: tempId,
+                  chatId: realChatId,
+                  type: ChatEventType.message,
+                  contentId: messageId,
+                  alignment: ChatEventAlignment.right,
+                  createdAt: DateTime.fromMillisecondsSinceEpoch(createdAt),
+                ),
+              );
 
           await mediaTableProviderRef.updateActorId(tempId, messageId);
 
@@ -567,6 +607,19 @@ class MessageNotifer extends Notifier {
               ),
               messageId,
             );
+
+            await ref
+                .read(chatEventsTableProvider.notifier)
+                .createOrUpdateChatEvent(
+                  ChatEventModel(
+                    id: msg.id,
+                    chatId: realChatId,
+                    type: ChatEventType.message,
+                    contentId: messageId,
+                    alignment: ChatEventAlignment.right,
+                    createdAt: DateTime.fromMillisecondsSinceEpoch(createdAt),
+                  ),
+                );
 
             await mediaTableProviderRef.updateActorId(msg.id, messageId);
 

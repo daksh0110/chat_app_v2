@@ -7,9 +7,12 @@ import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/core/database.dart';
 import 'package:my_app/core/network/api_client.dart';
 import 'package:my_app/data/services/user_api_service.dart';
+import 'package:my_app/modal/notification_model.dart';
 import 'package:my_app/modal/screens/search/user_profile_arguments.dart';
 import 'package:my_app/providers/friend_requests_provider.dart';
+import 'package:my_app/providers/tables/notifications_provider.dart';
 import 'package:my_app/providers/tables/request_user_provider.dart';
+import 'package:my_app/providers/tables/user_preference_table_provider.dart';
 import 'package:my_app/providers/token_provider.dart';
 import 'package:my_app/providers/database_provider.dart';
 import 'package:drift/drift.dart' as drift;
@@ -55,6 +58,17 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       await ref
           .read(requestUserProvider.notifier)
           .insertOrUpdateRequest(item.userId, 'FRIENDS');
+
+      final recipientId = ref.read(userPreferenceTableProvider).value;
+      if (recipientId != null) {
+        await ref
+            .read(notificationTableProvider.notifier)
+            .updateFriendRequestNotification(
+              recipientId: recipientId,
+              actorId: item.userId,
+              type: NotificationType.friendRequestAccepted,
+            );
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

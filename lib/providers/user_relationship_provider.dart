@@ -188,14 +188,49 @@ class UserRelationshipNotifier extends AsyncNotifier<RelationshipStatus> {
 
       final db = ref.read(databaseProvider);
       await db
-          .into(db.friendsTable)
+          .into(db.blocksTable)
           .insertOnConflictUpdate(
-            FriendsTableCompanion(
+            BlocksTableCompanion(
               userId: Value(userId),
-              status: const Value('BLOCKED'),
+              createdAt: Value(DateTime.now()),
             ),
           );
       state = const AsyncData(RelationshipStatus.blocked);
+    } catch (e) {
+      state = AsyncError(e, StackTrace.current);
+    }
+  }
+
+  Future<void> unblockUser() async {
+    state = const AsyncLoading();
+    try {
+      final token = ref.read(tokenProvider).value;
+      if (token == null) {
+        state = AsyncError(
+          Exception('Authentication token not found'),
+          StackTrace.current,
+        );
+        return;
+      }
+
+      final response = await UserApiService(
+        ApiClient(),
+      ).unblockUser(token: token, targetUserId: userId);
+
+      if (!response.success) {
+        state = AsyncError(Exception(response.message), StackTrace.current);
+        return;
+      }
+
+      final db = ref.read(databaseProvider);
+      await (db.delete(db.blocksTable)
+            ..where((t) => t.userId.equals(userId)))
+          .go();
+
+      final currentRelationship = await ref
+          .read(requestUserProvider.notifier)
+          .getRelationshipStatus(userId);
+      state = AsyncData(currentRelationship);
     } catch (e) {
       state = AsyncError(e, StackTrace.current);
     }

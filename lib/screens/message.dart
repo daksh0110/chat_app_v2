@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:my_app/core/util/getDatelabel.dart';
 import 'package:my_app/core/util/status_map.dart';
 import 'package:my_app/modal/screens/message/message_screen_data.dart';
+import 'package:my_app/modal/screens/message/message_item_model.dart';
 import 'package:my_app/modal/screens/message/send_message_request.dart';
 import 'package:my_app/modal/screens/search/message_screen_arguments.dart';
 import 'package:my_app/providers/chat_list_provider.dart';
@@ -273,20 +274,19 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
                           final item = messages[messages.length - 1 - msgIndex];
                           final msg = item.message;
                           final sender = item.participant;
-                          final currentLabel = getDateLabel(msg.createdAt);
+                          final currentTimestamp = item.timelineTimestamp;
+                          final currentLabel = getDateLabel(currentTimestamp);
 
                           String? previousLabel;
                           bool isGrouped = false;
                           if (msgIndex < messages.length - 1) {
                             final prevMsg =
                                 messages[messages.length - 1 - (msgIndex + 1)];
-                            previousLabel = getDateLabel(
-                              prevMsg.message.createdAt,
-                            );
+                            final previousTimestamp = prevMsg.timelineTimestamp;
+                            previousLabel = getDateLabel(previousTimestamp);
                             isGrouped =
                                 prevMsg.message.senderId == msg.senderId &&
-                                (msg.createdAt - prevMsg.message.createdAt)
-                                        .abs() <
+                                (currentTimestamp - previousTimestamp).abs() <
                                     5 * 60 * 1000;
                           }
 
@@ -299,18 +299,21 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
                               if (showBanner) DateBanner(label: currentLabel),
 
                               MessageItem(
-                                attachments: item.attachments,
-                                message: msg.message,
-                                isSender: msg.senderId == currentUser,
-                                status: msg.senderId == currentUser
-                                    ? statusMap(item.overallStatus)
-                                    : statusMap("sending"),
-                                timestamp: msg.createdAt,
-                                senderName: sender.userId == currentUser
-                                    ? "You"
-                                    : name,
-                                isGroupChat: isGroup,
-                                isGrouped: isGrouped,
+                                data: MessageItemModel(
+                                  attachments: item.attachments,
+                                  message: msg.message,
+                                  isSender: msg.senderId == currentUser,
+                                  status: msg.senderId == currentUser
+                                      ? statusMap(item.overallStatus)
+                                      : statusMap("sending"),
+                                  timestamp: currentTimestamp,
+                                  senderName: sender.userId == currentUser
+                                      ? "You"
+                                      : name,
+                                  isGroupChat: isGroup,
+                                  isGrouped: isGrouped,
+                                  eventAlignment: item.event?.alignment,
+                                ),
                               ),
                             ],
                           );
