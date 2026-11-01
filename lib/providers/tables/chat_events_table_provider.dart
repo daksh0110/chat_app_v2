@@ -39,8 +39,29 @@ class ChatEventsTableProvider extends Notifier<void> {
     DateTime? createdAt,
   }) async {
     final db = ref.read(databaseProvider);
-    final eventId = id ?? const Uuid().v4();
     final time = createdAt ?? DateTime.now();
+
+    // Deduplication check: if id is not explicitly specified, check if an identical
+    // banner event was already inserted recently for this chat (within last 5 seconds)
+    if (id == null) {
+      final recentDuplicate = await (db.select(db.chatEventsTable)
+            ..where((tbl) =>
+                tbl.chatId.equals(chatId) &
+                tbl.type.equalsValue(ChatEventType.banner) &
+                tbl.contentId.equals(text))
+            ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)])
+            ..limit(1))
+          .getSingleOrNull();
+
+      if (recentDuplicate != null) {
+        final diff = time.difference(recentDuplicate.createdAt).abs();
+        if (diff.inSeconds < 5) {
+          return;
+        }
+      }
+    }
+
+    final eventId = id ?? const Uuid().v4();
 
     await db
         .into(db.chatEventsTable)
@@ -99,6 +120,8 @@ class ChatEventsTableProvider extends Notifier<void> {
     required String memberName,
     bool isSelf = false,
     bool isActorSelf = false,
+    String? eventId,
+    int? sequence,
     DateTime? createdAt,
   }) async {
     String text;
@@ -111,8 +134,11 @@ class ChatEventsTableProvider extends Notifier<void> {
     } else {
       text = "$actorName added $memberName";
     }
+    final deterministicId = eventId ??
+        (sequence != null ? "event_added_${chatId}_$sequence" : null);
     await insertBannerEvent(
       chatId: chatId,
+      id: deterministicId,
       text: text,
       createdAt: createdAt,
     );
@@ -124,6 +150,8 @@ class ChatEventsTableProvider extends Notifier<void> {
     required String memberName,
     bool isSelf = false,
     bool isActorSelf = false,
+    String? eventId,
+    int? sequence,
     DateTime? createdAt,
   }) async {
     String text;
@@ -136,8 +164,11 @@ class ChatEventsTableProvider extends Notifier<void> {
     } else {
       text = "$actorName removed $memberName";
     }
+    final deterministicId = eventId ??
+        (sequence != null ? "event_removed_${chatId}_$sequence" : null);
     await insertBannerEvent(
       chatId: chatId,
+      id: deterministicId,
       text: text,
       createdAt: createdAt,
     );
@@ -147,11 +178,16 @@ class ChatEventsTableProvider extends Notifier<void> {
     required String chatId,
     required String memberName,
     bool isSelf = false,
+    String? eventId,
+    int? sequence,
     DateTime? createdAt,
   }) async {
     final text = isSelf ? "You left the group" : "$memberName left the group";
+    final deterministicId = eventId ??
+        (sequence != null ? "event_left_${chatId}_$sequence" : null);
     await insertBannerEvent(
       chatId: chatId,
+      id: deterministicId,
       text: text,
       createdAt: createdAt,
     );
@@ -164,6 +200,8 @@ class ChatEventsTableProvider extends Notifier<void> {
     required String role,
     bool isSelf = false,
     bool isActorSelf = false,
+    String? eventId,
+    int? sequence,
     DateTime? createdAt,
   }) async {
     String text;
@@ -184,8 +222,11 @@ class ChatEventsTableProvider extends Notifier<void> {
         text = "$actorName dismissed $memberName as admin";
       }
     }
+    final deterministicId = eventId ??
+        (sequence != null ? "event_role_${chatId}_$sequence" : null);
     await insertBannerEvent(
       chatId: chatId,
+      id: deterministicId,
       text: text,
       createdAt: createdAt,
     );

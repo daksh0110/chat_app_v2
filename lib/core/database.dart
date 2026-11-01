@@ -42,7 +42,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   // --- Queries ---
   // Stream<List<UsersTableData>> getAllUsers() {
@@ -83,6 +83,9 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 14) {
         await m.createTable(messageReactionsTable);
+      }
+      if (from < 15) {
+        await m.addColumn(messages, messages.isDeleted);
       }
     },
 

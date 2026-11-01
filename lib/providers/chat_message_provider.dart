@@ -83,6 +83,14 @@ List<ChatTimelineEvent> _buildTimelineEventsFromGroups(
     }
 
     if (event.type == ChatEventType.banner) {
+      // Deduplicate consecutive identical banner events within 60s
+      if (events.isNotEmpty &&
+          events.last is BannerTimelineEvent &&
+          (events.last as BannerTimelineEvent).text == event.contentId &&
+          (currentTimestamp - (events.last as BannerTimelineEvent).timestamp).abs() < 60000) {
+        continue;
+      }
+
       events.add(
         BannerTimelineEvent(
           id: event.id,
@@ -147,6 +155,7 @@ List<ChatTimelineEvent> _buildTimelineEventsFromGroups(
             replyToId: message.replyToId,
             replyToSenderName: message.replyToSenderName,
             replyToMessage: message.replyToMessage,
+            isDeleted: message.isDeleted,
           ),
         ),
       );

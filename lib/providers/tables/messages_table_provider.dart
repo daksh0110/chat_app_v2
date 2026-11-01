@@ -163,4 +163,108 @@ class MessagesTableProvider extends Notifier {
 
     return messages.length;
   }
+
+  /// Mark message deleted for everyone (tombstone)
+  Future<void> markMessageAsDeleted(String messageId, String chatId) async {
+    final db = ref.read(databaseProvider);
+
+    await db.transaction(() async {
+      await (db.update(db.messages)
+            ..where(
+              (tbl) =>
+                  tbl.id.equals(messageId) |
+                  tbl.serverId.equals(messageId),
+            ))
+          .write(
+        const MessagesCompanion(
+          message: Value('This message was deleted'),
+          isDeleted: Value(true),
+          replyToId: Value(null),
+          replyToSenderName: Value(null),
+          replyToMessage: Value(null),
+        ),
+      );
+
+      // Remove attachments & reactions associated with the deleted message
+      await (db.delete(db.mediaTable)
+            ..where((tbl) => tbl.actorId.equals(messageId)))
+          .go();
+
+      await (db.delete(db.messageReactionsTable)
+            ..where((tbl) => tbl.messageId.equals(messageId)))
+          .go();
+
+      await updateChatLastMessageAfterDeletion(chatId);
+    });
+  }
+
+  /// Delete message permanently for me (removes row from SQLite)
+  Future<void> deleteMessagePermanently(String messageId, String chatId) async {
+    final db = ref.read(databaseProvider);
+
+    await db.transaction(() async {
+      await (db.delete(db.messages)
+            ..where(
+              (tbl) =>
+                  tbl.id.equals(messageId) |
+                  tbl.serverId.equals(messageId),
+            ))
+          .go();
+
+      await (db.delete(db.chatEventsTable)
+            ..where(
+              (tbl) =>
+                  tbl.id.equals(messageId) |
+                  tbl.contentId.equals(messageId),
+            ))
+          .go();
+
+      await (db.delete(db.mediaTable)
+            ..where((tbl) => tbl.actorId.equals(messageId)))
+          .go();
+
+      await (db.delete(db.messageStatusTable)
+            ..where((tbl) => tbl.messageId.equals(messageId)))
+          .go();
+
+      await (db.delete(db.messageReactionsTable)
+            ..where((tbl) => tbl.messageId.equals(messageId)))
+          .go();
+
+      await updateChatLastMessageAfterDeletion(chatId);
+    });
+  }
+
+  /// Updates the chat list card preview with the newest remaining message
+  Future<void> updateChatLastMessageAfterDeletion(String chatId) async {
+    final db = ref.read(databaseProvider);
+
+    final newestMessage = await (db.select(db.messages)
+          ..where((tbl) => tbl.chatId.equals(chatId))
+          ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)])
+          ..limit(1))
+        .getSingleOrNull();
+
+    if (newestMessage != null) {
+      final preview = newestMessage.isDeleted
+          ? 'This message was deleted'
+          : (newestMessage.message.isNotEmpty
+              ? newestMessage.message
+              : 'Media');
+      await (db.update(db.chatListTable)..where((tbl) => tbl.chatId.equals(chatId)))
+          .write(
+        ChatListTableCompanion(
+          lastMessage: Value(preview),
+          lastMessageTime: Value(newestMessage.createdAt),
+        ),
+      );
+    } else {
+      await (db.update(db.chatListTable)..where((tbl) => tbl.chatId.equals(chatId)))
+          .write(
+        const ChatListTableCompanion(
+          lastMessage: Value(''),
+        ),
+      );
+    }
+  }
 }

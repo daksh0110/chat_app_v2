@@ -12,6 +12,7 @@ class Messages extends Table {
   TextColumn get replyToId => text().nullable()();
   TextColumn get replyToSenderName => text().nullable()();
   TextColumn get replyToMessage => text().nullable()();
+  BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};

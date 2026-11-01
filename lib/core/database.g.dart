@@ -128,6 +128,21 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
+    'isDeleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+    'is_deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -141,6 +156,7 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
     replyToId,
     replyToSenderName,
     replyToMessage,
+    isDeleted,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -236,6 +252,12 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
         ),
       );
     }
+    if (data.containsKey('is_deleted')) {
+      context.handle(
+        _isDeletedMeta,
+        isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
+      );
+    }
     return context;
   }
 
@@ -289,6 +311,10 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
         DriftSqlType.string,
         data['${effectivePrefix}reply_to_message'],
       ),
+      isDeleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_deleted'],
+      )!,
     );
   }
 
@@ -310,6 +336,7 @@ class Message extends DataClass implements Insertable<Message> {
   final String? replyToId;
   final String? replyToSenderName;
   final String? replyToMessage;
+  final bool isDeleted;
   const Message({
     required this.id,
     required this.chatId,
@@ -322,6 +349,7 @@ class Message extends DataClass implements Insertable<Message> {
     this.replyToId,
     this.replyToSenderName,
     this.replyToMessage,
+    required this.isDeleted,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -347,6 +375,7 @@ class Message extends DataClass implements Insertable<Message> {
     if (!nullToAbsent || replyToMessage != null) {
       map['reply_to_message'] = Variable<String>(replyToMessage);
     }
+    map['is_deleted'] = Variable<bool>(isDeleted);
     return map;
   }
 
@@ -373,6 +402,7 @@ class Message extends DataClass implements Insertable<Message> {
       replyToMessage: replyToMessage == null && nullToAbsent
           ? const Value.absent()
           : Value(replyToMessage),
+      isDeleted: Value(isDeleted),
     );
   }
 
@@ -395,6 +425,7 @@ class Message extends DataClass implements Insertable<Message> {
         json['replyToSenderName'],
       ),
       replyToMessage: serializer.fromJson<String?>(json['replyToMessage']),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
     );
   }
   @override
@@ -412,6 +443,7 @@ class Message extends DataClass implements Insertable<Message> {
       'replyToId': serializer.toJson<String?>(replyToId),
       'replyToSenderName': serializer.toJson<String?>(replyToSenderName),
       'replyToMessage': serializer.toJson<String?>(replyToMessage),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
     };
   }
 
@@ -427,6 +459,7 @@ class Message extends DataClass implements Insertable<Message> {
     Value<String?> replyToId = const Value.absent(),
     Value<String?> replyToSenderName = const Value.absent(),
     Value<String?> replyToMessage = const Value.absent(),
+    bool? isDeleted,
   }) => Message(
     id: id ?? this.id,
     chatId: chatId ?? this.chatId,
@@ -445,6 +478,7 @@ class Message extends DataClass implements Insertable<Message> {
     replyToMessage: replyToMessage.present
         ? replyToMessage.value
         : this.replyToMessage,
+    isDeleted: isDeleted ?? this.isDeleted,
   );
   Message copyWithCompanion(MessagesCompanion data) {
     return Message(
@@ -465,6 +499,7 @@ class Message extends DataClass implements Insertable<Message> {
       replyToMessage: data.replyToMessage.present
           ? data.replyToMessage.value
           : this.replyToMessage,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
     );
   }
 
@@ -481,7 +516,8 @@ class Message extends DataClass implements Insertable<Message> {
           ..write('serverId: $serverId, ')
           ..write('replyToId: $replyToId, ')
           ..write('replyToSenderName: $replyToSenderName, ')
-          ..write('replyToMessage: $replyToMessage')
+          ..write('replyToMessage: $replyToMessage, ')
+          ..write('isDeleted: $isDeleted')
           ..write(')'))
         .toString();
   }
@@ -499,6 +535,7 @@ class Message extends DataClass implements Insertable<Message> {
     replyToId,
     replyToSenderName,
     replyToMessage,
+    isDeleted,
   );
   @override
   bool operator ==(Object other) =>
@@ -514,7 +551,8 @@ class Message extends DataClass implements Insertable<Message> {
           other.serverId == this.serverId &&
           other.replyToId == this.replyToId &&
           other.replyToSenderName == this.replyToSenderName &&
-          other.replyToMessage == this.replyToMessage);
+          other.replyToMessage == this.replyToMessage &&
+          other.isDeleted == this.isDeleted);
 }
 
 class MessagesCompanion extends UpdateCompanion<Message> {
@@ -529,6 +567,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
   final Value<String?> replyToId;
   final Value<String?> replyToSenderName;
   final Value<String?> replyToMessage;
+  final Value<bool> isDeleted;
   final Value<int> rowid;
   const MessagesCompanion({
     this.id = const Value.absent(),
@@ -542,6 +581,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     this.replyToId = const Value.absent(),
     this.replyToSenderName = const Value.absent(),
     this.replyToMessage = const Value.absent(),
+    this.isDeleted = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   MessagesCompanion.insert({
@@ -556,6 +596,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     this.replyToId = const Value.absent(),
     this.replyToSenderName = const Value.absent(),
     this.replyToMessage = const Value.absent(),
+    this.isDeleted = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        chatId = Value(chatId),
@@ -574,6 +615,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     Expression<String>? replyToId,
     Expression<String>? replyToSenderName,
     Expression<String>? replyToMessage,
+    Expression<bool>? isDeleted,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -588,6 +630,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
       if (replyToId != null) 'reply_to_id': replyToId,
       if (replyToSenderName != null) 'reply_to_sender_name': replyToSenderName,
       if (replyToMessage != null) 'reply_to_message': replyToMessage,
+      if (isDeleted != null) 'is_deleted': isDeleted,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -604,6 +647,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     Value<String?>? replyToId,
     Value<String?>? replyToSenderName,
     Value<String?>? replyToMessage,
+    Value<bool>? isDeleted,
     Value<int>? rowid,
   }) {
     return MessagesCompanion(
@@ -618,6 +662,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
       replyToId: replyToId ?? this.replyToId,
       replyToSenderName: replyToSenderName ?? this.replyToSenderName,
       replyToMessage: replyToMessage ?? this.replyToMessage,
+      isDeleted: isDeleted ?? this.isDeleted,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -658,6 +703,9 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     if (replyToMessage.present) {
       map['reply_to_message'] = Variable<String>(replyToMessage.value);
     }
+    if (isDeleted.present) {
+      map['is_deleted'] = Variable<bool>(isDeleted.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -678,6 +726,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
           ..write('replyToId: $replyToId, ')
           ..write('replyToSenderName: $replyToSenderName, ')
           ..write('replyToMessage: $replyToMessage, ')
+          ..write('isDeleted: $isDeleted, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5542,6 +5591,7 @@ typedef $$MessagesTableCreateCompanionBuilder =
       Value<String?> replyToId,
       Value<String?> replyToSenderName,
       Value<String?> replyToMessage,
+      Value<bool> isDeleted,
       Value<int> rowid,
     });
 typedef $$MessagesTableUpdateCompanionBuilder =
@@ -5557,6 +5607,7 @@ typedef $$MessagesTableUpdateCompanionBuilder =
       Value<String?> replyToId,
       Value<String?> replyToSenderName,
       Value<String?> replyToMessage,
+      Value<bool> isDeleted,
       Value<int> rowid,
     });
 
@@ -5621,6 +5672,11 @@ class $$MessagesTableFilterComposer
 
   ColumnFilters<String> get replyToMessage => $composableBuilder(
     column: $table.replyToMessage,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -5688,6 +5744,11 @@ class $$MessagesTableOrderingComposer
     column: $table.replyToMessage,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$MessagesTableAnnotationComposer
@@ -5737,6 +5798,9 @@ class $$MessagesTableAnnotationComposer
     column: $table.replyToMessage,
     builder: (column) => column,
   );
+
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
 }
 
 class $$MessagesTableTableManager
@@ -5778,6 +5842,7 @@ class $$MessagesTableTableManager
                 Value<String?> replyToId = const Value.absent(),
                 Value<String?> replyToSenderName = const Value.absent(),
                 Value<String?> replyToMessage = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MessagesCompanion(
                 id: id,
@@ -5791,6 +5856,7 @@ class $$MessagesTableTableManager
                 replyToId: replyToId,
                 replyToSenderName: replyToSenderName,
                 replyToMessage: replyToMessage,
+                isDeleted: isDeleted,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -5806,6 +5872,7 @@ class $$MessagesTableTableManager
                 Value<String?> replyToId = const Value.absent(),
                 Value<String?> replyToSenderName = const Value.absent(),
                 Value<String?> replyToMessage = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MessagesCompanion.insert(
                 id: id,
@@ -5819,6 +5886,7 @@ class $$MessagesTableTableManager
                 replyToId: replyToId,
                 replyToSenderName: replyToSenderName,
                 replyToMessage: replyToMessage,
+                isDeleted: isDeleted,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

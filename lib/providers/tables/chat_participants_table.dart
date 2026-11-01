@@ -25,6 +25,19 @@ class ChatParticipantsTable extends Notifier<void> {
         .map((row) => row != null);
   }
 
+  Stream<bool> watchIsAdmin(String chatId, String userId) {
+    final db = ref.read(databaseProvider);
+    return (db.select(db.chatParticipants)
+          ..where(
+            (tbl) =>
+                tbl.chatId.equals(chatId) &
+                tbl.userId.equals(userId) &
+                tbl.role.equals("ADMIN"),
+          ))
+        .watchSingleOrNull()
+        .map((row) => row != null);
+  }
+
   Future<void> bulkInsertParticipants(List<Participant> participants) async {
     final db = ref.read(databaseProvider);
     await db.batch((batch) {
@@ -60,4 +73,15 @@ final isGroupParticipantProvider =
   return ref
       .read(chatParticipantsTableProvider.notifier)
       .watchIsParticipant(chatId, currentUserId);
+});
+
+final isGroupAdminProvider =
+    StreamProvider.autoDispose.family<bool, String>((ref, chatId) {
+  final currentUserId = ref.watch(userPreferenceTableProvider).value;
+  if (currentUserId == null || currentUserId.isEmpty) {
+    return Stream.value(false);
+  }
+  return ref
+      .read(chatParticipantsTableProvider.notifier)
+      .watchIsAdmin(chatId, currentUserId);
 });

@@ -25,10 +25,16 @@ final groupSocketProvider = NotifierProvider<GroupSocketNotifier, void>(
 );
 
 class GroupSocketNotifier extends Notifier<void> {
+  bool _isListening = false;
+
   @override
-  void build() {}
+  void build() {
+    _isListening = false;
+  }
 
   void listen() {
+    if (_isListening) return;
+    _isListening = true;
     final socketService = ref.read(socketProvider);
 
     // 1. Group member added
@@ -129,6 +135,7 @@ class GroupSocketNotifier extends Notifier<void> {
               chatId: event.chatId,
               actorName: event.actorName,
               memberName: event.memberName,
+              sequence: event.sequence,
               isSelf: isSelf,
               isActorSelf: isActorSelf,
             );
@@ -170,6 +177,7 @@ class GroupSocketNotifier extends Notifier<void> {
               chatId: event.chatId,
               actorName: event.actorName,
               memberName: event.memberName,
+              sequence: event.sequence,
               isSelf: isSelf,
               isActorSelf: isActorSelf,
             );
@@ -209,6 +217,7 @@ class GroupSocketNotifier extends Notifier<void> {
             .insertGroupMemberLeftEvent(
               chatId: event.chatId,
               memberName: event.memberName,
+              sequence: event.sequence,
               isSelf: isSelf,
             );
 
@@ -261,6 +270,7 @@ class GroupSocketNotifier extends Notifier<void> {
               actorName: event.actorName,
               memberName: event.memberName,
               role: event.role,
+              sequence: event.sequence,
               isSelf: isSelf,
               isActorSelf: isActorSelf,
             );

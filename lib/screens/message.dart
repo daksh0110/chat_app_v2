@@ -266,6 +266,9 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
     final isParticipant =
         !isGroup || (ref.watch(isGroupParticipantProvider(chatId)).value ?? true);
 
+    final isCurrentUserGroupAdmin =
+        isGroup && (ref.watch(isGroupAdminProvider(chatId)).value ?? false);
+
     final isTyping = !isBlocked && typingMap[chatId] == true;
 
     final onlineCount = currentUser != null
@@ -326,6 +329,7 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
                               data: model.copyWith(
                                 reactions: reactionsMap[model.id] ?? const [],
                               ),
+                              isGroupAdmin: isCurrentUserGroupAdmin,
                               onReply: (item) {
                                 setState(() {
                                   _replyingTo = ReplyMessageInfo(
@@ -351,6 +355,15 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
                                       messageId: messageId,
                                       chatId: chatId,
                                       emoji: emoji,
+                                    );
+                              },
+                              onDelete: (item, deleteForEveryone) {
+                                ref
+                                    .read(messageProvider.notifier)
+                                    .deleteMessage(
+                                      messageId: item.id,
+                                      chatId: chatId,
+                                      deleteForEveryone: deleteForEveryone,
                                     );
                               },
                             ),

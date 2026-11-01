@@ -22,10 +22,16 @@ final friendRequestSocketProvider =
     );
 
 class FriendRequestSocketNotifier extends Notifier<void> {
+  bool _isListening = false;
+
   @override
-  void build() {}
+  void build() {
+    _isListening = false;
+  }
 
   void listen() {
+    if (_isListening) return;
+    _isListening = true;
     final socketService = ref.read(socketProvider);
 
     // Live incoming friend request

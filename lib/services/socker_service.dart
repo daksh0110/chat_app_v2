@@ -81,7 +81,9 @@ class SocketService {
   }
 
   void onConnect(void Function() callback) {
-    _onConnectCallbacks.add(callback);
+    if (!_onConnectCallbacks.contains(callback)) {
+      _onConnectCallbacks.add(callback);
+    }
 
     if (socket?.connected == true) {
       callback();
@@ -92,6 +94,7 @@ class SocketService {
     if (socket == null) return;
     if (_registeredEvents.contains(event)) return;
     _registeredEvents.add(event);
+    socket!.off(event);
     socket!.on(event, callback);
   }
 
@@ -107,6 +110,7 @@ class SocketService {
 
   void listen(String event, Function(dynamic) callback) {
     if (socket == null) return;
+    socket!.off(event);
     socket!.on(event, callback);
   }
 

@@ -123,6 +123,52 @@ class MessageNotifer extends Notifier {
     );
   }
 
+  Future<void> listenForMessageDeleted() async {
+    ref.read(socketProvider).listenOnce("message_deleted", (dynamic data) async {
+      acknowledgeEvent(data);
+      if (data is Map) {
+        final messageId = data["message_id"]?.toString();
+        final chatId = data["chat_id"]?.toString();
+        final deleteType = data["delete_type"]?.toString();
+        if (messageId == null || chatId == null) return;
+
+        if (deleteType == "everyone") {
+          await ref
+              .read(messagesTableProvider.notifier)
+              .markMessageAsDeleted(messageId, chatId);
+        }
+      }
+    });
+  }
+
+  void deleteMessage({
+    required String messageId,
+    required String chatId,
+    required bool deleteForEveryone,
+  }) {
+    ref.read(socketProvider).sendMessageWithAck(
+      "delete_message",
+      {
+        "message_id": messageId,
+        "chat_id": chatId,
+        "delete_type": deleteForEveryone ? "everyone" : "me",
+      },
+      (response) async {
+        if (response is Map && response['error'] == true) return;
+
+        if (deleteForEveryone) {
+          await ref
+              .read(messagesTableProvider.notifier)
+              .markMessageAsDeleted(messageId, chatId);
+        } else {
+          await ref
+              .read(messagesTableProvider.notifier)
+              .deleteMessagePermanently(messageId, chatId);
+        }
+      },
+    );
+  }
+
   //
 
   Future<void> _handleMessage(SendMessageAck data) async {

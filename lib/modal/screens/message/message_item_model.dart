@@ -18,6 +18,7 @@ class MessageItemModel {
   final String? replyToSenderName;
   final String? replyToMessage;
   final List<ReactionGroup> reactions;
+  final bool isDeleted;
 
   const MessageItemModel({
     this.id = '',
@@ -34,6 +35,7 @@ class MessageItemModel {
     this.replyToSenderName,
     this.replyToMessage,
     this.reactions = const [],
+    this.isDeleted = false,
   });
 
   MessageItemModel copyWith({
@@ -51,6 +53,7 @@ class MessageItemModel {
     String? replyToSenderName,
     String? replyToMessage,
     List<ReactionGroup>? reactions,
+    bool? isDeleted,
   }) {
     return MessageItemModel(
       id: id ?? this.id,
@@ -67,6 +70,7 @@ class MessageItemModel {
       replyToSenderName: replyToSenderName ?? this.replyToSenderName,
       replyToMessage: replyToMessage ?? this.replyToMessage,
       reactions: reactions ?? this.reactions,
+      isDeleted: isDeleted ?? this.isDeleted,
     );
   }
 }

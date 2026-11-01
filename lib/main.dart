@@ -85,6 +85,7 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
             final notifier = ref.read(messageProvider.notifier);
             await notifier.receiveMessage();
             await notifier.listenForReactions();
+            await notifier.listenForMessageDeleted();
             await notifier.messageDelivered();
             await notifier.markRead();
             notifier.sendChatSyncEvent();

@@ -8,6 +8,7 @@ import 'package:my_app/modal/screens/message/message_modal.dart';
 import 'package:my_app/modal/tables/chat_events_table.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
 import 'package:my_app/widgets/screens/message/attachments_list_widget.dart';
+import 'package:my_app/widgets/screens/message/delete_message_dialog.dart';
 import 'package:my_app/widgets/screens/message/message_bubble.dart';
 import 'package:my_app/widgets/screens/message/reaction_details_sheet.dart';
 import 'package:my_app/widgets/screens/message/reaction_picker.dart';
@@ -93,22 +94,29 @@ class MessageItem extends ConsumerWidget {
   final MessageItemModel data;
   final void Function(MessageItemModel data)? onReply;
   final void Function(String messageId, String emoji)? onReact;
+  final void Function(MessageItemModel data, bool deleteForEveryone)? onDelete;
+  final bool isGroupAdmin;
 
   const MessageItem({
     super.key,
     required this.data,
     this.onReply,
     this.onReact,
+    this.onDelete,
+    this.isGroupAdmin = false,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isMediaOnly = data.attachments.isNotEmpty && data.message.isEmpty;
-    final hasVisualMedia = data.attachments.any(
-      (attachment) =>
-          attachment.contentType?.startsWith('image/') == true ||
-          attachment.contentType?.startsWith('video/') == true,
-    );
+    final isMediaOnly = !data.isDeleted &&
+        data.attachments.isNotEmpty &&
+        data.message.isEmpty;
+    final hasVisualMedia = !data.isDeleted &&
+        data.attachments.any(
+          (attachment) =>
+              attachment.contentType?.startsWith('image/') == true ||
+              attachment.contentType?.startsWith('video/') == true,
+        );
 
     final timeStr = DateFormat(
       'hh:mm a',
@@ -131,100 +139,147 @@ class MessageItem extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Quoted reply block
-          if (data.replyToMessage != null &&
-              data.replyToMessage!.isNotEmpty) ...[
-            _QuotedReplyPreview(
-              senderName: data.replyToSenderName ?? 'Reply',
-              message: data.replyToMessage ?? '',
-              isSender: data.isSender,
-            ),
-            const SizedBox(height: 4),
-          ],
+          if (data.isDeleted)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    LucideIcons.ban,
+                    size: 14,
+                    color: Colors.grey.shade500,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'This message was deleted',
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontStyle: FontStyle.italic,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  _TimestampChip(
+                    timeStr: timeStr,
+                    isSender: data.isSender,
+                    status: null,
+                    overlayOnMedia: false,
+                  ),
+                ],
+              ),
+            )
+          else ...[
+            // Quoted reply block
+            if (data.replyToMessage != null &&
+                data.replyToMessage!.isNotEmpty) ...[
+              _QuotedReplyPreview(
+                senderName: data.replyToSenderName ?? 'Reply',
+                message: data.replyToMessage ?? '',
+                isSender: data.isSender,
+              ),
+              const SizedBox(height: 4),
+            ],
 
-          // Group sender name
-          if (!data.isSender && data.isGroupChat && !data.isGrouped) ...[
-            PrimaryText(
-              data.senderName,
-              fontSize: 11.5,
-              fontWeight: FontWeight.w700,
-              color: _getSenderColor(data.senderName),
-            ),
-            const SizedBox(height: 2),
-          ],
+            // Group sender name
+            if (!data.isSender && data.isGroupChat && !data.isGrouped) ...[
+              PrimaryText(
+                data.senderName,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+                color: _getSenderColor(data.senderName),
+              ),
+              const SizedBox(height: 2),
+            ],
 
-          // Attachments
-          if (data.attachments.isNotEmpty) ...[
-            AttachmentsListWidget(
-              attachments: data.attachments,
-              senderName: data.senderName,
-              sentAt: data.timestamp,
-            ),
-            if (data.message.isNotEmpty) const SizedBox(height: 5),
-          ],
+            // Attachments
+            if (data.attachments.isNotEmpty) ...[
+              AttachmentsListWidget(
+                attachments: data.attachments,
+                senderName: data.senderName,
+                sentAt: data.timestamp,
+              ),
+              if (data.message.isNotEmpty) const SizedBox(height: 5),
+            ],
 
-          // Text + timestamp row
-          if (data.message.isNotEmpty || !isMediaOnly)
-            _TextWithTimestamp(
-              message: data.message,
-              timeStr: timeStr,
-              isSender: data.isSender,
-              status: data.status,
-              isMediaOnly: isMediaOnly,
-            ),
+            // Text + timestamp row
+            if (data.message.isNotEmpty || !isMediaOnly)
+              _TextWithTimestamp(
+                message: data.message,
+                timeStr: timeStr,
+                isSender: data.isSender,
+                status: data.status,
+                isMediaOnly: isMediaOnly,
+              ),
 
-          // Timestamp for media-only messages
-          if (isMediaOnly)
-            Align(
-              alignment: Alignment.bottomRight,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 3, right: 2, bottom: 2),
-                child: _TimestampChip(
-                  timeStr: timeStr,
-                  isSender: data.isSender,
-                  status: data.status,
-                  overlayOnMedia: true,
+            // Timestamp for media-only messages
+            if (isMediaOnly)
+              Align(
+                alignment: Alignment.bottomRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 3, right: 2, bottom: 2),
+                  child: _TimestampChip(
+                    timeStr: timeStr,
+                    isSender: data.isSender,
+                    status: data.status,
+                    overlayOnMedia: true,
+                  ),
                 ),
               ),
-            ),
+          ],
         ],
       ),
     );
 
-    final gestureBubble = GestureDetector(
-      onLongPressStart: (details) async {
-        final myEmojis = data.reactions
-            .where((r) => r.hasReactedByMe)
-            .map((r) => r.emoji)
-            .toSet();
+    final gestureBubble = data.isDeleted
+        ? bubble
+        : GestureDetector(
+            onLongPressStart: (details) async {
+              final myEmojis = data.reactions
+                  .where((r) => r.hasReactedByMe)
+                  .map((r) => r.emoji)
+                  .toSet();
 
-        final result = await showMessageContextMenu(
-          context,
-          tapPosition: details.globalPosition,
-          myReactedEmojis: myEmojis,
-          canReply: onReply != null,
-          canCopy: data.message.isNotEmpty,
-          messageText: data.message,
-        );
+              final result = await showMessageContextMenu(
+                context,
+                tapPosition: details.globalPosition,
+                isSender: data.isSender,
+                myReactedEmojis: myEmojis,
+                canReply: onReply != null,
+                canCopy: data.message.isNotEmpty,
+                canDelete: onDelete != null,
+                messageText: data.message,
+              );
 
-        if (result == null) return;
+              if (result == null) return;
 
-        switch (result.action) {
-          case MessageContextActionType.react:
-            if (result.emoji != null && onReact != null) {
-              onReact!(data.id, result.emoji!);
-            }
-            break;
-          case MessageContextActionType.reply:
-            onReply?.call(data);
-            break;
-          case MessageContextActionType.copy:
-            break;
-        }
-      },
-      onDoubleTap: onReply != null ? () => onReply!(data) : null,
-      child: bubble,
-    );
+              switch (result.action) {
+                case MessageContextActionType.react:
+                  if (result.emoji != null && onReact != null) {
+                    onReact!(data.id, result.emoji!);
+                  }
+                  break;
+                case MessageContextActionType.reply:
+                  onReply?.call(data);
+                  break;
+                case MessageContextActionType.copy:
+                  break;
+                case MessageContextActionType.delete:
+                  final canDeleteForEveryone = data.isSender || isGroupAdmin;
+                  if (!context.mounted) break;
+                  final deleteType = await showDeleteMessageDialog(
+                    context,
+                    canDeleteForEveryone: canDeleteForEveryone,
+                  );
+                  if (deleteType != null && onDelete != null) {
+                    onDelete!(data, deleteType == DeleteMessageType.everyone);
+                  }
+                  break;
+              }
+            },
+            onDoubleTap: onReply != null ? () => onReply!(data) : null,
+            child: bubble,
+          );
 
     final itemWithReactions = Column(
       mainAxisSize: MainAxisSize.min,
@@ -232,7 +287,7 @@ class MessageItem extends ConsumerWidget {
           data.isSender ? CrossAxisAlignment.end : CrossAxisAlignment.start,
       children: [
         gestureBubble,
-        if (data.reactions.isNotEmpty)
+        if (!data.isDeleted && data.reactions.isNotEmpty)
           ReactionPills(
             reactions: data.reactions,
             isSender: data.isSender,
@@ -246,7 +301,7 @@ class MessageItem extends ConsumerWidget {
       ],
     );
 
-    if (onReply == null) return itemWithReactions;
+    if (onReply == null || data.isDeleted) return itemWithReactions;
 
     return Dismissible(
       key: ValueKey('msg_${data.id}_${data.timestamp}'),
