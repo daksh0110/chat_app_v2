@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/modal/screens/search/search_item.dart';
 import 'package:my_app/modal/screens/search/user_profile_arguments.dart';
@@ -87,11 +89,28 @@ class _HeaderState extends State<Header> {
         ),
       ),
       actionsPadding: const EdgeInsets.only(right: 15, left: 10),
-      // actions: const [
-      //   Icon(LucideIcons.phone, color: DefaultColorSheet.lightBlack, size: 20),
-      //   SizedBox(width: 10),
-      //   Icon(LucideIcons.video, color: DefaultColorSheet.lightBlack, size: 20),
-      // ],
+      actions: [
+        IconButton(
+          icon: const Icon(
+            LucideIcons.ellipsisVertical,
+            color: DefaultColorSheet.lightBlack,
+            size: 20,
+          ),
+          tooltip: widget.isGroupChat ? 'Group info' : 'Contact info',
+          onPressed: () {
+            Navigator.pushNamed(
+              context,
+              AppRoutes.userProfile,
+              arguments: UserProfileArguments(
+                id: widget.id,
+                isGroupChat: widget.isGroupChat,
+                name: widget.name,
+                profilePicUrl: widget.profilePicUrl,
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 }

@@ -8,6 +8,7 @@ import 'package:my_app/modal/screens/message/send_message_request.dart';
 import 'package:my_app/modal/screens/search/message_screen_arguments.dart';
 import 'package:my_app/providers/chat_list_provider.dart';
 import 'package:my_app/providers/chat_message_provider.dart';
+import 'package:my_app/providers/chat_reactions_provider.dart';
 import 'package:my_app/providers/database_provider.dart';
 import 'package:my_app/providers/message_provider.dart';
 import 'package:my_app/providers/message_screen_provider.dart';
@@ -298,6 +299,9 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
                       receiverId: receiverId,
                     )),
                   );
+                  final reactionsMap =
+                      ref.watch(chatReactionsProvider(chatId)).value ??
+                      const {};
 
                   return messagesAsync.when(
                     data: (events) {
@@ -319,7 +323,9 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
                               label: label,
                             ),
                             MessageTimelineEvent(:final model) => MessageItem(
-                              data: model,
+                              data: model.copyWith(
+                                reactions: reactionsMap[model.id] ?? const [],
+                              ),
                               onReply: (item) {
                                 setState(() {
                                   _replyingTo = ReplyMessageInfo(
@@ -337,6 +343,15 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
                                             : ""),
                                   );
                                 });
+                              },
+                              onReact: (messageId, emoji) {
+                                ref
+                                    .read(messageProvider.notifier)
+                                    .toggleReaction(
+                                      messageId: messageId,
+                                      chatId: chatId,
+                                      emoji: emoji,
+                                    );
                               },
                             ),
                             BannerTimelineEvent(:final text) => DateBanner(

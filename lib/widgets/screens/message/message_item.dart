@@ -9,6 +9,9 @@ import 'package:my_app/modal/tables/chat_events_table.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
 import 'package:my_app/widgets/screens/message/attachments_list_widget.dart';
 import 'package:my_app/widgets/screens/message/message_bubble.dart';
+import 'package:my_app/widgets/screens/message/reaction_details_sheet.dart';
+import 'package:my_app/widgets/screens/message/reaction_picker.dart';
+import 'package:my_app/widgets/screens/message/reaction_pills.dart';
 
 Widget _statusIcon(MessageStatus status) {
   switch (status) {
@@ -89,8 +92,14 @@ EdgeInsets _visualMediaMargin(MessageAlignment alignment, bool isGrouped) {
 class MessageItem extends ConsumerWidget {
   final MessageItemModel data;
   final void Function(MessageItemModel data)? onReply;
+  final void Function(String messageId, String emoji)? onReact;
 
-  const MessageItem({super.key, required this.data, this.onReply});
+  const MessageItem({
+    super.key,
+    required this.data,
+    this.onReply,
+    this.onReact,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -183,12 +192,61 @@ class MessageItem extends ConsumerWidget {
     );
 
     final gestureBubble = GestureDetector(
-      onLongPress: onReply != null ? () => onReply!(data) : null,
+      onLongPressStart: (details) async {
+        final myEmojis = data.reactions
+            .where((r) => r.hasReactedByMe)
+            .map((r) => r.emoji)
+            .toSet();
+
+        final result = await showMessageContextMenu(
+          context,
+          tapPosition: details.globalPosition,
+          myReactedEmojis: myEmojis,
+          canReply: onReply != null,
+          canCopy: data.message.isNotEmpty,
+          messageText: data.message,
+        );
+
+        if (result == null) return;
+
+        switch (result.action) {
+          case MessageContextActionType.react:
+            if (result.emoji != null && onReact != null) {
+              onReact!(data.id, result.emoji!);
+            }
+            break;
+          case MessageContextActionType.reply:
+            onReply?.call(data);
+            break;
+          case MessageContextActionType.copy:
+            break;
+        }
+      },
       onDoubleTap: onReply != null ? () => onReply!(data) : null,
       child: bubble,
     );
 
-    if (onReply == null) return gestureBubble;
+    final itemWithReactions = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment:
+          data.isSender ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        gestureBubble,
+        if (data.reactions.isNotEmpty)
+          ReactionPills(
+            reactions: data.reactions,
+            isSender: data.isSender,
+            onTap: (emoji) {
+              onReact?.call(data.id, emoji);
+            },
+            onLongPress: (reactions) {
+              showReactionDetailsSheet(context, reactions);
+            },
+          ),
+      ],
+    );
+
+    if (onReply == null) return itemWithReactions;
 
     return Dismissible(
       key: ValueKey('msg_${data.id}_${data.timestamp}'),
@@ -206,7 +264,7 @@ class MessageItem extends ConsumerWidget {
           color: DefaultColorSheet.green500,
         ),
       ),
-      child: gestureBubble,
+      child: itemWithReactions,
     );
   }
 }

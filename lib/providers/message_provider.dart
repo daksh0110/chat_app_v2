@@ -29,6 +29,8 @@ import 'package:my_app/providers/tables/chat_events_table_provider.dart';
 import 'package:my_app/providers/tables/chat_participants_table.dart';
 import 'package:my_app/providers/tables/media_table_provider.dart';
 import 'package:my_app/providers/tables/message_status_table_provider.dart';
+import 'package:my_app/modal/message_reaction_modal.dart';
+import 'package:my_app/providers/tables/message_reactions_table_provider.dart';
 import 'package:my_app/providers/tables/messages_table_provider.dart';
 import 'package:my_app/providers/tables/user_preference_table_provider.dart';
 import 'package:uuid/uuid.dart';
@@ -71,6 +73,54 @@ class MessageNotifer extends Notifier {
             },
           );
     });
+  }
+
+  Future<void> listenForReactions() async {
+    ref.read(socketProvider).listenOnce("message_reaction", (dynamic data) {
+      acknowledgeEvent(data);
+      if (data is Map) {
+        final currentUserId = ref.read(userPreferenceTableProvider).value;
+        final payload = ReactionEventPayload.fromJson(
+          Map<String, dynamic>.from(data),
+          currentUserId: currentUserId,
+        );
+        ref.read(messageReactionsTableProvider.notifier).syncReactionsForMessage(
+          messageId: payload.messageId,
+          chatId: payload.chatId,
+          reactionGroups: payload.reactions,
+        );
+      }
+    });
+  }
+
+  void toggleReaction({
+    required String messageId,
+    required String chatId,
+    required String emoji,
+  }) {
+    ref.read(socketProvider).sendMessageWithAck(
+      "message_reaction",
+      {
+        "message_id": messageId,
+        "chat_id": chatId,
+        "emoji": emoji,
+      },
+      (response) {
+        if (response is Map && response['error'] == true) return;
+        if (response is Map) {
+          final currentUserId = ref.read(userPreferenceTableProvider).value;
+          final payload = ReactionEventPayload.fromJson(
+            Map<String, dynamic>.from(response),
+            currentUserId: currentUserId,
+          );
+          ref.read(messageReactionsTableProvider.notifier).syncReactionsForMessage(
+            messageId: payload.messageId,
+            chatId: payload.chatId,
+            reactionGroups: payload.reactions,
+          );
+        }
+      },
+    );
   }
 
   //
@@ -736,6 +786,12 @@ class MessageNotifer extends Notifier {
                         type: "GROUP",
                       ),
                     );
+
+                if (payload.data?.participants.isNotEmpty == true) {
+                  await ref
+                      .read(chatParticipantsTableProvider.notifier)
+                      .bulkInsertParticipants(payload.data!.participants);
+                }
               },
             );
       });

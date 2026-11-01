@@ -8,6 +8,7 @@ import 'package:my_app/modal/tables/groups_table.dart';
 import 'package:my_app/modal/tables/media_modal.dart';
 import 'package:my_app/modal/tables/message_status_table.dart';
 import 'package:my_app/modal/tables/messages_table.dart';
+import 'package:my_app/modal/tables/message_reactions_table.dart';
 import 'package:my_app/modal/tables/notifications_table.dart';
 import 'package:my_app/modal/tables/recent_searches_table.dart';
 import 'package:my_app/modal/tables/user_preferences_table.dart';
@@ -34,13 +35,14 @@ part 'database.g.dart';
     BlocksTable,
     NotificationsTable,
     ChatEventsTable,
+    MessageReactionsTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   // --- Queries ---
   // Stream<List<UsersTableData>> getAllUsers() {
@@ -78,6 +80,9 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(messages, messages.replyToId);
         await m.addColumn(messages, messages.replyToSenderName);
         await m.addColumn(messages, messages.replyToMessage);
+      }
+      if (from < 14) {
+        await m.createTable(messageReactionsTable);
       }
     },
 

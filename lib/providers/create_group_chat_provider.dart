@@ -10,6 +10,7 @@ import 'package:my_app/modal/group_creation_modal.dart';
 import 'package:my_app/modal/upload_responses/upload_attachment.dart';
 import 'package:my_app/providers/socket_provider.dart';
 import 'package:my_app/providers/tables/chat_list_table_provider.dart';
+import 'package:my_app/providers/tables/chat_participants_table.dart';
 import 'package:my_app/providers/tables/groups_table_provider.dart';
 import 'package:my_app/providers/tables/media_table_provider.dart';
 
@@ -69,6 +70,12 @@ class CreateGroupChatProvider extends Notifier {
     final chatId = response.data?.chatId;
     if (chatId == null) {
       throw Exception("Chat ID not received");
+    }
+
+    if (response.data?.participants.isNotEmpty == true) {
+      await ref
+          .read(chatParticipantsTableProvider.notifier)
+          .bulkInsertParticipants(response.data!.participants);
     }
 
     if (group.media != null) {
