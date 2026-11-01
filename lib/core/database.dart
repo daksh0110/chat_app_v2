@@ -40,7 +40,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   // --- Queries ---
   // Stream<List<UsersTableData>> getAllUsers() {
@@ -71,8 +71,70 @@ class AppDatabase extends _$AppDatabase {
       if (from < 11) {
         await m.createTable(chatEventsTable);
       }
+      if (from < 12) {
+        await _backfillChatEventsForMessages();
+      }
+    },
+
+    beforeOpen: (OpeningDetails details) async {
+      await _backfillChatEventsForMessages();
     },
   );
+
+  /// Ensures all existing messages in SQLite have a corresponding row in chatEventsTable
+  Future<void> _backfillChatEventsForMessages() async {
+    try {
+      final existingMessages = await select(messages).get();
+      if (existingMessages.isEmpty) return;
+
+      final existingEvents = await (selectOnly(
+        chatEventsTable,
+      )..addColumns([chatEventsTable.id, chatEventsTable.contentId])).get();
+
+      final existingIds = <String>{};
+      for (final row in existingEvents) {
+        final id = row.read(chatEventsTable.id);
+        final contentId = row.read(chatEventsTable.contentId);
+        if (id != null) existingIds.add(id);
+        if (contentId != null) existingIds.add(contentId);
+      }
+
+      final currentUserPref = await select(
+        userPreferencesTable,
+      ).getSingleOrNull();
+      final currentUserId = currentUserPref?.userId;
+
+      final missing = existingMessages.where(
+        (m) =>
+            !existingIds.contains(m.id) &&
+            (m.serverId == null || !existingIds.contains(m.serverId)),
+      );
+
+      if (missing.isEmpty) return;
+
+      await batch((b) {
+        for (final msg in missing) {
+          final timestamp = msg.serverCreatedAt ?? msg.createdAt;
+          final isSender =
+              currentUserId != null && msg.senderId == currentUserId;
+          b.insert(
+            chatEventsTable,
+            ChatEventsTableCompanion(
+              id: Value(msg.id),
+              chatId: Value(msg.chatId),
+              type: const Value(ChatEventType.message),
+              contentId: Value(msg.serverId ?? msg.id),
+              alignment: Value(
+                isSender ? ChatEventAlignment.right : ChatEventAlignment.left,
+              ),
+              createdAt: Value(DateTime.fromMillisecondsSinceEpoch(timestamp)),
+            ),
+            mode: InsertMode.insertOrIgnore,
+          );
+        }
+      });
+    } catch (_) {}
+  }
 
   Future<void> clearAllData() async {
     await transaction(() async {

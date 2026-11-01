@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/core/database.dart';
 import 'package:my_app/modal/screens/message/message_body_request.dart';
+import 'package:my_app/modal/tables/chat_events_table.dart';
 import 'package:my_app/modal/user_profile_modal.dart';
 import 'package:my_app/providers/database_provider.dart';
 
@@ -70,6 +71,26 @@ class MessagesTableProvider extends Notifier {
               serverCreatedAt: Value(messageRequest.serverCreatedAt),
             ),
           );
+
+      final msgId = messageRequest.messageId ?? messageRequest.tempId;
+      if (msgId != null && msgId.isNotEmpty) {
+        final timestamp =
+            messageRequest.serverCreatedAt ?? messageRequest.createdAt;
+        final eventTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
+
+        await db
+            .into(db.chatEventsTable)
+            .insertOnConflictUpdate(
+              ChatEventsTableCompanion(
+                id: Value(msgId),
+                chatId: Value(messageRequest.chatId ?? ""),
+                type: const Value(ChatEventType.message),
+                contentId: Value(msgId),
+                alignment: const Value(ChatEventAlignment.left),
+                createdAt: Value(eventTime),
+              ),
+            );
+      }
     } catch (e) {
       debugPrint(e.toString());
     }
@@ -93,7 +114,8 @@ class MessagesTableProvider extends Notifier {
             .join([
               leftOuterJoin(
                 db.mediaTable,
-                db.mediaTable.actorId.equalsExp(db.messages.id),
+                db.mediaTable.actorId.equalsExp(db.messages.id) |
+                    db.mediaTable.actorId.equalsExp(db.messages.serverId),
               ),
               leftOuterJoin(
                 db.usersTable,

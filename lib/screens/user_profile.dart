@@ -1,3 +1,6 @@
+import 'package:my_app/screens/select_members_screen.dart';
+import 'package:my_app/modal/user.modal.dart';
+import 'package:my_app/providers/socket_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -95,12 +98,98 @@ class UserProfileState extends ConsumerState<UserProfile> {
         );
   }
 
+  void _showLeaveGroupDialog(BuildContext context, String chatId) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.grey.shade900,
+        title: const Text('Leave Group', style: TextStyle(color: Colors.white)),
+        content: const Text(
+          'Are you sure you want to leave this group?',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white60)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await ref.read(socketProvider).leaveGroup(chatId);
+                if (context.mounted) {
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ToastHelper.show(
+                    context: context,
+                    message: e.toString().replaceFirst('Exception: ', ''),
+                    type: ToastificationType.error,
+                  );
+                }
+              }
+            },
+            child: const Text(
+              'Leave',
+              style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRemoveMemberDialog(BuildContext context, String chatId, GroupMember member) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.grey.shade900,
+        title: Text('Remove ${member.name}', style: const TextStyle(color: Colors.white)),
+        content: Text(
+          'Are you sure you want to remove ${member.name} from this group?',
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white60)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await ref.read(socketProvider).removeGroupMember(chatId, member.userId);
+              } catch (e) {
+                if (context.mounted) {
+                  ToastHelper.show(
+                    context: context,
+                    message: e.toString().replaceFirst('Exception: ', ''),
+                    type: ToastificationType.error,
+                  );
+                }
+              }
+            },
+            child: const Text(
+              'Remove',
+              style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildGroupProfile(
     BuildContext context,
     GroupProfile group,
     UserProfileArguments args,
     String currentUser,
   ) {
+    final isCurrentUserAdmin = group.members.any(
+      (m) => m.userId == currentUser && m.role.toUpperCase() == 'ADMIN',
+    );
     final displayName = args.name?.isNotEmpty == true
         ? args.name!
         : group.name.isNotEmpty
@@ -176,13 +265,77 @@ class UserProfileState extends ConsumerState<UserProfile> {
                         color: DefaultColorSheet.grey500,
                       ),
                       const SizedBox(height: 14),
+                      if (isCurrentUserAdmin) ...[
+                        InkWell(
+                          onTap: () async {
+                            final excluded = group.members.map((m) => m.userId).toList();
+                            final List<UserModel>? selected = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => SelectMembersScreen(
+                                  initialSelected: const [],
+                                  excludedUserIds: excluded,
+                                ),
+                              ),
+                            );
+                            if (selected != null && selected.isNotEmpty && context.mounted) {
+                              final socket = ref.read(socketProvider);
+                              for (final user in selected) {
+                                try {
+                                  await socket.addGroupMember(group.chatId, user.id);
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ToastHelper.show(
+                                      context: context,
+                                      message: e.toString().replaceFirst('Exception: ', ''),
+                                      type: ToastificationType.error,
+                                    );
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 12.0),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: DefaultColorSheet.primary.withOpacity(0.15),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    LucideIcons.userPlus,
+                                    color: DefaultColorSheet.primary,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                const PrimaryText(
+                                  'Add Members',
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: DefaultColorSheet.primary,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                       if (group.members.isEmpty)
                         const PrimaryText(
                           'No members found',
                           textAlign: TextAlign.center,
                         ),
                       ...group.members.map(
-                        (member) => _memberTile(currentUser, member),
+                        (member) => _memberTile(
+                          currentUser,
+                          member,
+                          isCurrentUserAdmin,
+                          group.chatId,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       Row(
@@ -214,6 +367,40 @@ class UserProfileState extends ConsumerState<UserProfile> {
                         const SizedBox(height: 12),
                         MediaSharedList(media: media),
                       ],
+                      const SizedBox(height: 24),
+                      InkWell(
+                        onTap: () => _showLeaveGroupDialog(context, group.chatId),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.redAccent.withOpacity(0.3),
+                            ),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                LucideIcons.logOut,
+                                color: Colors.redAccent,
+                                size: 20,
+                              ),
+                              SizedBox(width: 8),
+                              PrimaryText(
+                                'Leave Group',
+                                color: Colors.redAccent,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
                     ],
                   ),
                 ),
@@ -385,8 +572,15 @@ class UserProfileState extends ConsumerState<UserProfile> {
     );
   }
 
-  Widget _memberTile(String? currentUserId, GroupMember member) {
+  Widget _memberTile(
+    String? currentUserId,
+    GroupMember member,
+    bool isCurrentUserAdmin,
+    String chatId,
+  ) {
     final isMe = currentUserId == member.userId;
+    final isMemberAdmin = member.role.toUpperCase() == 'ADMIN';
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: Row(
@@ -409,13 +603,70 @@ class UserProfileState extends ConsumerState<UserProfile> {
                 ),
                 const SizedBox(height: 4),
                 PrimaryText(
-                  member.role == 'ADMIN' ? 'Admin' : 'Member',
-                  color: DefaultColorSheet.grey500,
+                  isMemberAdmin ? 'Admin' : 'Member',
+                  color: isMemberAdmin
+                      ? DefaultColorSheet.primary
+                      : DefaultColorSheet.grey500,
                   fontSize: 14,
                 ),
               ],
             ),
           ),
+          if (isCurrentUserAdmin && !isMe)
+            PopupMenuButton<String>(
+              icon: const Icon(
+                LucideIcons.ellipsisVertical,
+                color: Colors.white70,
+                size: 20,
+              ),
+              color: Colors.grey.shade900,
+              onSelected: (value) async {
+                final socket = ref.read(socketProvider);
+                if (value == 'make_admin') {
+                  try {
+                    await socket.changeGroupMemberRole(chatId, member.userId, 'ADMIN');
+                  } catch (e) {
+                    if (context.mounted) {
+                      ToastHelper.show(
+                        context: context,
+                        message: e.toString().replaceFirst('Exception: ', ''),
+                        type: ToastificationType.error,
+                      );
+                    }
+                  }
+                } else if (value == 'dismiss_admin') {
+                  try {
+                    await socket.changeGroupMemberRole(chatId, member.userId, 'MEMBER');
+                  } catch (e) {
+                    if (context.mounted) {
+                      ToastHelper.show(
+                        context: context,
+                        message: e.toString().replaceFirst('Exception: ', ''),
+                        type: ToastificationType.error,
+                      );
+                    }
+                  }
+                } else if (value == 'remove') {
+                  _showRemoveMemberDialog(context, chatId, member);
+                }
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: isMemberAdmin ? 'dismiss_admin' : 'make_admin',
+                  child: Text(
+                    isMemberAdmin ? 'Dismiss as admin' : 'Make group admin',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'remove',
+                  child: Text(
+                    'Remove from group',
+                    style: TextStyle(color: Colors.redAccent),
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );

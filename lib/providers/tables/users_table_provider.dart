@@ -128,32 +128,38 @@ class UsersTableProvider extends Notifier {
   }
 
   Future<UserModel?> fetchAndUpdateUserProfile(String userId) async {
-    final profile = await UserApiService(ApiClient()).getUserById(userId);
+    try {
+      final profile = await UserApiService(ApiClient()).getUserById(userId);
 
-    if (!profile.success || profile.data == null) {
-      throw Exception(profile.message);
+      if (!profile.success || profile.data == null) {
+        // Fallback to stale cached data from local DB
+        return await getUserById(userId);
+      }
+      final data = profile.data!;
+      await ref
+          .read(requestUserProvider.notifier)
+          .insertOrUpdateRequest(data.id, data.relationshipStatus ?? "NONE");
+
+      return await updateUserProfile(
+        UserModel(
+          id: data.id,
+          name: data.name,
+          email: data.email ?? "",
+          bio: data.bio ?? "",
+        ),
+        data.media != null
+            ? UploadAttachment(
+                key: data.media!.key,
+                contentType: data.media!.contentType,
+                type: data.media!.type,
+                actorId: data.id,
+                name: data.media!.name,
+              )
+            : null,
+      );
+    } catch (e) {
+      debugPrint("fetchAndUpdateUserProfile fallback to cached: $e");
+      return await getUserById(userId);
     }
-    final data = profile.data!;
-    await ref
-        .read(requestUserProvider.notifier)
-        .insertOrUpdateRequest(data.id, data.relationshipStatus ?? "NONE");
-
-    return await updateUserProfile(
-      UserModel(
-        id: data.id,
-        name: data.name,
-        email: data.email ?? "",
-        bio: data.bio ?? "",
-      ),
-      data.media != null
-          ? UploadAttachment(
-              key: data.media!.key,
-              contentType: data.media!.contentType,
-              type: data.media!.type,
-              actorId: data.id,
-              name: data.media!.name,
-            )
-          : null,
-    );
   }
 }

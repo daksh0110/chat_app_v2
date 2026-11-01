@@ -668,7 +668,7 @@ class MessageNotifer extends Notifier {
     if (_typingListenerAdded) return;
     _typingListenerAdded = true;
 
-    ref.read(socketProvider).listenOnce("user_typing", (dynamic data) {
+    ref.read(socketProvider).listenOnce("user_typing", (dynamic data) async {
       final chatId = data["chat_id"];
       if (chatId != null) {
         ref.read(messageTypingProvider.notifier).receiveUserTyping(chatId);

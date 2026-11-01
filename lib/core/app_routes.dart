@@ -10,6 +10,7 @@ import 'package:my_app/screens/onboarding_screen.dart';
 import 'package:my_app/screens/profile_setup.dart';
 import 'package:my_app/screens/search.dart';
 import 'package:my_app/screens/settings/account/accounts_main.dart';
+import 'package:my_app/screens/settings/account/blocked_users_screen.dart';
 import 'package:my_app/screens/settings/profile/profile_edit.dart';
 import 'package:my_app/screens/settings/settings_main.dart';
 import 'package:my_app/screens/sign_up.dart';
@@ -28,6 +29,7 @@ class AppRoutes {
   static const String settingsMain = "/settings";
   static const String profileEdit = "/settings/profile-edit";
   static const String accountsMain = "/settings/account";
+  static const String blockedUsers = "/settings/blocked-users";
   static const String changePassword = "/change-password";
   static const String verifyEmail = "/verify-email";
   static const String profileSetup = "/profile-setup";
@@ -54,6 +56,7 @@ class AppRoutes {
     newChat: (context) => const NewChatScreen(),
     profileEdit: (context) => const ProfileEdit(),
     accountsMain: (context) => const AccountsPage(),
+    blockedUsers: (context) => const BlockedUsersScreen(),
     notifications: (context) => const NotificationsScreen(),
   };
 }

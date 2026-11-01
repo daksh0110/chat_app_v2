@@ -13,8 +13,13 @@ import 'package:my_app/widgets/comman/user_bubble.dart';
 
 class SelectMembersScreen extends ConsumerStatefulWidget {
   final List<UserModel> initialSelected;
+  final List<String>? excludedUserIds;
 
-  const SelectMembersScreen({super.key, required this.initialSelected});
+  const SelectMembersScreen({
+    super.key,
+    required this.initialSelected,
+    this.excludedUserIds,
+  });
 
   @override
   ConsumerState<SelectMembersScreen> createState() =>
@@ -188,11 +193,17 @@ class _SelectMembersScreenState extends ConsumerState<SelectMembersScreen> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_searchResults.isEmpty) {
+    final filtered = widget.excludedUserIds != null
+        ? _searchResults
+            .where((u) => !widget.excludedUserIds!.contains(u.id))
+            .toList()
+        : _searchResults;
+
+    if (filtered.isEmpty) {
       return const Center(child: PrimaryText("No users found"));
     }
 
-    return _buildList(_searchResults);
+    return _buildList(filtered);
   }
 
   Widget _buildContactsList() {
@@ -202,11 +213,15 @@ class _SelectMembersScreenState extends ConsumerState<SelectMembersScreen> {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, stack) => Center(child: Text(err.toString())),
       data: (users) {
-        if (users.isEmpty) {
+        final filtered = widget.excludedUserIds != null
+            ? users.where((u) => !widget.excludedUserIds!.contains(u.id)).toList()
+            : users;
+
+        if (filtered.isEmpty) {
           return const Center(child: PrimaryText("No contacts found"));
         }
 
-        return _buildList(users);
+        return _buildList(filtered);
       },
     );
   }

@@ -4,6 +4,8 @@ import 'package:my_app/core/database.dart';
 import 'package:my_app/core/network/api_client.dart';
 import 'package:my_app/data/services/user_api_service.dart';
 import 'package:my_app/providers/database_provider.dart';
+import 'package:my_app/providers/tables/blocks_table_provider.dart';
+import 'package:my_app/providers/tables/request_user_provider.dart';
 import 'package:my_app/providers/token_provider.dart';
 
 class FriendRequestNotification {
@@ -47,7 +49,7 @@ final friendRequestsProvider =
             ..orderBy([
               OrderingTerm(
                 expression: db.friendsTable.isRead,
-                mode: OrderingMode.asc, // unread (false) first
+                mode: OrderingMode.asc,
               ),
             ]);
 
@@ -85,31 +87,18 @@ Future<void> syncRelationshipsFromRest(WidgetRef ref) async {
       final status = item.relationshipStatus ?? 'NONE';
 
       if (status == 'BLOCKED') {
-        await db
-            .into(db.blocksTable)
-            .insertOnConflictUpdate(
-              BlocksTableCompanion(
-                userId: Value(item.id),
-                createdAt: Value(DateTime.now()),
-              ),
-            );
+        await ref.read(blocksTableProvider.notifier).blockUser(item.id);
       } else {
-        await (db.delete(
-          db.blocksTable,
-        )..where((t) => t.userId.equals(item.id))).go();
+        await ref.read(blocksTableProvider.notifier).unblockUser(item.id);
 
         final existing = await (db.select(
           db.friendsTable,
         )..where((t) => t.userId.equals(item.id))).getSingleOrNull();
 
-        await db
-            .into(db.friendsTable)
-            .insertOnConflictUpdate(
-              FriendsTableCompanion(
-                userId: Value(item.id),
-                status: Value(status),
-                isRead: Value(existing?.isRead ?? true),
-              ),
+        await ref.read(requestUserProvider.notifier).insertOrUpdateRequest(
+              item.id,
+              status,
+              isRead: existing?.isRead ?? true,
             );
       }
       await db

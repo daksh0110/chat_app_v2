@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
 import 'package:my_app/modal/screens/createGroup/create_group_response.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -124,6 +123,119 @@ class SocketService {
 
     return completer.future;
   }
+
+  Future<dynamic> addGroupMember(String chatId, String userId) {
+    final completer = Completer<dynamic>();
+    if (socket == null) {
+      completer.completeError('Socket not connected');
+      return completer.future;
+    }
+
+    socket!.emitWithAck(
+      "add-group-member",
+      {"chatId": chatId, "userId": userId},
+      ack: (response) {
+        if (response is Map && response['success'] == true) {
+          completer.complete(response);
+        } else {
+          completer.completeError(
+            Exception(
+              response is Map
+                  ? (response['message'] ?? 'Failed to add member')
+                  : 'Failed to add member',
+            ),
+          );
+        }
+      },
+    );
+    return completer.future;
+  }
+
+  Future<dynamic> removeGroupMember(String chatId, String userId) {
+    final completer = Completer<dynamic>();
+    if (socket == null) {
+      completer.completeError('Socket not connected');
+      return completer.future;
+    }
+
+    socket!.emitWithAck(
+      "remove-group-member",
+      {"chatId": chatId, "userId": userId},
+      ack: (response) {
+        if (response is Map && response['success'] == true) {
+          completer.complete(response);
+        } else {
+          completer.completeError(
+            Exception(
+              response is Map
+                  ? (response['message'] ?? 'Failed to remove member')
+                  : 'Failed to remove member',
+            ),
+          );
+        }
+      },
+    );
+    return completer.future;
+  }
+
+  Future<dynamic> leaveGroup(String chatId) {
+    final completer = Completer<dynamic>();
+    if (socket == null) {
+      completer.completeError('Socket not connected');
+      return completer.future;
+    }
+
+    socket!.emitWithAck(
+      "leave-group",
+      {"chatId": chatId},
+      ack: (response) {
+        if (response is Map && response['success'] == true) {
+          completer.complete(response);
+        } else {
+          completer.completeError(
+            Exception(
+              response is Map
+                  ? (response['message'] ?? 'Failed to leave group')
+                  : 'Failed to leave group',
+            ),
+          );
+        }
+      },
+    );
+    return completer.future;
+  }
+
+  Future<dynamic> changeGroupMemberRole(
+    String chatId,
+    String userId,
+    String role,
+  ) {
+    final completer = Completer<dynamic>();
+    if (socket == null) {
+      completer.completeError('Socket not connected');
+      return completer.future;
+    }
+
+    socket!.emitWithAck(
+      "change-group-member-role",
+      {"chatId": chatId, "userId": userId, "role": role},
+      ack: (response) {
+        if (response is Map && response['success'] == true) {
+          completer.complete(response);
+        } else {
+          completer.completeError(
+            Exception(
+              response is Map
+                  ? (response['message'] ?? 'Failed to update role')
+                  : 'Failed to update role',
+            ),
+          );
+        }
+      },
+    );
+    return completer.future;
+  }
+
 
   void listenGroupCreated(void Function(dynamic data) callback) {
     if (socket == null) return;

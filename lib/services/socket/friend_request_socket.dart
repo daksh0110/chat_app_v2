@@ -7,6 +7,9 @@ import 'package:my_app/modal/notification_model.dart';
 import 'package:my_app/modal/screens/search/search_item.dart';
 import 'package:my_app/providers/database_provider.dart';
 import 'package:my_app/providers/socket_provider.dart';
+import 'package:my_app/providers/tables/blocks_table_provider.dart';
+import 'package:my_app/providers/tables/chat_events_table_provider.dart';
+import 'package:my_app/providers/tables/chat_list_table_provider.dart';
 import 'package:my_app/providers/tables/notifications_provider.dart';
 import 'package:my_app/providers/tables/request_user_provider.dart';
 import 'package:my_app/providers/tables/users_table_provider.dart';
@@ -52,13 +55,24 @@ class FriendRequestSocketNotifier extends Notifier<void> {
           .read(requestUserProvider.notifier)
           .insertOrUpdateRequest(accepterId, "FRIENDS");
 
-      await ref
+      final user = await ref
           .read(usersTableProvider.notifier)
           .fetchAndUpdateUserProfile(accepterId);
+
       await _saveNotification(
         actorId: accepterId,
         type: NotificationType.friendRequestAccepted,
       );
+
+      // Insert timeline event in chat if chat exists or local chat
+      final chatId =
+          await ref
+              .read(chatListTableProvider.notifier)
+              .findDirectChatIdWithUser(accepterId) ??
+          "local_$accepterId";
+      await ref
+          .read(chatEventsTableProvider.notifier)
+          .insertFriendAddedEvent(chatId: chatId, friendName: user?.name ?? "");
     });
 
     socketService.listen('friend_request_rejected', (data) async {
@@ -88,32 +102,25 @@ class FriendRequestSocketNotifier extends Notifier<void> {
               final status = searchItem.relationshipStatus ?? 'NONE';
 
               if (status == 'BLOCKED') {
-                await db
-                    .into(db.blocksTable)
-                    .insertOnConflictUpdate(
-                      BlocksTableCompanion(
-                        userId: Value(searchItem.id),
-                        createdAt: Value(DateTime.now()),
-                      ),
-                    );
+                await ref
+                    .read(blocksTableProvider.notifier)
+                    .blockUser(searchItem.id);
               } else {
-                await (db.delete(
-                  db.blocksTable,
-                )..where((t) => t.userId.equals(searchItem.id))).go();
+                await ref
+                    .read(blocksTableProvider.notifier)
+                    .unblockUser(searchItem.id);
 
                 final existing =
                     await (db.select(db.friendsTable)
                           ..where((t) => t.userId.equals(searchItem.id)))
                         .getSingleOrNull();
 
-                await db
-                    .into(db.friendsTable)
-                    .insertOnConflictUpdate(
-                      FriendsTableCompanion(
-                        userId: Value(searchItem.id),
-                        status: Value(status),
-                        isRead: Value(existing?.isRead ?? true),
-                      ),
+                await ref
+                    .read(requestUserProvider.notifier)
+                    .insertOrUpdateRequest(
+                      searchItem.id,
+                      status,
+                      isRead: existing?.isRead ?? true,
                     );
               }
 
@@ -138,15 +145,17 @@ class FriendRequestSocketNotifier extends Notifier<void> {
     required String actorId,
     required NotificationType type,
   }) async {
-    final recipientId = ref.read(userPreferenceTableProvider).value;
-    if (recipientId == null) return;
+    final currentUserId = await ref
+        .read(userPreferenceTableProvider.notifier)
+        .getCurrentUserId();
+    if (currentUserId == null) return;
 
     await ref
         .read(notificationTableProvider.notifier)
         .createOrUpdateNotification(
           NotificationModel(
             id: const Uuid().v4(),
-            recipientId: recipientId,
+            recipientId: currentUserId,
             actorId: actorId,
             type: type,
             entityId: actorId,

@@ -1,10 +1,8 @@
+import 'package:my_app/providers/tables/chat_participants_table.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:my_app/core/util/getDatelabel.dart';
-import 'package:my_app/core/util/status_map.dart';
 import 'package:my_app/modal/screens/message/message_screen_data.dart';
-import 'package:my_app/modal/screens/message/message_item_model.dart';
 import 'package:my_app/modal/screens/message/send_message_request.dart';
 import 'package:my_app/modal/screens/search/message_screen_arguments.dart';
 import 'package:my_app/providers/chat_list_provider.dart';
@@ -15,6 +13,7 @@ import 'package:my_app/providers/message_screen_provider.dart';
 import 'package:my_app/providers/message_typing_provider.dart';
 import 'package:my_app/providers/socket_provider.dart';
 import 'package:my_app/providers/tables/user_preference_table_provider.dart';
+import 'package:my_app/providers/user_relationship_provider.dart';
 import 'package:my_app/widgets/screens/message/chat_input_box.dart';
 import 'package:my_app/widgets/screens/message/date_banner.dart';
 import 'package:my_app/widgets/screens/message/header.dart';
@@ -91,7 +90,10 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
 
     socketService.getUserStatus((data) {
       if (data["userId"] == receiverId && mounted) {
-        setState(() => _isOnline = data["online"]);
+        final isBlocked =
+            ref.read(userRelationshipProvider(receiverId)).value ==
+            RelationshipStatus.blocked;
+        setState(() => _isOnline = !isBlocked && data["online"] == true);
       }
     });
 
@@ -114,7 +116,10 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
             });
           }
         } else {
-          if (userId == receiverId) {
+          final isBlocked =
+              ref.read(userRelationshipProvider(receiverId)).value ==
+              RelationshipStatus.blocked;
+          if (userId == receiverId && !isBlocked) {
             setState(() => _isOnline = true);
           }
         }
@@ -179,10 +184,20 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
   }
 
   void onTyping() {
+    final isBlocked = !isGroup && receiverId.isNotEmpty
+        ? ref.read(userRelationshipProvider(receiverId)).value ==
+            RelationshipStatus.blocked
+        : false;
+    if (isBlocked) return;
     ref.read(messageProvider.notifier).sendTypingEvent(chatId);
   }
 
   void onStopTyping() {
+    final isBlocked = !isGroup && receiverId.isNotEmpty
+        ? ref.read(userRelationshipProvider(receiverId)).value ==
+            RelationshipStatus.blocked
+        : false;
+    if (isBlocked) return;
     ref.read(messageProvider.notifier).sendStopTypingEvent(chatId);
   }
 
@@ -199,20 +214,31 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
           .fetchChatDetailsFromReceiverId(receiverId);
     }
 
-    if (!mounted || data == null) return;
+    final chatData = data;
+    if (!mounted || chatData == null) return;
+
+    final newChatId = chatData.chatId;
+    final newReceiverId = chatData.receiverId;
+    final newName = chatData.name;
+    final newProfilePic = chatData.profilePic;
+    final newIsGroup = chatData.type == "GROUP";
 
     setState(() {
-      chatId = data?.chatId ?? "";
-      receiverId = data?.receiverId ?? receiverId;
-      name = data?.name ?? name;
-      profilePicUrl = data?.profilePic ?? profilePicUrl;
-      isGroup = data?.type == "GROUP" ? true : false;
+      if (newChatId != null && newChatId.isNotEmpty) {
+        chatId = newChatId;
+      }
+      receiverId = newReceiverId ?? receiverId;
+      name = newName ?? name;
+      profilePicUrl = newProfilePic ?? profilePicUrl;
+      isGroup = newIsGroup;
     });
 
-    _chatListController.setActiveChatId(chatId);
-
-    if (chatId.isNotEmpty) {
-      ref.read(messageProvider.notifier).markChatMessagesRead(chatId);
+    if (newChatId != null &&
+        newChatId.isNotEmpty &&
+        _lastActiveUserId != newChatId) {
+      _lastActiveUserId = newChatId;
+      _chatListController.setActiveChatId(newChatId);
+      ref.read(messageProvider.notifier).markChatMessagesRead(newChatId);
     }
   }
 
@@ -220,7 +246,16 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
   Widget build(BuildContext context) {
     final typingMap = ref.watch(messageTypingProvider);
     final currentUser = ref.watch(userPreferenceTableProvider).value;
-    final isTyping = typingMap[chatId] == true;
+
+    final isBlocked = !isGroup && receiverId.isNotEmpty
+        ? ref.watch(userRelationshipProvider(receiverId)).value ==
+              RelationshipStatus.blocked
+        : false;
+
+    final isParticipant =
+        !isGroup || (ref.watch(isGroupParticipantProvider(chatId)).value ?? true);
+
+    final isTyping = !isBlocked && typingMap[chatId] == true;
 
     final onlineCount = currentUser != null
         ? _onlineGroupMembers.where((id) => id != currentUser).length
@@ -229,14 +264,14 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
 
     final subtitle = isGroup
         ? (onlineCount > 0 ? "$onlineCount online" : "$totalMembers members")
-        : null;
+        : (!isBlocked && _isOnline ? "Online" : null);
 
     return Scaffold(
       backgroundColor: const Color(0xFFECE5DD),
       appBar: Header(
         id: chatId.isNotEmpty ? chatId : receiverId,
         name: name,
-        isOnline: _isOnline,
+        isOnline: !isBlocked && _isOnline,
         profilePicUrl: profilePicUrl,
         isGroupChat: isGroup,
         subtitle: subtitle,
@@ -255,68 +290,31 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
                   );
 
                   return messagesAsync.when(
-                    data: (messages) {
-                      if (currentUser == null) {
-                        throw Exception("Current user is not Set");
-                      }
-
+                    data: (events) {
                       return ListView.builder(
                         controller: _scrollController,
                         reverse: true,
                         padding: const EdgeInsets.symmetric(vertical: 10),
-                        itemCount: messages.length + (isTyping ? 1 : 0),
+                        itemCount: events.length + (isTyping ? 1 : 0),
                         itemBuilder: (context, index) {
                           if (isTyping && index == 0) {
                             return TypingIndicator();
                           }
 
-                          final msgIndex = isTyping ? index - 1 : index;
-                          final item = messages[messages.length - 1 - msgIndex];
-                          final msg = item.message;
-                          final sender = item.participant;
-                          final currentTimestamp = item.timelineTimestamp;
-                          final currentLabel = getDateLabel(currentTimestamp);
+                          final eventIndex = isTyping ? index - 1 : index;
+                          final event = events[eventIndex];
 
-                          String? previousLabel;
-                          bool isGrouped = false;
-                          if (msgIndex < messages.length - 1) {
-                            final prevMsg =
-                                messages[messages.length - 1 - (msgIndex + 1)];
-                            final previousTimestamp = prevMsg.timelineTimestamp;
-                            previousLabel = getDateLabel(previousTimestamp);
-                            isGrouped =
-                                prevMsg.message.senderId == msg.senderId &&
-                                (currentTimestamp - previousTimestamp).abs() <
-                                    5 * 60 * 1000;
-                          }
-
-                          final showBanner = currentLabel != previousLabel;
-
-                          if (showBanner) isGrouped = false;
-
-                          return Column(
-                            children: [
-                              if (showBanner) DateBanner(label: currentLabel),
-
-                              MessageItem(
-                                data: MessageItemModel(
-                                  attachments: item.attachments,
-                                  message: msg.message,
-                                  isSender: msg.senderId == currentUser,
-                                  status: msg.senderId == currentUser
-                                      ? statusMap(item.overallStatus)
-                                      : statusMap("sending"),
-                                  timestamp: currentTimestamp,
-                                  senderName: sender.userId == currentUser
-                                      ? "You"
-                                      : name,
-                                  isGroupChat: isGroup,
-                                  isGrouped: isGrouped,
-                                  eventAlignment: item.event?.alignment,
-                                ),
-                              ),
-                            ],
-                          );
+                          return switch (event) {
+                            DateBannerTimelineEvent(:final label) => DateBanner(
+                              label: label,
+                            ),
+                            MessageTimelineEvent(:final model) => MessageItem(
+                              data: model,
+                            ),
+                            BannerTimelineEvent(:final text) => DateBanner(
+                              label: text,
+                            ),
+                          };
                         },
                       );
                     },
@@ -328,11 +326,59 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
               ),
             ),
 
-            ChatInputBox(
-              onSend: _handleSend,
-              onTyping: onTyping,
-              onStopTyping: onStopTyping,
-            ),
+            if (isBlocked)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 16,
+                ),
+                color: Colors.grey.shade900,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      "You blocked this contact. ",
+                      style: TextStyle(color: Colors.white70, fontSize: 14),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        ref
+                            .read(userRelationshipProvider(receiverId).notifier)
+                            .unblockUser();
+                      },
+                      child: const Text(
+                        "Unblock",
+                        style: TextStyle(
+                          color: Colors.blueAccent,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else if (isGroup && !isParticipant)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  vertical: 16,
+                  horizontal: 20,
+                ),
+                color: Colors.grey.shade900,
+                child: const Text(
+                  "You can't send messages to this group because you're no longer a member.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
+                ),
+              )
+            else
+              ChatInputBox(
+                onSend: _handleSend,
+                onTyping: onTyping,
+                onStopTyping: onStopTyping,
+              ),
           ],
         ),
       ),

@@ -1,10 +1,11 @@
-import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:my_app/core/database.dart';
 import 'package:my_app/core/network/api_client.dart';
 import 'package:my_app/data/services/user_api_service.dart';
-import 'package:my_app/providers/database_provider.dart';
+import 'package:my_app/providers/tables/blocks_table_provider.dart';
+import 'package:my_app/providers/tables/chat_events_table_provider.dart';
+import 'package:my_app/providers/tables/chat_list_table_provider.dart';
 import 'package:my_app/providers/tables/request_user_provider.dart';
+import 'package:my_app/providers/tables/users_table_provider.dart';
 import 'package:my_app/providers/token_provider.dart';
 
 enum RelationshipStatus {
@@ -92,6 +93,18 @@ class UserRelationshipNotifier extends AsyncNotifier<RelationshipStatus> {
       await ref
           .read(requestUserProvider.notifier)
           .insertOrUpdateRequest(userId, 'FRIENDS');
+
+      // Record timeline event in chat if chat exists or local chat
+      final user =
+          await ref.read(usersTableProvider.notifier).getUserById(userId);
+      final chatId = await ref
+              .read(chatListTableProvider.notifier)
+              .findDirectChatIdWithUser(userId) ??
+          "local_$userId";
+      await ref.read(chatEventsTableProvider.notifier).insertFriendAddedEvent(
+            chatId: chatId,
+            friendName: user?.name ?? "",
+          );
 
       state = const AsyncData(RelationshipStatus.friends);
     } catch (e, stackTrace) {
@@ -186,15 +199,17 @@ class UserRelationshipNotifier extends AsyncNotifier<RelationshipStatus> {
         return;
       }
 
-      final db = ref.read(databaseProvider);
-      await db
-          .into(db.blocksTable)
-          .insertOnConflictUpdate(
-            BlocksTableCompanion(
-              userId: Value(userId),
-              createdAt: Value(DateTime.now()),
-            ),
-          );
+      await ref.read(blocksTableProvider.notifier).blockUser(userId);
+
+      // Record timeline event in chat if chat exists or local chat
+      final chatId = await ref
+              .read(chatListTableProvider.notifier)
+              .findDirectChatIdWithUser(userId) ??
+          "local_$userId";
+      await ref
+          .read(chatEventsTableProvider.notifier)
+          .insertUserBlockedEvent(chatId: chatId);
+
       state = const AsyncData(RelationshipStatus.blocked);
     } catch (e) {
       state = AsyncError(e, StackTrace.current);
@@ -222,10 +237,16 @@ class UserRelationshipNotifier extends AsyncNotifier<RelationshipStatus> {
         return;
       }
 
-      final db = ref.read(databaseProvider);
-      await (db.delete(db.blocksTable)
-            ..where((t) => t.userId.equals(userId)))
-          .go();
+      await ref.read(blocksTableProvider.notifier).unblockUser(userId);
+
+      // Record timeline event in chat if chat exists or local chat
+      final chatId = await ref
+              .read(chatListTableProvider.notifier)
+              .findDirectChatIdWithUser(userId) ??
+          "local_$userId";
+      await ref
+          .read(chatEventsTableProvider.notifier)
+          .insertUserUnblockedEvent(chatId: chatId);
 
       final currentRelationship = await ref
           .read(requestUserProvider.notifier)

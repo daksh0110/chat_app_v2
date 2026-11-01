@@ -1,3 +1,4 @@
+import 'package:my_app/providers/group_socket_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/core/util/route_observer.dart';
@@ -94,6 +95,7 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
                 .read(miscellaneousNotifierProvider.notifier)
                 .listenUserUpdateDetails();
             ref.read(friendRequestSocketProvider.notifier).listen();
+            ref.read(groupSocketProvider.notifier).listen();
             // notifier.groupsCountSync();
 
             await NotificationService.handleInitialMessage();

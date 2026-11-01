@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/core/database.dart';
 import 'package:my_app/providers/database_provider.dart';
+import 'package:my_app/providers/tables/blocks_table_provider.dart';
 import 'package:my_app/providers/user_relationship_provider.dart';
 
 final requestUserProvider = NotifierProvider<RequestUserProvider, void>(
@@ -32,11 +33,11 @@ class RequestUserProvider extends Notifier {
   Future<RelationshipStatus> getRelationshipStatus(String userId) async {
     final db = ref.read(databaseProvider);
 
-    final isBlocked = await (db.select(
-      db.blocksTable,
-    )..where((t) => t.userId.equals(userId))).getSingleOrNull();
+    final isBlocked = await ref
+        .read(blocksTableProvider.notifier)
+        .isUserBlocked(userId);
 
-    if (isBlocked != null) {
+    if (isBlocked) {
       return RelationshipStatus.blocked;
     }
 
