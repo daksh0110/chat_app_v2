@@ -7,6 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mime/mime.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/core/util/media_file_helper.dart';
+import 'package:my_app/modal/screens/message/reply_message_info.dart';
 import 'package:my_app/widgets/screens/message/attachment_bottom_sheet.dart';
 import 'package:my_app/widgets/screens/message/media_picker_sheet.dart';
 
@@ -14,12 +15,16 @@ class ChatInputBox extends StatefulWidget {
   final Function(String, List<XFile>) onSend;
   final Function() onTyping;
   final Function() onStopTyping;
+  final ReplyMessageInfo? replyingTo;
+  final VoidCallback? onCancelReply;
 
   const ChatInputBox({
     super.key,
     required this.onSend,
     required this.onTyping,
     required this.onStopTyping,
+    this.replyingTo,
+    this.onCancelReply,
   });
 
   @override
@@ -114,6 +119,72 @@ class _ChatInputBoxState extends State<ChatInputBox> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Reply preview
+          if (widget.replyingTo != null) ...[
+            Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0F2F5),
+                borderRadius: BorderRadius.circular(12),
+                border: const Border(
+                  left: BorderSide(
+                    color: DefaultColorSheet.green500,
+                    width: 4,
+                  ),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          widget.replyingTo!.senderName.isEmpty
+                              ? "Reply"
+                              : widget.replyingTo!.senderName,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: DefaultColorSheet.green500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          widget.replyingTo!.message.isEmpty
+                              ? "Attachment"
+                              : widget.replyingTo!.message,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: DefaultColorSheet.grey500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: widget.onCancelReply,
+                    child: const Padding(
+                      padding: EdgeInsets.all(4),
+                      child: Icon(
+                        LucideIcons.x,
+                        size: 16,
+                        color: DefaultColorSheet.grey500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
           // Attachment previews
           if (attachments.isNotEmpty) ...[
             SizedBox(

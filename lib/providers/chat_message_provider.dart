@@ -134,6 +134,7 @@ List<ChatTimelineEvent> _buildTimelineEventsFromGroups(
         MessageTimelineEvent(
           rawMessage: rawMessage,
           model: MessageItemModel(
+            id: message.id,
             attachments: group.attachments,
             message: message.message,
             isSender: isSender,
@@ -143,6 +144,9 @@ List<ChatTimelineEvent> _buildTimelineEventsFromGroups(
             isGroupChat: group.chat?.type == "GROUP",
             isGrouped: isGrouped,
             eventAlignment: event.alignment,
+            replyToId: message.replyToId,
+            replyToSenderName: message.replyToSenderName,
+            replyToMessage: message.replyToMessage,
           ),
         ),
       );

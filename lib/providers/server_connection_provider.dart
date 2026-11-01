@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/core/network/api_client.dart';
 import 'package:my_app/data/services/miscellenious.service.dart';
 import 'package:my_app/modal/server_status_response.dart';
+import 'package:my_app/providers/socket_provider.dart';
 
 class ServerConnectionState {
   final bool isConnected;
@@ -19,43 +20,75 @@ final serverConnectedProvider =
     );
 
 class ServerConnectedNotifier extends Notifier<ServerConnectionState> {
+  bool _listenerAttached = false;
+
   @override
   ServerConnectionState build() {
+    if (!_listenerAttached) {
+      _listenerAttached = true;
+      Future.microtask(() => _attachSocketListener());
+    }
     return const ServerConnectionState(
       isConnected: false,
-      message: "Not connected",
+      message: "Connecting to server...",
+    );
+  }
+
+  void _attachSocketListener() {
+    final socket = ref.read(socketProvider);
+    socket.onConnectionChange((isConnected, message) {
+      state = ServerConnectionState(
+        isConnected: isConnected,
+        message: message,
+      );
+    });
+  }
+
+  void setConnectionState(bool isConnected, String message) {
+    state = ServerConnectionState(
+      isConnected: isConnected,
+      message: message,
     );
   }
 
   Future<void> verifyServerConnection() async {
-    state = const ServerConnectionState(
-      isConnected: false,
-      message: "Connecting to server...",
-    );
+    final socket = ref.read(socketProvider);
+    if (socket.isConnected) {
+      state = const ServerConnectionState(
+        isConnected: true,
+        message: "Connected to server",
+      );
+      return;
+    }
 
-    while (true) {
-      try {
-        final apiClient = ApiClient();
+    try {
+      final apiClient = ApiClient();
+      final ServerStatusResponse statusResponse =
+          await MiscelleniousService(apiClient).verifyServerConnection();
 
-        final ServerStatusResponse statusResponse = await MiscelleniousService(apiClient).verifyServerConnection();
-
-        if (statusResponse.success) {
+      if (statusResponse.success) {
+        if (socket.isConnected) {
           state = ServerConnectionState(
             isConnected: true,
             message: statusResponse.message,
           );
-          return;
         } else {
-          throw Exception("Server response indicated failure");
+          state = const ServerConnectionState(
+            isConnected: false,
+            message: "Connecting to real-time chat...",
+          );
         }
-      } catch (_) {
+      } else {
         state = const ServerConnectionState(
           isConnected: false,
-          message: "Connection failed. Retrying...",
+          message: "Server is unavailable. Retrying...",
         );
-
-        await Future.delayed(const Duration(seconds: 5));
       }
+    } catch (_) {
+      state = const ServerConnectionState(
+        isConnected: false,
+        message: "Server not connected. Retrying...",
+      );
     }
   }
 }

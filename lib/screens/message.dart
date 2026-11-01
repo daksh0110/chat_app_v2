@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:my_app/modal/screens/message/message_screen_data.dart';
+import 'package:my_app/modal/screens/message/reply_message_info.dart';
 import 'package:my_app/modal/screens/message/send_message_request.dart';
 import 'package:my_app/modal/screens/search/message_screen_arguments.dart';
 import 'package:my_app/providers/chat_list_provider.dart';
@@ -41,6 +42,7 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
   late final ChatListController _chatListController;
   final Set<String> _onlineGroupMembers = {};
   List<String> _groupParticipantIds = [];
+  ReplyMessageInfo? _replyingTo;
   @override
   void initState() {
     super.initState();
@@ -158,6 +160,13 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
   }
 
   void _handleSend(String text, List<XFile> attachments) async {
+    final replyTo = _replyingTo;
+    if (_replyingTo != null) {
+      setState(() {
+        _replyingTo = null;
+      });
+    }
+
     ref
         .read(messageProvider.notifier)
         .sendMessage(
@@ -168,6 +177,7 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
             chatId: chatId,
             message: text,
             type: isGroup ? "GROUP" : "DIRECT",
+            replyTo: replyTo,
             onChatResolved: (realId) {
               if (mounted) {
                 setState(() {
@@ -310,6 +320,24 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
                             ),
                             MessageTimelineEvent(:final model) => MessageItem(
                               data: model,
+                              onReply: (item) {
+                                setState(() {
+                                  _replyingTo = ReplyMessageInfo(
+                                    messageId: item.id,
+                                    senderId: item.isSender
+                                        ? (currentUser ?? "")
+                                        : receiverId,
+                                    senderName: item.isSender
+                                        ? "You"
+                                        : item.senderName,
+                                    message: item.message.isNotEmpty
+                                        ? item.message
+                                        : (item.attachments.isNotEmpty
+                                            ? "Attachment"
+                                            : ""),
+                                  );
+                                });
+                              },
                             ),
                             BannerTimelineEvent(:final text) => DateBanner(
                               label: text,
@@ -378,6 +406,12 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
                 onSend: _handleSend,
                 onTyping: onTyping,
                 onStopTyping: onStopTyping,
+                replyingTo: _replyingTo,
+                onCancelReply: () {
+                  setState(() {
+                    _replyingTo = null;
+                  });
+                },
               ),
           ],
         ),

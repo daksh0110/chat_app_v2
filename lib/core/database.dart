@@ -40,7 +40,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   // --- Queries ---
   // Stream<List<UsersTableData>> getAllUsers() {
@@ -73,6 +73,11 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 12) {
         await _backfillChatEventsForMessages();
+      }
+      if (from < 13) {
+        await m.addColumn(messages, messages.replyToId);
+        await m.addColumn(messages, messages.replyToSenderName);
+        await m.addColumn(messages, messages.replyToMessage);
       }
     },
 

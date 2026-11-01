@@ -8,6 +8,26 @@ class SocketService {
   IO.Socket? socket;
   final List<void Function()> _onConnectCallbacks = [];
   final Set<String> _registeredEvents = {};
+  final List<void Function(bool isConnected, String message)>
+      _onConnectionChangeCallbacks = [];
+
+  void onConnectionChange(
+    void Function(bool isConnected, String message) callback,
+  ) {
+    _onConnectionChangeCallbacks.add(callback);
+    if (socket != null) {
+      callback(
+        socket!.connected,
+        socket!.connected ? "Connected to server" : "Server not connected",
+      );
+    }
+  }
+
+  void _notifyConnectionChange(bool connected, String message) {
+    for (final cb in _onConnectionChangeCallbacks) {
+      cb(connected, message);
+    }
+  }
 
   bool get isInitialized => socket != null;
   bool get isConnected => socket?.connected ?? false;
@@ -29,6 +49,7 @@ class SocketService {
     socket!.onConnect((_) {
       print('✅ Connected');
       _registeredEvents.clear();
+      _notifyConnectionChange(true, "Connected to server");
 
       for (final cb in _onConnectCallbacks) {
         cb();
@@ -37,15 +58,26 @@ class SocketService {
 
     socket!.onDisconnect((_) {
       print('❌ Disconnected');
+      _notifyConnectionChange(false, "Server not connected. Reconnecting...");
     });
 
     socket!.onConnectError((data) {
       print('⚠️ Connect Error: $data');
+      _notifyConnectionChange(false, "Connection error. Reconnecting...");
+    });
+
+    socket!.io.on('reconnect', (_) {
+      _notifyConnectionChange(true, "Reconnected to server");
+    });
+
+    socket!.io.on('reconnecting', (_) {
+      _notifyConnectionChange(false, "Reconnecting to server...");
     });
   }
 
   void disconnect() {
     socket?.disconnect();
+    _notifyConnectionChange(false, "Disconnected");
   }
 
   void onConnect(void Function() callback) {

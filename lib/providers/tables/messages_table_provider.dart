@@ -28,6 +28,9 @@ class MessagesTableProvider extends Notifier {
             isRead: Value(messageBody.isRead),
             message: Value(messageBody.message ?? ""),
             senderId: Value(messageBody.senderId ?? ""),
+            replyToId: Value(messageBody.replyToId),
+            replyToSenderName: Value(messageBody.replyToSenderName),
+            replyToMessage: Value(messageBody.replyToMessage),
           ),
         );
   }
@@ -69,6 +72,9 @@ class MessagesTableProvider extends Notifier {
               message: Value(messageRequest.message ?? ""),
               senderId: Value(messageRequest.senderId ?? ""),
               serverCreatedAt: Value(messageRequest.serverCreatedAt),
+              replyToId: Value(messageRequest.replyToId),
+              replyToSenderName: Value(messageRequest.replyToSenderName),
+              replyToMessage: Value(messageRequest.replyToMessage),
             ),
           );
 

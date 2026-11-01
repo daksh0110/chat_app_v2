@@ -1,4 +1,5 @@
 import 'package:my_app/modal/screens/message/message_status.dart';
+import 'package:my_app/modal/screens/message/reply_message_info.dart';
 import 'package:my_app/modal/upload_responses/upload_attachment.dart';
 
 class SendMessageAck {
@@ -10,6 +11,7 @@ class SendMessageAck {
   final int createdAt;
   final List<MessageStatus> messageStatuses;
   final List<UploadAttachment> attachments;
+  final ReplyMessageInfo? replyTo;
 
   SendMessageAck({
     required this.messageId,
@@ -20,6 +22,7 @@ class SendMessageAck {
     required this.messageStatuses,
     this.attachments = const [],
     this.tempId = "",
+    this.replyTo,
   });
 
   factory SendMessageAck.fromJson(Map<String, dynamic> json) {
@@ -27,18 +30,23 @@ class SendMessageAck {
       tempId: json['temp_id'] ?? "",
       messageId: json['message_id'],
       chatId: json['chat_id'],
-      message: json['message'],
+      message: json['message'] ?? "",
       senderId: json['sender_id'],
       createdAt: json['created_at'],
+      replyTo: json['reply_to'] != null
+          ? ReplyMessageInfo.fromJson(
+              Map<String, dynamic>.from(json['reply_to']),
+            )
+          : null,
       attachments: json['attachments'] != null
           ? (json['attachments'] as List)
-                .map(
-                  (att) =>
-                      UploadAttachment.fromJson(Map<String, dynamic>.from(att)),
-                )
-                .toList()
+              .map(
+                (att) =>
+                    UploadAttachment.fromJson(Map<String, dynamic>.from(att)),
+              )
+              .toList()
           : [],
-      messageStatuses: (json['message_statuses'] as List)
+      messageStatuses: (json['message_statuses'] as List? ?? [])
           .map(
             (status) => MessageStatus(
               messageId: status['message_id'],
@@ -53,6 +61,7 @@ class SendMessageAck {
           .toList(),
     );
   }
+
   @override
   String toString() {
     return 'SendMessageAck('
@@ -63,7 +72,8 @@ class SendMessageAck {
         'senderId: $senderId, '
         'createdAt: $createdAt, '
         'messageStatuses: $messageStatuses, '
-        'attachments: $attachments'
+        'attachments: $attachments, '
+        'replyTo: $replyTo'
         ')';
   }
 }

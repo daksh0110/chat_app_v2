@@ -7,6 +7,9 @@ class MessageBodyRequest {
   final int createdAt;
   final int? serverCreatedAt;
   final String? messageId;
+  final String? replyToId;
+  final String? replyToSenderName;
+  final String? replyToMessage;
 
   MessageBodyRequest({
     this.chatId,
@@ -17,5 +20,8 @@ class MessageBodyRequest {
     this.messageId,
     int? createdAt,
     this.serverCreatedAt,
+    this.replyToId,
+    this.replyToSenderName,
+    this.replyToMessage,
   }) : createdAt = createdAt ?? DateTime.now().millisecondsSinceEpoch;
 }

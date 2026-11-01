@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/modal/screens/message/message_item_model.dart';
 import 'package:my_app/modal/screens/message/message_modal.dart';
 import 'package:my_app/modal/tables/chat_events_table.dart';
@@ -87,8 +88,9 @@ EdgeInsets _visualMediaMargin(MessageAlignment alignment, bool isGrouped) {
 
 class MessageItem extends ConsumerWidget {
   final MessageItemModel data;
+  final void Function(MessageItemModel data)? onReply;
 
-  const MessageItem({super.key, required this.data});
+  const MessageItem({super.key, required this.data, this.onReply});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -107,7 +109,7 @@ class MessageItem extends ConsumerWidget {
       data.isSender,
     );
 
-    return MessageBubble(
+    final bubble = MessageBubble(
       alignment: bubbleAlignment,
       isGrouped: data.isGrouped,
       padding: isMediaOnly ? const EdgeInsets.all(3) : null,
@@ -120,6 +122,17 @@ class MessageItem extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Quoted reply block
+          if (data.replyToMessage != null &&
+              data.replyToMessage!.isNotEmpty) ...[
+            _QuotedReplyPreview(
+              senderName: data.replyToSenderName ?? 'Reply',
+              message: data.replyToMessage ?? '',
+              isSender: data.isSender,
+            ),
+            const SizedBox(height: 4),
+          ],
+
           // Group sender name
           if (!data.isSender && data.isGroupChat && !data.isGrouped) ...[
             PrimaryText(
@@ -165,6 +178,94 @@ class MessageItem extends ConsumerWidget {
                 ),
               ),
             ),
+        ],
+      ),
+    );
+
+    final gestureBubble = GestureDetector(
+      onLongPress: onReply != null ? () => onReply!(data) : null,
+      onDoubleTap: onReply != null ? () => onReply!(data) : null,
+      child: bubble,
+    );
+
+    if (onReply == null) return gestureBubble;
+
+    return Dismissible(
+      key: ValueKey('msg_${data.id}_${data.timestamp}'),
+      direction: DismissDirection.startToEnd,
+      confirmDismiss: (direction) async {
+        onReply!(data);
+        return false;
+      },
+      background: Container(
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.only(left: 20),
+        child: const Icon(
+          LucideIcons.reply,
+          size: 20,
+          color: DefaultColorSheet.green500,
+        ),
+      ),
+      child: gestureBubble,
+    );
+  }
+}
+
+class _QuotedReplyPreview extends StatelessWidget {
+  final String senderName;
+  final String message;
+  final bool isSender;
+
+  const _QuotedReplyPreview({
+    required this.senderName,
+    required this.message,
+    required this.isSender,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: isSender
+            ? Colors.black.withValues(alpha: 0.06)
+            : Colors.grey.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(6),
+        border: Border(
+          left: BorderSide(
+            color: isSender
+                ? const Color(0xFF005C4B)
+                : const Color(0xFF00A884),
+            width: 3.5,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            senderName.isEmpty ? "Reply" : senderName,
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+              color: isSender
+                  ? const Color(0xFF005C4B)
+                  : const Color(0xFF00A884),
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            message,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFF3B4A54),
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ),
     );

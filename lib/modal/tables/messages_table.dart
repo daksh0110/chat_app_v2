@@ -9,6 +9,9 @@ class Messages extends Table {
   IntColumn get serverCreatedAt => integer().nullable()();
   BoolColumn get isRead => boolean().withDefault(const Constant(false))();
   TextColumn get serverId => text().nullable()();
+  TextColumn get replyToId => text().nullable()();
+  TextColumn get replyToSenderName => text().nullable()();
+  TextColumn get replyToMessage => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

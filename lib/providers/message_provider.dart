@@ -105,6 +105,9 @@ class MessageNotifer extends Notifier {
                 messageId: messageId,
                 senderId: senderId,
                 serverCreatedAt: createdAt,
+                replyToId: data.replyTo?.messageId,
+                replyToSenderName: data.replyTo?.senderName,
+                replyToMessage: data.replyTo?.message,
               ),
             );
         await ref
@@ -243,6 +246,9 @@ class MessageNotifer extends Notifier {
             message: request.message,
             senderId: currentUserId,
             tempId: tempId,
+            replyToId: request.replyTo?.messageId,
+            replyToSenderName: request.replyTo?.senderName,
+            replyToMessage: request.replyTo?.message,
           ),
         );
         await ref
@@ -333,6 +339,7 @@ class MessageNotifer extends Notifier {
           "temp_id": tempId,
           "attachments": uploadedAttachments.map((e) => e.toJson()).toList(),
           if (isRealChat) "chat_id": currentChatId,
+          if (request.replyTo != null) "reply_to": request.replyTo!.toJson(),
         },
         (response) async {
           final payload = SendMessageAck.fromJson(response);
