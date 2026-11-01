@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/core/database.dart';
 import 'package:my_app/modal/screens/message/message_body_request.dart';
+import 'package:my_app/modal/tables/chat_events_table.dart';
 import 'package:my_app/modal/user_profile_modal.dart';
 import 'package:my_app/providers/database_provider.dart';
 
@@ -27,6 +28,9 @@ class MessagesTableProvider extends Notifier {
             isRead: Value(messageBody.isRead),
             message: Value(messageBody.message ?? ""),
             senderId: Value(messageBody.senderId ?? ""),
+            replyToId: Value(messageBody.replyToId),
+            replyToSenderName: Value(messageBody.replyToSenderName),
+            replyToMessage: Value(messageBody.replyToMessage),
           ),
         );
   }
@@ -68,8 +72,31 @@ class MessagesTableProvider extends Notifier {
               message: Value(messageRequest.message ?? ""),
               senderId: Value(messageRequest.senderId ?? ""),
               serverCreatedAt: Value(messageRequest.serverCreatedAt),
+              replyToId: Value(messageRequest.replyToId),
+              replyToSenderName: Value(messageRequest.replyToSenderName),
+              replyToMessage: Value(messageRequest.replyToMessage),
             ),
           );
+
+      final msgId = messageRequest.messageId ?? messageRequest.tempId;
+      if (msgId != null && msgId.isNotEmpty) {
+        final timestamp =
+            messageRequest.serverCreatedAt ?? messageRequest.createdAt;
+        final eventTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
+
+        await db
+            .into(db.chatEventsTable)
+            .insertOnConflictUpdate(
+              ChatEventsTableCompanion(
+                id: Value(msgId),
+                chatId: Value(messageRequest.chatId ?? ""),
+                type: const Value(ChatEventType.message),
+                contentId: Value(msgId),
+                alignment: const Value(ChatEventAlignment.left),
+                createdAt: Value(eventTime),
+              ),
+            );
+      }
     } catch (e) {
       debugPrint(e.toString());
     }
@@ -93,7 +120,8 @@ class MessagesTableProvider extends Notifier {
             .join([
               leftOuterJoin(
                 db.mediaTable,
-                db.mediaTable.actorId.equalsExp(db.messages.id),
+                db.mediaTable.actorId.equalsExp(db.messages.id) |
+                    db.mediaTable.actorId.equalsExp(db.messages.serverId),
               ),
               leftOuterJoin(
                 db.usersTable,
@@ -134,5 +162,109 @@ class MessagesTableProvider extends Notifier {
             .get();
 
     return messages.length;
+  }
+
+  /// Mark message deleted for everyone (tombstone)
+  Future<void> markMessageAsDeleted(String messageId, String chatId) async {
+    final db = ref.read(databaseProvider);
+
+    await db.transaction(() async {
+      await (db.update(db.messages)
+            ..where(
+              (tbl) =>
+                  tbl.id.equals(messageId) |
+                  tbl.serverId.equals(messageId),
+            ))
+          .write(
+        const MessagesCompanion(
+          message: Value('This message was deleted'),
+          isDeleted: Value(true),
+          replyToId: Value(null),
+          replyToSenderName: Value(null),
+          replyToMessage: Value(null),
+        ),
+      );
+
+      // Remove attachments & reactions associated with the deleted message
+      await (db.delete(db.mediaTable)
+            ..where((tbl) => tbl.actorId.equals(messageId)))
+          .go();
+
+      await (db.delete(db.messageReactionsTable)
+            ..where((tbl) => tbl.messageId.equals(messageId)))
+          .go();
+
+      await updateChatLastMessageAfterDeletion(chatId);
+    });
+  }
+
+  /// Delete message permanently for me (removes row from SQLite)
+  Future<void> deleteMessagePermanently(String messageId, String chatId) async {
+    final db = ref.read(databaseProvider);
+
+    await db.transaction(() async {
+      await (db.delete(db.messages)
+            ..where(
+              (tbl) =>
+                  tbl.id.equals(messageId) |
+                  tbl.serverId.equals(messageId),
+            ))
+          .go();
+
+      await (db.delete(db.chatEventsTable)
+            ..where(
+              (tbl) =>
+                  tbl.id.equals(messageId) |
+                  tbl.contentId.equals(messageId),
+            ))
+          .go();
+
+      await (db.delete(db.mediaTable)
+            ..where((tbl) => tbl.actorId.equals(messageId)))
+          .go();
+
+      await (db.delete(db.messageStatusTable)
+            ..where((tbl) => tbl.messageId.equals(messageId)))
+          .go();
+
+      await (db.delete(db.messageReactionsTable)
+            ..where((tbl) => tbl.messageId.equals(messageId)))
+          .go();
+
+      await updateChatLastMessageAfterDeletion(chatId);
+    });
+  }
+
+  /// Updates the chat list card preview with the newest remaining message
+  Future<void> updateChatLastMessageAfterDeletion(String chatId) async {
+    final db = ref.read(databaseProvider);
+
+    final newestMessage = await (db.select(db.messages)
+          ..where((tbl) => tbl.chatId.equals(chatId))
+          ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)])
+          ..limit(1))
+        .getSingleOrNull();
+
+    if (newestMessage != null) {
+      final preview = newestMessage.isDeleted
+          ? 'This message was deleted'
+          : (newestMessage.message.isNotEmpty
+              ? newestMessage.message
+              : 'Media');
+      await (db.update(db.chatListTable)..where((tbl) => tbl.chatId.equals(chatId)))
+          .write(
+        ChatListTableCompanion(
+          lastMessage: Value(preview),
+          lastMessageTime: Value(newestMessage.createdAt),
+        ),
+      );
+    } else {
+      await (db.update(db.chatListTable)..where((tbl) => tbl.chatId.equals(chatId)))
+          .write(
+        const ChatListTableCompanion(
+          lastMessage: Value(''),
+        ),
+      );
+    }
   }
 }

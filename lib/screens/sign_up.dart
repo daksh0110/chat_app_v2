@@ -186,7 +186,9 @@ class _SignUpState extends ConsumerState<SignUp> {
                           if (value!.isEmpty) {
                             return "Email is required";
                           }
-                          if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                          if (!RegExp(
+                            r'^[^\s@]+@[^\s@]+\.[^\s@]+$',
+                          ).hasMatch(value)) {
                             return "Enter a valid email";
                           }
                           return null;

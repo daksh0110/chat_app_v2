@@ -1,3 +1,4 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:my_app/core/network/api_client.dart';
 import 'package:my_app/core/network/api_constant.dart';
 import 'package:my_app/modal/api_response.dart';
@@ -151,10 +152,26 @@ class UserApiService {
     }
   }
 
-  Future<ApiResponse<SearchItem>> getUserById(String userId) async {
+  Future<ApiResponse<void>> authenticate({required String token}) async {
     try {
       final response = await apiClient.get(
+        "${ApiConstants.baseUrl}${ApiConstants.users}/auth",
+        token: token,
+      );
+
+      return ApiResponse<void>.fromJson(response, (_) => {});
+    } catch (e) {
+      throw Exception("Authentication check failed: $e");
+    }
+  }
+
+  Future<ApiResponse<SearchItem>> getUserById(String userId) async {
+    try {
+      final storage = const FlutterSecureStorage();
+      final token = await storage.read(key: 'accessToken');
+      final response = await apiClient.get(
         "${ApiConstants.baseUrl}${ApiConstants.users}/$userId",
+        token: token,
       );
 
       return ApiResponse<SearchItem>.fromJson(
@@ -280,6 +297,172 @@ class UserApiService {
       return apiResponse;
     } catch (e) {
       throw Exception("Update profile failed: $e");
+    }
+  }
+
+  Future<ApiResponse<void>> sendFriendRequest({
+    required String token,
+    required String targetUserId,
+  }) async {
+    try {
+      final response = await apiClient.post(
+        "${ApiConstants.baseUrl}${ApiConstants.users}/$targetUserId/friend-request",
+        {},
+        token: token,
+      );
+      return ApiResponse<void>.fromJson(response, (_) => {});
+    } catch (e) {
+      throw Exception("Send friend request failed: $e");
+    }
+  }
+
+  Future<ApiResponse<void>> removeFriend({
+    required String token,
+    required String targetUserId,
+  }) async {
+    try {
+      final response = await apiClient.delete(
+        "${ApiConstants.baseUrl}${ApiConstants.users}/$targetUserId/friend",
+        token: token,
+      );
+      return ApiResponse<void>.fromJson(response, (_) => {});
+    } catch (e) {
+      throw Exception("Remove friend failed: $e");
+    }
+  }
+
+  Future<ApiResponse<void>> cancelFriendRequest({
+    required String token,
+    required String targetUserId,
+  }) async {
+    try {
+      final response = await apiClient.delete(
+        "${ApiConstants.baseUrl}${ApiConstants.users}/$targetUserId/friend-request",
+        token: token,
+      );
+      return ApiResponse<void>.fromJson(response, (_) => {});
+    } catch (e) {
+      throw Exception("Cancel friend request failed: $e");
+    }
+  }
+
+  Future<ApiResponse<void>> blockUser({
+    required String token,
+    required String targetUserId,
+  }) async {
+    try {
+      final response = await apiClient.post(
+        "${ApiConstants.baseUrl}${ApiConstants.users}/$targetUserId/block",
+        {},
+        token: token,
+      );
+      return ApiResponse<void>.fromJson(response, (_) => {});
+    } catch (e) {
+      throw Exception("Block user failed: $e");
+    }
+  }
+
+  Future<ApiResponse<void>> unblockUser({
+    required String token,
+    required String targetUserId,
+  }) async {
+    try {
+      final response = await apiClient.delete(
+        "${ApiConstants.baseUrl}${ApiConstants.users}/$targetUserId/block",
+        token: token,
+      );
+      return ApiResponse<void>.fromJson(response, (_) => {});
+    } catch (e) {
+      throw Exception("Unblock user failed: $e");
+    }
+  }
+
+  Future<ApiResponse<List<SearchItem>>> getFriendRequests({
+    required String token,
+  }) async {
+    try {
+      final response = await apiClient.get(
+        "${ApiConstants.baseUrl}${ApiConstants.users}/friend-requests",
+        token: token,
+      );
+      final apiResponse = ApiResponse<List<SearchItem>>.fromJson(
+        response,
+        (json) =>
+            (json as List).map((item) => SearchItem.fromJson(item)).toList(),
+      );
+      return apiResponse;
+    } catch (e) {
+      throw Exception("Get friend requests failed: $e");
+    }
+  }
+
+  Future<ApiResponse<List<SearchItem>>> getFriendsList({
+    required String token,
+  }) async {
+    try {
+      final response = await apiClient.get(
+        "${ApiConstants.baseUrl}${ApiConstants.users}/friends",
+        token: token,
+      );
+      final apiResponse = ApiResponse<List<SearchItem>>.fromJson(
+        response,
+        (json) =>
+            (json as List).map((item) => SearchItem.fromJson(item)).toList(),
+      );
+      return apiResponse;
+    } catch (e) {
+      throw Exception("Get friends list failed: $e");
+    }
+  }
+
+  Future<ApiResponse<List<SearchItem>>> getAllRelationships({
+    required String token,
+  }) async {
+    try {
+      final response = await apiClient.get(
+        "${ApiConstants.baseUrl}${ApiConstants.users}/relationships",
+        token: token,
+      );
+      final apiResponse = ApiResponse<List<SearchItem>>.fromJson(
+        response,
+        (json) =>
+            (json as List).map((item) => SearchItem.fromJson(item)).toList(),
+      );
+      return apiResponse;
+    } catch (e) {
+      throw Exception("Get all relationships failed: $e");
+    }
+  }
+
+  Future<ApiResponse<void>> acceptFriendRequest({
+    required String token,
+    required String targetUserId,
+  }) async {
+    try {
+      final response = await apiClient.post(
+        "${ApiConstants.baseUrl}${ApiConstants.users}/$targetUserId/friend-request/accept",
+        {},
+        token: token,
+      );
+      return ApiResponse<void>.fromJson(response, (_) => {});
+    } catch (e) {
+      throw Exception("Accept friend request failed: $e");
+    }
+  }
+
+  Future<ApiResponse<void>> rejectFriendRequest({
+    required String token,
+    required String targetUserId,
+  }) async {
+    try {
+      final response = await apiClient.post(
+        "${ApiConstants.baseUrl}${ApiConstants.users}/$targetUserId/friend-request/reject",
+        {},
+        token: token,
+      );
+      return ApiResponse<void>.fromJson(response, (_) => {});
+    } catch (e) {
+      throw Exception("Reject friend request failed: $e");
     }
   }
 }

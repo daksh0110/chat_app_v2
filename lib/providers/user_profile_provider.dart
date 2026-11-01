@@ -1,9 +1,9 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/modal/group_profile_modal.dart';
 import 'package:my_app/modal/user_profile_modal.dart';
 import 'package:my_app/providers/database_provider.dart';
 import 'package:drift/drift.dart';
+import 'package:my_app/providers/tables/blocks_table_provider.dart';
 import 'package:my_app/providers/tables/media_table_provider.dart';
 import 'package:my_app/providers/tables/messages_table_provider.dart';
 import 'package:my_app/providers/tables/user_preference_table_provider.dart';
@@ -77,12 +77,12 @@ class UserProfileProvider extends Notifier {
 
     final members = memberResults.map((row) {
       final participant = row.readTable(db.chatParticipants);
-      final user = row.readTable(db.usersTable);
+      final user = row.readTableOrNull(db.usersTable);
       final media = row.readTableOrNull(db.mediaTable);
 
       return GroupMember(
-        userId: user.userId,
-        name: user.name,
+        userId: participant.userId,
+        name: user != null && user.name.isNotEmpty ? user.name : participant.userId,
         profilePicUrl: media?.location,
         role: participant.role,
       );
@@ -129,13 +129,15 @@ class UserProfileProvider extends Notifier {
       userId = participant.userId;
     }
 
-    var user = await ref.read(usersTableProvider.notifier).getUserById(userId);
-
-    user ??= await ref
-        .read(usersTableProvider.notifier)
-        .fetchAndUpdateUserProfile(userId);
+    final usersTable = ref.read(usersTableProvider.notifier);
+    var user = await usersTable.fetchAndUpdateUserProfile(userId);
+    user ??= await usersTable.getUserById(userId);
 
     if (user == null) return null;
+
+    final isBlocked =
+        await ref.read(blocksTableProvider.notifier).isUserBlocked(userId);
+    final relStatus = isBlocked ? "BLOCKED" : user.relationshipStatus;
 
     final media = await ref
         .read(mediaTableProvider.notifier)
@@ -143,6 +145,7 @@ class UserProfileProvider extends Notifier {
     final mediaShared = await ref
         .read(messagesTableProvider.notifier)
         .fetchMessagesImages(chatId: chatId, limit: 7);
+
     return UserProfileModal(
       id: user.id,
       chatId: chat != null ? chatId : null,
@@ -152,6 +155,7 @@ class UserProfileProvider extends Notifier {
       profilePic: media?.location ?? user.profilePic,
       mediaShared: mediaShared.media,
       totalMediaCount: mediaShared.count,
+      relationshipStatus: relStatus,
     );
   }
 }

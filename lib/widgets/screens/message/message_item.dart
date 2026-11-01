@@ -2,11 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:my_app/core/database.dart';
+import 'package:my_app/colors/defaullt_color_sheet.dart';
+import 'package:my_app/modal/screens/message/message_item_model.dart';
 import 'package:my_app/modal/screens/message/message_modal.dart';
+import 'package:my_app/modal/tables/chat_events_table.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
 import 'package:my_app/widgets/screens/message/attachments_list_widget.dart';
+import 'package:my_app/widgets/screens/message/delete_message_dialog.dart';
 import 'package:my_app/widgets/screens/message/message_bubble.dart';
+import 'package:my_app/widgets/screens/message/reaction_details_sheet.dart';
+import 'package:my_app/widgets/screens/message/reaction_picker.dart';
+import 'package:my_app/widgets/screens/message/reaction_pills.dart';
 
 Widget _statusIcon(MessageStatus status) {
   switch (status) {
@@ -24,10 +30,18 @@ Widget _statusIcon(MessageStatus status) {
       );
 
     case MessageStatus.read:
-      return const Icon(LucideIcons.checkCheck, size: 12, color: Color(0xFF4FC3F7));
+      return const Icon(
+        LucideIcons.checkCheck,
+        size: 12,
+        color: Color(0xFF4FC3F7),
+      );
 
     case MessageStatus.failed:
-      return const Icon(LucideIcons.circleAlert, size: 12, color: Colors.redAccent);
+      return const Icon(
+        LucideIcons.circleAlert,
+        size: 12,
+        color: Colors.redAccent,
+      );
   }
 }
 
@@ -46,105 +60,325 @@ Color _getSenderColor(String name) {
   return colors[name.hashCode.abs() % colors.length];
 }
 
-class MessageItem extends ConsumerWidget {
-  final String message;
-  final bool isSender;
-  final MessageStatus? status;
-  final int timestamp;
-  final String senderName;
-  final bool isGroupChat;
-  final List<MediaTableData> attachments;
+MessageAlignment _resolveAlignment(
+  ChatEventAlignment? eventAlignment,
+  bool isSender,
+) {
+  if (eventAlignment == null) {
+    return isSender ? MessageAlignment.right : MessageAlignment.left;
+  }
 
-  final bool isGrouped;
+  return switch (eventAlignment) {
+    ChatEventAlignment.left => MessageAlignment.left,
+    ChatEventAlignment.center => MessageAlignment.center,
+    ChatEventAlignment.right => MessageAlignment.right,
+  };
+}
+
+EdgeInsets _visualMediaMargin(MessageAlignment alignment, bool isGrouped) {
+  final horizontal = switch (alignment) {
+    MessageAlignment.left => (8.0, 60.0),
+    MessageAlignment.center => (24.0, 24.0),
+    MessageAlignment.right => (60.0, 8.0),
+  };
+
+  return EdgeInsets.fromLTRB(
+    horizontal.$1,
+    isGrouped ? 1 : 4,
+    horizontal.$2,
+    0,
+  );
+}
+
+class MessageItem extends ConsumerWidget {
+  final MessageItemModel data;
+  final void Function(MessageItemModel data)? onReply;
+  final void Function(String messageId, String emoji)? onReact;
+  final void Function(MessageItemModel data, bool deleteForEveryone)? onDelete;
+  final bool isGroupAdmin;
 
   const MessageItem({
     super.key,
-    required this.message,
-    required this.isSender,
-    this.status,
-    required this.timestamp,
-    required this.senderName,
-    this.isGroupChat = false,
-    this.attachments = const [],
-    this.isGrouped = false,
+    required this.data,
+    this.onReply,
+    this.onReact,
+    this.onDelete,
+    this.isGroupAdmin = false,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isMediaOnly = attachments.isNotEmpty && message.isEmpty;
-    final hasVisualMedia = attachments.any(
-      (attachment) =>
-          attachment.contentType?.startsWith('image/') == true ||
-          attachment.contentType?.startsWith('video/') == true,
+    final isMediaOnly = !data.isDeleted &&
+        data.attachments.isNotEmpty &&
+        data.message.isEmpty;
+    final hasVisualMedia = !data.isDeleted &&
+        data.attachments.any(
+          (attachment) =>
+              attachment.contentType?.startsWith('image/') == true ||
+              attachment.contentType?.startsWith('video/') == true,
+        );
+
+    final timeStr = DateFormat(
+      'hh:mm a',
+    ).format(DateTime.fromMillisecondsSinceEpoch(data.timestamp));
+    final bubbleAlignment = _resolveAlignment(
+      data.eventAlignment,
+      data.isSender,
     );
 
-    final timeStr = DateFormat('hh:mm a').format(
-      DateTime.fromMillisecondsSinceEpoch(timestamp),
-    );
-
-    return MessageBubble(
-      alignment: isSender ? MessageAlignment.right : MessageAlignment.left,
-      isGrouped: isGrouped,
+    final bubble = MessageBubble(
+      alignment: bubbleAlignment,
+      isGrouped: data.isGrouped,
       padding: isMediaOnly ? const EdgeInsets.all(3) : null,
       backgroundColor: isMediaOnly ? Colors.transparent : null,
       margin: hasVisualMedia
-          ? EdgeInsets.fromLTRB(
-              isSender ? 60 : 8,
-              isGrouped ? 1 : 4,
-              isSender ? 8 : 60,
-              0,
-            )
+          ? _visualMediaMargin(bubbleAlignment, data.isGrouped)
           : null,
       maxWidthFactor: hasVisualMedia ? .82 : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Group sender name
-          if (!isSender && isGroupChat && !isGrouped) ...[
-            PrimaryText(
-              senderName,
-              fontSize: 11.5,
-              fontWeight: FontWeight.w700,
-              color: _getSenderColor(senderName),
-            ),
-            const SizedBox(height: 2),
-          ],
+          if (data.isDeleted)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    LucideIcons.ban,
+                    size: 14,
+                    color: Colors.grey.shade500,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'This message was deleted',
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontStyle: FontStyle.italic,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  _TimestampChip(
+                    timeStr: timeStr,
+                    isSender: data.isSender,
+                    status: null,
+                    overlayOnMedia: false,
+                  ),
+                ],
+              ),
+            )
+          else ...[
+            // Quoted reply block
+            if (data.replyToMessage != null &&
+                data.replyToMessage!.isNotEmpty) ...[
+              _QuotedReplyPreview(
+                senderName: data.replyToSenderName ?? 'Reply',
+                message: data.replyToMessage ?? '',
+                isSender: data.isSender,
+              ),
+              const SizedBox(height: 4),
+            ],
 
-          // Attachments
-          if (attachments.isNotEmpty) ...[
-            AttachmentsListWidget(
-              attachments: attachments,
-              senderName: senderName,
-              sentAt: timestamp,
-            ),
-            if (message.isNotEmpty) const SizedBox(height: 5),
-          ],
+            // Group sender name
+            if (!data.isSender && data.isGroupChat && !data.isGrouped) ...[
+              PrimaryText(
+                data.senderName,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+                color: _getSenderColor(data.senderName),
+              ),
+              const SizedBox(height: 2),
+            ],
 
-          // Text + timestamp row
-          if (message.isNotEmpty || !isMediaOnly)
-            _TextWithTimestamp(
-              message: message,
-              timeStr: timeStr,
-              isSender: isSender,
-              status: status,
-              isMediaOnly: isMediaOnly,
-            ),
+            // Attachments
+            if (data.attachments.isNotEmpty) ...[
+              AttachmentsListWidget(
+                attachments: data.attachments,
+                senderName: data.senderName,
+                sentAt: data.timestamp,
+              ),
+              if (data.message.isNotEmpty) const SizedBox(height: 5),
+            ],
 
-          // Timestamp for media-only messages
-          if (isMediaOnly)
-            Align(
-              alignment: Alignment.bottomRight,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 3, right: 2, bottom: 2),
-                child: _TimestampChip(
-                  timeStr: timeStr,
-                  isSender: isSender,
-                  status: status,
-                  overlayOnMedia: true,
+            // Text + timestamp row
+            if (data.message.isNotEmpty || !isMediaOnly)
+              _TextWithTimestamp(
+                message: data.message,
+                timeStr: timeStr,
+                isSender: data.isSender,
+                status: data.status,
+                isMediaOnly: isMediaOnly,
+              ),
+
+            // Timestamp for media-only messages
+            if (isMediaOnly)
+              Align(
+                alignment: Alignment.bottomRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 3, right: 2, bottom: 2),
+                  child: _TimestampChip(
+                    timeStr: timeStr,
+                    isSender: data.isSender,
+                    status: data.status,
+                    overlayOnMedia: true,
+                  ),
                 ),
               ),
+          ],
+        ],
+      ),
+    );
+
+    final gestureBubble = data.isDeleted
+        ? bubble
+        : GestureDetector(
+            onLongPressStart: (details) async {
+              final myEmojis = data.reactions
+                  .where((r) => r.hasReactedByMe)
+                  .map((r) => r.emoji)
+                  .toSet();
+
+              final result = await showMessageContextMenu(
+                context,
+                tapPosition: details.globalPosition,
+                isSender: data.isSender,
+                myReactedEmojis: myEmojis,
+                canReply: onReply != null,
+                canCopy: data.message.isNotEmpty,
+                canDelete: onDelete != null,
+                messageText: data.message,
+              );
+
+              if (result == null) return;
+
+              switch (result.action) {
+                case MessageContextActionType.react:
+                  if (result.emoji != null && onReact != null) {
+                    onReact!(data.id, result.emoji!);
+                  }
+                  break;
+                case MessageContextActionType.reply:
+                  onReply?.call(data);
+                  break;
+                case MessageContextActionType.copy:
+                  break;
+                case MessageContextActionType.delete:
+                  final canDeleteForEveryone = data.isSender || isGroupAdmin;
+                  if (!context.mounted) break;
+                  final deleteType = await showDeleteMessageDialog(
+                    context,
+                    canDeleteForEveryone: canDeleteForEveryone,
+                  );
+                  if (deleteType != null && onDelete != null) {
+                    onDelete!(data, deleteType == DeleteMessageType.everyone);
+                  }
+                  break;
+              }
+            },
+            onDoubleTap: onReply != null ? () => onReply!(data) : null,
+            child: bubble,
+          );
+
+    final itemWithReactions = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment:
+          data.isSender ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        gestureBubble,
+        if (!data.isDeleted && data.reactions.isNotEmpty)
+          ReactionPills(
+            reactions: data.reactions,
+            isSender: data.isSender,
+            onTap: (emoji) {
+              onReact?.call(data.id, emoji);
+            },
+            onLongPress: (reactions) {
+              showReactionDetailsSheet(context, reactions);
+            },
+          ),
+      ],
+    );
+
+    if (onReply == null || data.isDeleted) return itemWithReactions;
+
+    return Dismissible(
+      key: ValueKey('msg_${data.id}_${data.timestamp}'),
+      direction: DismissDirection.startToEnd,
+      confirmDismiss: (direction) async {
+        onReply!(data);
+        return false;
+      },
+      background: Container(
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.only(left: 20),
+        child: const Icon(
+          LucideIcons.reply,
+          size: 20,
+          color: DefaultColorSheet.green500,
+        ),
+      ),
+      child: itemWithReactions,
+    );
+  }
+}
+
+class _QuotedReplyPreview extends StatelessWidget {
+  final String senderName;
+  final String message;
+  final bool isSender;
+
+  const _QuotedReplyPreview({
+    required this.senderName,
+    required this.message,
+    required this.isSender,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: isSender
+            ? Colors.black.withValues(alpha: 0.06)
+            : Colors.grey.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(6),
+        border: Border(
+          left: BorderSide(
+            color: isSender
+                ? const Color(0xFF005C4B)
+                : const Color(0xFF00A884),
+            width: 3.5,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            senderName.isEmpty ? "Reply" : senderName,
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+              color: isSender
+                  ? const Color(0xFF005C4B)
+                  : const Color(0xFF00A884),
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            message,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFF3B4A54),
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ),
     );

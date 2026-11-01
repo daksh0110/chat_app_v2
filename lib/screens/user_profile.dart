@@ -1,17 +1,28 @@
-﻿import 'package:flutter/material.dart';
+import 'package:my_app/screens/select_members_screen.dart';
+import 'package:my_app/modal/user.modal.dart';
+import 'package:my_app/providers/socket_provider.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
+import 'package:my_app/core/app_routes.dart';
+import 'package:my_app/modal/screens/search/message_screen_arguments.dart';
+import 'package:my_app/providers/user_relationship_provider.dart';
 import 'package:my_app/modal/group_profile_modal.dart';
 import 'package:my_app/modal/user_profile_modal.dart';
+import 'package:my_app/providers/tables/groups_table_provider.dart';
 import 'package:my_app/providers/tables/user_preference_table_provider.dart';
 import 'package:my_app/modal/screens/search/search_item.dart';
 import 'package:my_app/modal/screens/search/user_profile_arguments.dart';
 import 'package:my_app/providers/user_profile_provider.dart';
 import 'package:my_app/widgets/comman/primary_container.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
+import 'package:my_app/widgets/comman/toast_notification.dart';
 import 'package:my_app/widgets/comman/user_bubble.dart';
+import 'package:my_app/widgets/screens/userProfile/build_relationship_button.dart';
 import 'package:my_app/widgets/screens/userProfile/media_shared_list.dart';
 import 'package:my_app/widgets/screens/userProfile/profile_detail_item.dart';
+import 'package:toastification/toastification.dart';
 
 class UserProfile extends ConsumerStatefulWidget {
   const UserProfile({super.key});
@@ -22,6 +33,33 @@ class UserProfile extends ConsumerStatefulWidget {
 
 class UserProfileState extends ConsumerState<UserProfile> {
   SearchItem? user;
+  String? _refreshedProfileId;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final routeArgs = ModalRoute.of(context)?.settings.arguments;
+    if (routeArgs is! UserProfileArguments) return;
+
+    final profileId = routeArgs.id;
+    if (_refreshedProfileId == profileId) return;
+
+    _refreshedProfileId = profileId;
+    if (routeArgs.isGroupChat) {
+      Future.microtask(() async {
+        try {
+          await ref
+              .read(groupsTableProvider.notifier)
+              .fetchAndUpdateGroup(profileId);
+          ref.invalidate(groupProfile(profileId));
+        } catch (_) {}
+      });
+    } else {
+      ref.invalidate(userProfile(profileId));
+      ref.invalidate(userRelationshipProvider(profileId));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,12 +110,98 @@ class UserProfileState extends ConsumerState<UserProfile> {
         );
   }
 
+  void _showLeaveGroupDialog(BuildContext context, String chatId) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.grey.shade900,
+        title: const Text('Leave Group', style: TextStyle(color: Colors.white)),
+        content: const Text(
+          'Are you sure you want to leave this group?',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white60)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await ref.read(socketProvider).leaveGroup(chatId);
+                if (context.mounted) {
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ToastHelper.show(
+                    context: context,
+                    message: e.toString().replaceFirst('Exception: ', ''),
+                    type: ToastificationType.error,
+                  );
+                }
+              }
+            },
+            child: const Text(
+              'Leave',
+              style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRemoveMemberDialog(BuildContext context, String chatId, GroupMember member) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.grey.shade900,
+        title: Text('Remove ${member.name}', style: const TextStyle(color: Colors.white)),
+        content: Text(
+          'Are you sure you want to remove ${member.name} from this group?',
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white60)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await ref.read(socketProvider).removeGroupMember(chatId, member.userId);
+              } catch (e) {
+                if (context.mounted) {
+                  ToastHelper.show(
+                    context: context,
+                    message: e.toString().replaceFirst('Exception: ', ''),
+                    type: ToastificationType.error,
+                  );
+                }
+              }
+            },
+            child: const Text(
+              'Remove',
+              style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildGroupProfile(
     BuildContext context,
     GroupProfile group,
     UserProfileArguments args,
     String currentUser,
   ) {
+    final isCurrentUserAdmin = group.members.any(
+      (m) => m.userId == currentUser && m.role.toUpperCase() == 'ADMIN',
+    );
     final displayName = args.name?.isNotEmpty == true
         ? args.name!
         : group.name.isNotEmpty
@@ -153,13 +277,77 @@ class UserProfileState extends ConsumerState<UserProfile> {
                         color: DefaultColorSheet.grey500,
                       ),
                       const SizedBox(height: 14),
+                      if (isCurrentUserAdmin) ...[
+                        InkWell(
+                          onTap: () async {
+                            final excluded = group.members.map((m) => m.userId).toList();
+                            final List<UserModel>? selected = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => SelectMembersScreen(
+                                  initialSelected: const [],
+                                  excludedUserIds: excluded,
+                                ),
+                              ),
+                            );
+                            if (selected != null && selected.isNotEmpty && context.mounted) {
+                              final socket = ref.read(socketProvider);
+                              for (final user in selected) {
+                                try {
+                                  await socket.addGroupMember(group.chatId, user.id);
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ToastHelper.show(
+                                      context: context,
+                                      message: e.toString().replaceFirst('Exception: ', ''),
+                                      type: ToastificationType.error,
+                                    );
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 12.0),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: DefaultColorSheet.primary.withOpacity(0.15),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    LucideIcons.userPlus,
+                                    color: DefaultColorSheet.primary,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                const PrimaryText(
+                                  'Add Members',
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: DefaultColorSheet.primary,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                       if (group.members.isEmpty)
                         const PrimaryText(
                           'No members found',
                           textAlign: TextAlign.center,
                         ),
                       ...group.members.map(
-                        (member) => _memberTile(currentUser, member),
+                        (member) => _memberTile(
+                          currentUser,
+                          member,
+                          isCurrentUserAdmin,
+                          group.chatId,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       Row(
@@ -191,6 +379,40 @@ class UserProfileState extends ConsumerState<UserProfile> {
                         const SizedBox(height: 12),
                         MediaSharedList(media: media),
                       ],
+                      const SizedBox(height: 24),
+                      InkWell(
+                        onTap: () => _showLeaveGroupDialog(context, group.chatId),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.redAccent.withOpacity(0.3),
+                            ),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                LucideIcons.logOut,
+                                color: Colors.redAccent,
+                                size: 20,
+                              ),
+                              SizedBox(width: 8),
+                              PrimaryText(
+                                'Leave Group',
+                                color: Colors.redAccent,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
                     ],
                   ),
                 ),
@@ -205,6 +427,24 @@ class UserProfileState extends ConsumerState<UserProfile> {
   Widget _buildUserProfile(UserProfileModal info) {
     final media = info.mediaShared;
     final mediaCount = info.totalMediaCount;
+    final relationshipProvider = userRelationshipProvider(info.id ?? "");
+
+    final relationshipStatus = ref.watch(relationshipProvider);
+
+    final relationshipNotifier = ref.read(relationshipProvider.notifier);
+
+    ref.listen(relationshipProvider, (previous, next) {
+      next.whenOrNull(
+        error: (error, stackTrace) {
+          ToastHelper.show(
+            context: context,
+            message: error.toString().replaceFirst('Exception: ', ''),
+            type: ToastificationType.error,
+          );
+        },
+      );
+    });
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -215,17 +455,37 @@ class UserProfileState extends ConsumerState<UserProfile> {
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back, color: Colors.white),
         ),
-        // actions: [
-        //   Padding(
-        //     padding: const EdgeInsets.only(right: 8),
-        //     child: ProfileActionButton(
-        //       icon: LucideIcons.ellipsis,
-        //       onTap: () {},
-        //       size: 35,
-        //       iconSize: 20,
-        //     ),
-        //   ),
-        // ],
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(LucideIcons.ellipsisVertical, color: Colors.white),
+            color: Colors.grey[900],
+            onSelected: (value) {
+              if (value == 'block') {
+                relationshipNotifier.blockUser();
+              } else if (value == 'unblock') {
+                relationshipNotifier.unblockUser();
+              }
+            },
+            itemBuilder: (BuildContext context) => [
+              PopupMenuItem<String>(
+                value: relationshipStatus.value == RelationshipStatus.blocked
+                    ? 'unblock'
+                    : 'block',
+                child: Text(
+                  relationshipStatus.value == RelationshipStatus.blocked
+                      ? 'Unblock'
+                      : 'Block',
+                  style: TextStyle(
+                    color:
+                        relationshipStatus.value == RelationshipStatus.blocked
+                        ? Colors.white
+                        : Colors.red,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       body: _buildProfileBody(
         children: [
@@ -243,18 +503,27 @@ class UserProfileState extends ConsumerState<UserProfile> {
             color: Colors.white,
             fontWeight: FontWeight.w600,
           ),
-          const SizedBox(height: 10),
-          // Row(
-          //   mainAxisAlignment: MainAxisAlignment.center,
-          //   children: const [
-          //     ProfileActionButton(icon: LucideIcons.messageCircleMore),
-          //     SizedBox(width: 20),
-          //     ProfileActionButton(icon: LucideIcons.phone),
-          //     SizedBox(width: 20),
-          //     ProfileActionButton(icon: LucideIcons.video),
-          //   ],
-          // ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
+          buildRelationshipButton(
+            relationshipStatus.value ?? RelationshipStatus.none,
+            relationshipNotifier,
+            relationshipStatus.isLoading,
+            context: context,
+            userName: info.name ?? "User",
+            profilePicUrl: info.profilePic,
+            onMessageTap: () {
+              Navigator.pushNamed(
+                context,
+                AppRoutes.message,
+                arguments: MessageScreenArguments(
+                  receiverId: info.id ?? "",
+                  name: info.name ?? "",
+                  profilePicUrl: info.profilePic,
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 18),
           Expanded(
             child: PrimaryContainer(
               children: SingleChildScrollView(
@@ -315,38 +584,196 @@ class UserProfileState extends ConsumerState<UserProfile> {
     );
   }
 
-  Widget _memberTile(String? currentUserId, GroupMember member) {
+  void _showMemberOptionsSheet(
+    BuildContext context,
+    String chatId,
+    GroupMember member,
+    bool isMemberAdmin,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey.shade900,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              ListTile(
+                leading: UserBubble(
+                  profilePicUrl: member.profilePicUrl,
+                  name: member.name,
+                  size: 44,
+                  needActiveIndicator: false,
+                ),
+                title: Text(
+                  member.name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                  ),
+                ),
+                subtitle: Text(
+                  isMemberAdmin ? 'Group Admin' : 'Group Member',
+                  style: TextStyle(
+                    color: isMemberAdmin
+                        ? DefaultColorSheet.primary
+                        : Colors.white60,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+              const Divider(color: Colors.white12),
+              ListTile(
+                leading: Icon(
+                  isMemberAdmin
+                      ? LucideIcons.shieldAlert
+                      : LucideIcons.shieldCheck,
+                  color: Colors.white,
+                ),
+                title: Text(
+                  isMemberAdmin ? 'Dismiss as admin' : 'Make group admin',
+                  style: const TextStyle(color: Colors.white),
+                ),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final socket = ref.read(socketProvider);
+                  final newRole = isMemberAdmin ? 'MEMBER' : 'ADMIN';
+                  try {
+                    await socket.changeGroupMemberRole(
+                      chatId,
+                      member.userId,
+                      newRole,
+                    );
+                  } catch (e) {
+                    if (context.mounted) {
+                      ToastHelper.show(
+                        context: context,
+                        message: e.toString().replaceFirst('Exception: ', ''),
+                        type: ToastificationType.error,
+                      );
+                    }
+                  }
+                },
+              ),
+              ListTile(
+                leading: const Icon(
+                  LucideIcons.userMinus,
+                  color: Colors.redAccent,
+                ),
+                title: Text(
+                  'Remove ${member.name} from group',
+                  style: const TextStyle(color: Colors.redAccent),
+                ),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showRemoveMemberDialog(context, chatId, member);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _memberTile(
+    String? currentUserId,
+    GroupMember member,
+    bool isCurrentUserAdmin,
+    String chatId,
+  ) {
     final isMe = currentUserId == member.userId;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: Row(
-        children: [
-          UserBubble(
-            profilePicUrl: member.profilePicUrl,
-            name: member.name,
-            size: 40,
-            needActiveIndicator: false,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                PrimaryText(
-                  isMe ? '${member.name} (You)' : member.name,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-                const SizedBox(height: 4),
-                PrimaryText(
-                  member.role == 'ADMIN' ? 'Admin' : 'Member',
-                  color: DefaultColorSheet.grey500,
-                  fontSize: 14,
-                ),
-              ],
+    final isMemberAdmin = member.role.toUpperCase() == 'ADMIN';
+
+    return InkWell(
+      onTap: (isCurrentUserAdmin && !isMe)
+          ? () => _showMemberOptionsSheet(
+                context,
+                chatId,
+                member,
+                isMemberAdmin,
+              )
+          : null,
+      borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+        child: Row(
+          children: [
+            UserBubble(
+              profilePicUrl: member.profilePicUrl,
+              name: member.name,
+              size: 40,
+              needActiveIndicator: false,
             ),
-          ),
-        ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  PrimaryText(
+                    isMe ? '${member.name} (You)' : member.name,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  const SizedBox(height: 3),
+                  if (isMemberAdmin)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 1.5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: DefaultColorSheet.primary.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'Admin',
+                        style: TextStyle(
+                          color: DefaultColorSheet.primary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    )
+                  else
+                    const PrimaryText(
+                      'Member',
+                      color: DefaultColorSheet.grey500,
+                      fontSize: 13,
+                    ),
+                ],
+              ),
+            ),
+            if (isCurrentUserAdmin && !isMe)
+              IconButton(
+                icon: const Icon(
+                  LucideIcons.ellipsisVertical,
+                  color: Colors.white70,
+                  size: 20,
+                ),
+                onPressed: () => _showMemberOptionsSheet(
+                  context,
+                  chatId,
+                  member,
+                  isMemberAdmin,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

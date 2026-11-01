@@ -8,7 +8,9 @@ import 'package:my_app/core/util/get_file_type.dart';
 import 'package:my_app/core/util/parse_time.dart';
 import 'package:my_app/core/util/status_rank.dart';
 import 'package:my_app/data/services/upload_service.dart';
+import 'package:my_app/modal/chat_event_model.dart';
 import 'package:my_app/modal/chat_list_modal.dart';
+import 'package:my_app/modal/tables/chat_events_table.dart';
 import 'package:my_app/modal/screens/createGroup/create_group_response.dart';
 import 'package:my_app/modal/screens/message/message_body_request.dart';
 import 'package:my_app/modal/screens/message/message_delivered_response.dart';
@@ -23,9 +25,12 @@ import 'package:my_app/providers/global_queue_provider.dart';
 import 'package:my_app/providers/message_typing_provider.dart';
 import 'package:my_app/providers/socket_provider.dart';
 import 'package:my_app/providers/tables/chat_list_table_provider.dart';
+import 'package:my_app/providers/tables/chat_events_table_provider.dart';
 import 'package:my_app/providers/tables/chat_participants_table.dart';
 import 'package:my_app/providers/tables/media_table_provider.dart';
 import 'package:my_app/providers/tables/message_status_table_provider.dart';
+import 'package:my_app/modal/message_reaction_modal.dart';
+import 'package:my_app/providers/tables/message_reactions_table_provider.dart';
 import 'package:my_app/providers/tables/messages_table_provider.dart';
 import 'package:my_app/providers/tables/user_preference_table_provider.dart';
 import 'package:uuid/uuid.dart';
@@ -70,6 +75,100 @@ class MessageNotifer extends Notifier {
     });
   }
 
+  Future<void> listenForReactions() async {
+    ref.read(socketProvider).listenOnce("message_reaction", (dynamic data) {
+      acknowledgeEvent(data);
+      if (data is Map) {
+        final currentUserId = ref.read(userPreferenceTableProvider).value;
+        final payload = ReactionEventPayload.fromJson(
+          Map<String, dynamic>.from(data),
+          currentUserId: currentUserId,
+        );
+        ref.read(messageReactionsTableProvider.notifier).syncReactionsForMessage(
+          messageId: payload.messageId,
+          chatId: payload.chatId,
+          reactionGroups: payload.reactions,
+        );
+      }
+    });
+  }
+
+  void toggleReaction({
+    required String messageId,
+    required String chatId,
+    required String emoji,
+  }) {
+    ref.read(socketProvider).sendMessageWithAck(
+      "message_reaction",
+      {
+        "message_id": messageId,
+        "chat_id": chatId,
+        "emoji": emoji,
+      },
+      (response) {
+        if (response is Map && response['error'] == true) return;
+        if (response is Map) {
+          final currentUserId = ref.read(userPreferenceTableProvider).value;
+          final payload = ReactionEventPayload.fromJson(
+            Map<String, dynamic>.from(response),
+            currentUserId: currentUserId,
+          );
+          ref.read(messageReactionsTableProvider.notifier).syncReactionsForMessage(
+            messageId: payload.messageId,
+            chatId: payload.chatId,
+            reactionGroups: payload.reactions,
+          );
+        }
+      },
+    );
+  }
+
+  Future<void> listenForMessageDeleted() async {
+    ref.read(socketProvider).listenOnce("message_deleted", (dynamic data) async {
+      acknowledgeEvent(data);
+      if (data is Map) {
+        final messageId = data["message_id"]?.toString();
+        final chatId = data["chat_id"]?.toString();
+        final deleteType = data["delete_type"]?.toString();
+        if (messageId == null || chatId == null) return;
+
+        if (deleteType == "everyone") {
+          await ref
+              .read(messagesTableProvider.notifier)
+              .markMessageAsDeleted(messageId, chatId);
+        }
+      }
+    });
+  }
+
+  void deleteMessage({
+    required String messageId,
+    required String chatId,
+    required bool deleteForEveryone,
+  }) {
+    ref.read(socketProvider).sendMessageWithAck(
+      "delete_message",
+      {
+        "message_id": messageId,
+        "chat_id": chatId,
+        "delete_type": deleteForEveryone ? "everyone" : "me",
+      },
+      (response) async {
+        if (response is Map && response['error'] == true) return;
+
+        if (deleteForEveryone) {
+          await ref
+              .read(messagesTableProvider.notifier)
+              .markMessageAsDeleted(messageId, chatId);
+        } else {
+          await ref
+              .read(messagesTableProvider.notifier)
+              .deleteMessagePermanently(messageId, chatId);
+        }
+      },
+    );
+  }
+
   //
 
   Future<void> _handleMessage(SendMessageAck data) async {
@@ -102,6 +201,21 @@ class MessageNotifer extends Notifier {
                 messageId: messageId,
                 senderId: senderId,
                 serverCreatedAt: createdAt,
+                replyToId: data.replyTo?.messageId,
+                replyToSenderName: data.replyTo?.senderName,
+                replyToMessage: data.replyTo?.message,
+              ),
+            );
+        await ref
+            .read(chatEventsTableProvider.notifier)
+            .createOrUpdateChatEvent(
+              ChatEventModel(
+                id: messageId,
+                chatId: chatId,
+                type: ChatEventType.message,
+                contentId: messageId,
+                alignment: ChatEventAlignment.left,
+                createdAt: DateTime.fromMillisecondsSinceEpoch(createdAt),
               ),
             );
         final List<MessageStatus> messageStatuses = data.messageStatuses
@@ -228,8 +342,23 @@ class MessageNotifer extends Notifier {
             message: request.message,
             senderId: currentUserId,
             tempId: tempId,
+            replyToId: request.replyTo?.messageId,
+            replyToSenderName: request.replyTo?.senderName,
+            replyToMessage: request.replyTo?.message,
           ),
         );
+        await ref
+            .read(chatEventsTableProvider.notifier)
+            .createOrUpdateChatEvent(
+              ChatEventModel(
+                id: tempId,
+                chatId: currentChatId,
+                type: ChatEventType.message,
+                contentId: tempId,
+                alignment: ChatEventAlignment.right,
+                createdAt: DateTime.fromMillisecondsSinceEpoch(now),
+              ),
+            );
 
         if (request.attachments.isNotEmpty) {
           final mediasToInsert = request.attachments.map((attachment) {
@@ -306,6 +435,7 @@ class MessageNotifer extends Notifier {
           "temp_id": tempId,
           "attachments": uploadedAttachments.map((e) => e.toJson()).toList(),
           if (isRealChat) "chat_id": currentChatId,
+          if (request.replyTo != null) "reply_to": request.replyTo!.toJson(),
         },
         (response) async {
           final payload = SendMessageAck.fromJson(response);
@@ -331,6 +461,19 @@ class MessageNotifer extends Notifier {
             ),
             messageId,
           );
+
+          await ref
+              .read(chatEventsTableProvider.notifier)
+              .createOrUpdateChatEvent(
+                ChatEventModel(
+                  id: tempId,
+                  chatId: realChatId,
+                  type: ChatEventType.message,
+                  contentId: messageId,
+                  alignment: ChatEventAlignment.right,
+                  createdAt: DateTime.fromMillisecondsSinceEpoch(createdAt),
+                ),
+              );
 
           await mediaTableProviderRef.updateActorId(tempId, messageId);
 
@@ -568,6 +711,19 @@ class MessageNotifer extends Notifier {
               messageId,
             );
 
+            await ref
+                .read(chatEventsTableProvider.notifier)
+                .createOrUpdateChatEvent(
+                  ChatEventModel(
+                    id: msg.id,
+                    chatId: realChatId,
+                    type: ChatEventType.message,
+                    contentId: messageId,
+                    alignment: ChatEventAlignment.right,
+                    createdAt: DateTime.fromMillisecondsSinceEpoch(createdAt),
+                  ),
+                );
+
             await mediaTableProviderRef.updateActorId(msg.id, messageId);
 
             await mediaTableProviderRef.updateUploadedMedia(
@@ -615,7 +771,7 @@ class MessageNotifer extends Notifier {
     if (_typingListenerAdded) return;
     _typingListenerAdded = true;
 
-    ref.read(socketProvider).listenOnce("user_typing", (dynamic data) {
+    ref.read(socketProvider).listenOnce("user_typing", (dynamic data) async {
       final chatId = data["chat_id"];
       if (chatId != null) {
         ref.read(messageTypingProvider.notifier).receiveUserTyping(chatId);
@@ -676,6 +832,12 @@ class MessageNotifer extends Notifier {
                         type: "GROUP",
                       ),
                     );
+
+                if (payload.data?.participants.isNotEmpty == true) {
+                  await ref
+                      .read(chatParticipantsTableProvider.notifier)
+                      .bulkInsertParticipants(payload.data!.participants);
+                }
               },
             );
       });

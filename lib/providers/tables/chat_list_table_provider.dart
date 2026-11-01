@@ -14,6 +14,7 @@ import 'package:my_app/providers/tables/users_table_provider.dart';
 import 'package:my_app/providers/tables/messages_table_provider.dart';
 import 'package:my_app/modal/user.modal.dart';
 import 'package:my_app/providers/token_provider.dart';
+import 'package:my_app/providers/tables/chat_events_table_provider.dart';
 
 final chatListTableProvider = NotifierProvider<ChatListTableProvider, void>(
   ChatListTableProvider.new,
@@ -75,7 +76,7 @@ class ChatListTableProvider extends Notifier {
         name: user.name,
         profilePicUrl: media?.location,
         type: "DIRECT",
-        id: chatId, // Using chatId as the unique identifier
+        id: chatId,
         lastMessage: chatquery.lastMessage ?? "",
         lastMessageTime: chatquery.lastMessageTime?.toString() ?? "",
         unReadCount: unreadMessages,
@@ -282,5 +283,25 @@ class ChatListTableProvider extends Notifier {
         isDeleted: const Value(false),
       ),
     );
+
+    await ref
+        .read(chatEventsTableProvider.notifier)
+        .updateChatId(oldChatId, currentChatId);
+  }
+
+  Future<String?> findDirectChatIdWithUser(String targetUserId) async {
+    final db = ref.read(databaseProvider);
+    final query = db.select(db.chatListTable).join([
+      innerJoin(
+        db.chatParticipants,
+        db.chatParticipants.chatId.equalsExp(db.chatListTable.chatId),
+      ),
+    ])..where(
+        db.chatListTable.type.equals("DIRECT") &
+        db.chatParticipants.userId.equals(targetUserId),
+      );
+
+    final result = await query.getSingleOrNull();
+    return result?.readTable(db.chatListTable).chatId;
   }
 }

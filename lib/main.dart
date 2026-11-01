@@ -1,8 +1,10 @@
+import 'package:my_app/providers/group_socket_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/core/util/route_observer.dart';
 import 'package:my_app/data/services/notification_service.dart';
 import 'package:my_app/providers/auth_notifier_provider.dart';
+import 'package:my_app/providers/friend_requests_provider.dart';
 import 'package:my_app/providers/message_provider.dart';
 
 import 'package:my_app/providers/server_connection_provider.dart';
@@ -14,18 +16,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:my_app/services/socket/friend_request_socket.dart';
 import 'package:my_app/services/socket/misc_socket.dart';
 import 'firebase_options.dart';
 import 'package:my_app/widgets/comman/overlay_banner.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-
-  await NotificationService.initialize();
 
   await dotenv.load(fileName: ".env");
 
@@ -72,12 +69,23 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
     ref.listen(authProvider, (previous, next) async {
       next.whenData((state) async {
         if (state == AuthState.authenticated) {
+          await Firebase.initializeApp(
+            options: DefaultFirebaseOptions.currentPlatform,
+          );
+
+          FirebaseMessaging.onBackgroundMessage(
+            firebaseMessagingBackgroundHandler,
+          );
+
+          await NotificationService.initialize();
           final token = await ref.read(tokenProvider.future);
 
           if (token == null) return;
           ref.read(socketProvider).onConnect(() async {
             final notifier = ref.read(messageProvider.notifier);
             await notifier.receiveMessage();
+            await notifier.listenForReactions();
+            await notifier.listenForMessageDeleted();
             await notifier.messageDelivered();
             await notifier.markRead();
             notifier.sendChatSyncEvent();
@@ -88,11 +96,14 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
             await ref
                 .read(miscellaneousNotifierProvider.notifier)
                 .listenUserUpdateDetails();
+            ref.read(friendRequestSocketProvider.notifier).listen();
+            ref.read(groupSocketProvider.notifier).listen();
             // notifier.groupsCountSync();
 
             await NotificationService.handleInitialMessage();
           });
           ref.read(socketProvider).connect(token);
+          await seedFriendRequestsFromRest(ref);
         }
       });
     });

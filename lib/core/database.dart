@@ -1,10 +1,15 @@
 import 'dart:io';
+import 'package:my_app/modal/tables/blocks_table.dart';
+import 'package:my_app/modal/tables/chat_events_table.dart';
 import 'package:my_app/modal/tables/chat_list_table.dart';
 import 'package:my_app/modal/tables/chat_participant_table.dart';
+import 'package:my_app/modal/tables/friends_table.dart';
 import 'package:my_app/modal/tables/groups_table.dart';
 import 'package:my_app/modal/tables/media_modal.dart';
 import 'package:my_app/modal/tables/message_status_table.dart';
 import 'package:my_app/modal/tables/messages_table.dart';
+import 'package:my_app/modal/tables/message_reactions_table.dart';
+import 'package:my_app/modal/tables/notifications_table.dart';
 import 'package:my_app/modal/tables/recent_searches_table.dart';
 import 'package:my_app/modal/tables/user_preferences_table.dart';
 import 'package:my_app/modal/tables/users_table.dart';
@@ -26,13 +31,18 @@ part 'database.g.dart';
     RecentSearchesTable,
     UserPreferencesTable,
     GroupListTable,
+    FriendsTable,
+    BlocksTable,
+    NotificationsTable,
+    ChatEventsTable,
+    MessageReactionsTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 15;
 
   // --- Queries ---
   // Stream<List<UsersTableData>> getAllUsers() {
@@ -40,6 +50,104 @@ class AppDatabase extends _$AppDatabase {
   // }
 
   // --- Recent Searches ---
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (Migrator m) async {
+      await m.createAll();
+    },
+
+    onUpgrade: (Migrator m, int from, int to) async {
+      if (from < 7) {
+        await m.createTable(friendsTable);
+      }
+      if (from < 8) {
+        await m.addColumn(friendsTable, friendsTable.isRead);
+      }
+      if (from < 9) {
+        await m.createTable(blocksTable);
+      }
+      if (from < 10) {
+        await m.createTable(notificationsTable);
+      }
+      if (from < 11) {
+        await m.createTable(chatEventsTable);
+      }
+      if (from < 12) {
+        await _backfillChatEventsForMessages();
+      }
+      if (from < 13) {
+        await m.addColumn(messages, messages.replyToId);
+        await m.addColumn(messages, messages.replyToSenderName);
+        await m.addColumn(messages, messages.replyToMessage);
+      }
+      if (from < 14) {
+        await m.createTable(messageReactionsTable);
+      }
+      if (from < 15) {
+        await m.addColumn(messages, messages.isDeleted);
+      }
+    },
+
+    beforeOpen: (OpeningDetails details) async {
+      await _backfillChatEventsForMessages();
+    },
+  );
+
+  /// Ensures all existing messages in SQLite have a corresponding row in chatEventsTable
+  Future<void> _backfillChatEventsForMessages() async {
+    try {
+      final existingMessages = await select(messages).get();
+      if (existingMessages.isEmpty) return;
+
+      final existingEvents = await (selectOnly(
+        chatEventsTable,
+      )..addColumns([chatEventsTable.id, chatEventsTable.contentId])).get();
+
+      final existingIds = <String>{};
+      for (final row in existingEvents) {
+        final id = row.read(chatEventsTable.id);
+        final contentId = row.read(chatEventsTable.contentId);
+        if (id != null) existingIds.add(id);
+        if (contentId != null) existingIds.add(contentId);
+      }
+
+      final currentUserPref = await select(
+        userPreferencesTable,
+      ).getSingleOrNull();
+      final currentUserId = currentUserPref?.userId;
+
+      final missing = existingMessages.where(
+        (m) =>
+            !existingIds.contains(m.id) &&
+            (m.serverId == null || !existingIds.contains(m.serverId)),
+      );
+
+      if (missing.isEmpty) return;
+
+      await batch((b) {
+        for (final msg in missing) {
+          final timestamp = msg.serverCreatedAt ?? msg.createdAt;
+          final isSender =
+              currentUserId != null && msg.senderId == currentUserId;
+          b.insert(
+            chatEventsTable,
+            ChatEventsTableCompanion(
+              id: Value(msg.id),
+              chatId: Value(msg.chatId),
+              type: const Value(ChatEventType.message),
+              contentId: Value(msg.serverId ?? msg.id),
+              alignment: Value(
+                isSender ? ChatEventAlignment.right : ChatEventAlignment.left,
+              ),
+              createdAt: Value(DateTime.fromMillisecondsSinceEpoch(timestamp)),
+            ),
+            mode: InsertMode.insertOrIgnore,
+          );
+        }
+      });
+    } catch (_) {}
+  }
 
   Future<void> clearAllData() async {
     await transaction(() async {
@@ -53,6 +161,10 @@ class AppDatabase extends _$AppDatabase {
         batch.deleteAll(recentSearchesTable);
         batch.deleteAll(userPreferencesTable);
         batch.deleteAll(groupListTable);
+        batch.deleteAll(friendsTable);
+        batch.deleteAll(blocksTable);
+        batch.deleteAll(notificationsTable);
+        batch.deleteAll(chatEventsTable);
       });
     });
   }

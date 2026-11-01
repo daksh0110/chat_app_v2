@@ -8,6 +8,7 @@ class SearchItem {
   final String? email;
   final UploadAttachment? media;
   final String? actorType;
+  final String? relationshipStatus;
 
   SearchItem({
     required this.id,
@@ -17,6 +18,7 @@ class SearchItem {
     this.email = "",
     this.media,
     this.actorType,
+    this.relationshipStatus = "NONE",
   });
 
   factory SearchItem.fromJson(Map<String, dynamic> json) {
@@ -30,6 +32,8 @@ class SearchItem {
           ? UploadAttachment.fromJson(json['media'] as Map<String, dynamic>)
           : null,
       actorType: json['actor_type'],
+      relationshipStatus:
+          json['relationship_status'] ?? json['status'] ?? "NONE",
     );
   }
 }

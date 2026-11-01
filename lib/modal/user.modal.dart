@@ -7,6 +7,7 @@ class UserModel {
   final String? bio;
   final String? profilePic;
   final UploadAttachment? media;
+  final String? relationshipStatus;
 
   UserModel({
     required this.id,
@@ -15,6 +16,7 @@ class UserModel {
     this.bio,
     this.profilePic,
     this.media,
+    this.relationshipStatus,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
