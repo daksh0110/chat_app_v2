@@ -33,12 +33,14 @@ class ChatListItem extends ConsumerWidget {
         onTap: onTap,
         splashColor: isSelected
             ? Colors.transparent
-            : DefaultColorSheet.blue200,
+            : DefaultColorSheet.tileSelection(context),
         onLongPress: onHold,
-        highlightColor: DefaultColorSheet.blue200,
+        highlightColor: DefaultColorSheet.tileSelection(context),
         child: Ink(
           decoration: BoxDecoration(
-            color: isSelected ? DefaultColorSheet.blue200 : Colors.transparent,
+            color: isSelected
+                ? DefaultColorSheet.tileSelection(context)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
           ),
           padding: const EdgeInsets.fromLTRB(24, 10, 24, 10),
@@ -94,11 +96,11 @@ class ChatListItem extends ConsumerWidget {
                       chat.name ?? "",
                       fontSize: 20,
                       fontWeight: FontWeight.w500,
-                      color: DefaultColorSheet.lightBlack,
+                      color: DefaultColorSheet.textPrimary(context),
                     ),
                     const SizedBox(height: 4),
                     isTyping
-                        ? PrimaryText(
+                        ? const PrimaryText(
                             "typing...",
                             fontSize: 12,
                             color: DefaultColorSheet.green500,
@@ -108,7 +110,7 @@ class ChatListItem extends ConsumerWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             fontSize: 12,
-                            color: DefaultColorSheet.grey500,
+                            color: DefaultColorSheet.textSecondary(context),
                           ),
                   ],
                 ),
@@ -122,7 +124,7 @@ class ChatListItem extends ConsumerWidget {
                   PrimaryText(
                     chat.lastMessageTime,
                     fontSize: 12,
-                    color: DefaultColorSheet.grey500,
+                    color: DefaultColorSheet.textSecondary(context),
                   ),
                   const SizedBox(height: 6),
 

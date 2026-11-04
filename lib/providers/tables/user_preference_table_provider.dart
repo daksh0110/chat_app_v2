@@ -51,6 +51,32 @@ class UserPreferenceTableProvider extends AsyncNotifier<String?> {
     });
   }
 
+  Stream<String> watchThemeMode() {
+    final db = ref.read(databaseProvider);
+    return db
+        .select(db.userPreferencesTable)
+        .watchSingleOrNull()
+        .map((pref) => pref?.themeMode ?? 'system');
+  }
+
+  Future<void> updateThemeMode(String mode) async {
+    final db = ref.read(databaseProvider);
+    final existing =
+        await db.select(db.userPreferencesTable).getSingleOrNull();
+    if (existing != null) {
+      await (db.update(db.userPreferencesTable)
+            ..where((t) => t.id.equals(existing.id)))
+          .write(UserPreferencesTableCompanion(themeMode: Value(mode)));
+    } else {
+      await db.into(db.userPreferencesTable).insert(
+            UserPreferencesTableCompanion(
+              userId: const Value('default'),
+              themeMode: Value(mode),
+            ),
+          );
+    }
+  }
+
   Future<void> setCurrentUser(String userId, String accessToken) async {
     final database = ref.read(databaseProvider);
 
@@ -58,12 +84,18 @@ class UserPreferenceTableProvider extends AsyncNotifier<String?> {
     final user = await userTableProvider.getUserById(userId);
     if (user == null) return;
 
+    final existingPref =
+        await database.select(database.userPreferencesTable).getSingleOrNull();
+
     await database
         .into(database.userPreferencesTable)
         .insertOnConflictUpdate(
           UserPreferencesTableCompanion(
             userId: Value(userId),
             accessToken: Value(accessToken),
+            themeMode: existingPref?.themeMode != null
+                ? Value(existingPref!.themeMode)
+                : const Value('system'),
           ),
         );
     state = AsyncData(userId);

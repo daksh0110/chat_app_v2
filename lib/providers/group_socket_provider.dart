@@ -8,6 +8,7 @@ import 'package:my_app/modal/group_member_left_modal.dart';
 import 'package:my_app/modal/group_member_removed_modal.dart';
 import 'package:my_app/modal/group_member_role_updated_modal.dart';
 import 'package:my_app/modal/group_modal.dart';
+import 'package:my_app/modal/group_profile_updated_modal.dart';
 import 'package:my_app/modal/group_sync_modal.dart';
 import 'package:my_app/modal/user.modal.dart';
 import 'package:my_app/providers/database_provider.dart';
@@ -323,6 +324,54 @@ class GroupSocketNotifier extends Notifier<void> {
         ref.invalidate(groupProfile(event.chatId));
       } catch (e) {
         debugPrint('Error handling group-sync: $e');
+      }
+    });
+
+    // 6. Group profile updated (photo, name, bio)
+    socketService.listen('group-profile-updated', (data) async {
+      try {
+        if (data is! Map) return;
+        final event = GroupProfileUpdatedModal.fromJson(
+          Map<String, dynamic>.from(data),
+        );
+
+        if (event.chatId.isEmpty) return;
+
+        final currentUserId = ref.read(userPreferenceTableProvider).value;
+        final isActorSelf =
+            event.actorId.isNotEmpty && event.actorId == currentUserId;
+
+        final db = ref.read(databaseProvider);
+        final existingGroup = await (db.select(db.groupListTable)
+              ..where((t) => t.chatId.equals(event.chatId)))
+            .getSingleOrNull();
+
+        final updatedName = (event.name != null && event.name!.isNotEmpty)
+            ? event.name!
+            : (existingGroup?.name ?? 'Group Chat');
+        final updatedBio = event.bio ?? existingGroup?.bio ?? '';
+
+        await ref.read(groupsTableProvider.notifier).createOrUpdateGroup(
+              GroupModal(
+                id: event.chatId,
+                name: updatedName,
+                bio: updatedBio,
+                media: event.media,
+              ),
+            );
+
+        ref.invalidate(groupProfile(event.chatId));
+
+        await ref
+            .read(chatEventsTableProvider.notifier)
+            .insertGroupProfileUpdatedEvent(
+              chatId: event.chatId,
+              actorName: event.actorName,
+              sequence: event.sequence,
+              isActorSelf: isActorSelf,
+            );
+      } catch (e) {
+        debugPrint('Error handling group-profile-updated: $e');
       }
     });
   }

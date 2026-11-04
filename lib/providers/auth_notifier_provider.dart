@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/core/network/api_client.dart';
@@ -25,19 +28,26 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     final token = await ref.watch(tokenProvider.future);
 
     if (token != null && token.isNotEmpty) {
-      final authResponse = await UserApiService(
-        ApiClient(),
-      ).authenticate(token: token);
-
-      if (!authResponse.success) {
-        await logout();
-        return AuthState.unauthenticated;
-      }
-
+      unawaited(_validateSavedToken(token));
       return AuthState.authenticated;
     }
 
     return AuthState.unauthenticated;
+  }
+
+  Future<void> _validateSavedToken(String token) async {
+    try {
+      final authResponse = await UserApiService(
+        ApiClient(),
+      ).authenticate(token: token);
+
+      if (!authResponse.success &&
+          await ref.read(tokenProvider.future) == token) {
+        await logout();
+      }
+    } catch (error) {
+      debugPrint('Unable to validate saved session while offline: $error');
+    }
   }
 
   Future<void> login(String token) async {

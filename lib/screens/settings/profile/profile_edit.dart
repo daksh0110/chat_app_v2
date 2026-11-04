@@ -137,16 +137,16 @@ class ProfileEditState extends ConsumerState<ProfileEdit> {
     });
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: DefaultColorSheet.scaffoldBg(context),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: DefaultColorSheet.appBarBg(context),
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: IconThemeData(color: DefaultColorSheet.appBarIcon(context)),
         title: PrimaryText(
           "Edit Profile",
           fontSize: 18,
           fontWeight: FontWeight.w600,
-          color: DefaultColorSheet.lightBlack,
+          color: DefaultColorSheet.appBarTitle(context),
         ),
         centerTitle: true,
       ),

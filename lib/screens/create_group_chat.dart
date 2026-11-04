@@ -160,25 +160,25 @@ class _createGroupChatState extends ConsumerState<CreateGroupChat> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: DefaultColorSheet.scaffoldBg(context),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: DefaultColorSheet.appBarBg(context),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back,
-            color: DefaultColorSheet.lightBlack,
+            color: DefaultColorSheet.appBarIcon(context),
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const PrimaryText(
+        title: PrimaryText(
           "Create Group",
-          color: DefaultColorSheet.lightBlack,
+          color: DefaultColorSheet.appBarTitle(context),
           fontSize: 16,
           fontWeight: FontWeight.w600,
         ),
         centerTitle: true,
       ),
-      backgroundColor: Colors.white,
       body: SafeArea(
         child: Form(
           key: _formKey,

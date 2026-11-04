@@ -116,11 +116,14 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         bottomNavigationBar: Container(
           decoration: BoxDecoration(
             border: Border(
-              top: BorderSide(color: DefaultColorSheet.grey300, width: 1),
+              top: BorderSide(
+                color: DefaultColorSheet.divider(context),
+                width: 1,
+              ),
             ),
           ),
           child: BottomAppBar(
-            color: Colors.white,
+            color: DefaultColorSheet.containerBg(context),
             child: SizedBox(
               height: 60,
               child: FlipCard(

@@ -272,6 +272,47 @@ class SocketService {
     return completer.future;
   }
 
+  Future<dynamic> updateGroupProfile({
+    required String chatId,
+    Map<String, dynamic>? media,
+    String? image,
+    String? name,
+    String? bio,
+  }) {
+    final completer = Completer<dynamic>();
+    if (socket == null) {
+      completer.completeError('Socket not connected');
+      return completer.future;
+    }
+
+    final payload = <String, dynamic>{
+      "chatId": chatId,
+      if (media != null) "media": media,
+      if (image != null) "image": image,
+      if (name != null) "name": name,
+      if (bio != null) "bio": bio,
+    };
+
+    socket!.emitWithAck(
+      "update-group-profile",
+      payload,
+      ack: (response) {
+        if (response is Map && response['success'] == true) {
+          completer.complete(response);
+        } else {
+          completer.completeError(
+            Exception(
+              response is Map
+                  ? (response['message'] ?? 'Failed to update group profile')
+                  : 'Failed to update group profile',
+            ),
+          );
+        }
+      },
+    );
+    return completer.future;
+  }
+
 
   void listenGroupCreated(void Function(dynamic data) callback) {
     if (socket == null) return;

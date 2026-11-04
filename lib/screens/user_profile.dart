@@ -1,3 +1,8 @@
+import 'package:image_picker/image_picker.dart';
+import 'package:mime/mime.dart';
+import 'package:my_app/core/network/api_client.dart';
+import 'package:my_app/core/util/get_file_type.dart';
+import 'package:my_app/data/services/upload_service.dart';
 import 'package:my_app/screens/select_members_screen.dart';
 import 'package:my_app/modal/user.modal.dart';
 import 'package:my_app/providers/socket_provider.dart';
@@ -34,6 +39,82 @@ class UserProfile extends ConsumerStatefulWidget {
 class UserProfileState extends ConsumerState<UserProfile> {
   SearchItem? user;
   String? _refreshedProfileId;
+  bool _isUpdatingGroupPhoto = false;
+
+  Future<void> _updateGroupPhoto(BuildContext context, String chatId) async {
+    try {
+      final picker = ImagePicker();
+      final pickedImage = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+      if (pickedImage == null) return;
+
+      setState(() {
+        _isUpdatingGroupPhoto = true;
+      });
+
+      final mime =
+          lookupMimeType(pickedImage.path) ?? 'application/octet-stream';
+
+      final presignedUrl = await UploadService(ApiClient()).getPresignedUrl(
+        assetType: 'chat',
+        entityType: 'avatar',
+        contentType: mime,
+      );
+
+      if (!presignedUrl.success || presignedUrl.data == null) {
+        throw Exception('Unable to generate presigned URL');
+      }
+
+      final response = presignedUrl.data!;
+      final result = await UploadService(ApiClient()).uploadToSignedUrl(
+        await pickedImage.readAsBytes(),
+        response.url,
+        mime,
+      );
+
+      if (result != 200) {
+        throw Exception('Failed to upload image file');
+      }
+
+      await ref.read(socketProvider).updateGroupProfile(
+        chatId: chatId,
+        media: {
+          'key': response.key ?? '',
+          'name': pickedImage.name,
+          'type': getMediaType(mime),
+          'content_type': mime,
+        },
+        image: response.key ?? '',
+      );
+
+      if (context.mounted) {
+        ToastHelper.show(
+          context: context,
+          message: 'Group photo updated successfully',
+          type: ToastificationType.success,
+        );
+      }
+    } catch (e) {
+      debugPrint('Failed to update group photo: $e');
+      if (context.mounted) {
+        ToastHelper.show(
+          context: context,
+          message: 'Failed to update group photo: $e',
+          type: ToastificationType.error,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUpdatingGroupPhoto = false;
+        });
+      }
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -227,11 +308,48 @@ class UserProfileState extends ConsumerState<UserProfile> {
       body: _buildProfileBody(
         children: [
           const SizedBox(height: 10),
-          UserBubble(
-            profilePicUrl: args.profilePicUrl ?? group.profilePicUrl,
-            name: displayName,
-            size: 80,
-            needActiveIndicator: false,
+          GestureDetector(
+            onTap: isCurrentUserAdmin && !_isUpdatingGroupPhoto
+                ? () => _updateGroupPhoto(context, group.chatId)
+                : null,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                UserBubble(
+                  profilePicUrl: args.profilePicUrl ?? group.profilePicUrl,
+                  name: displayName,
+                  size: 80,
+                  needActiveIndicator: false,
+                ),
+                if (isCurrentUserAdmin)
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: DefaultColorSheet.primary,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.black, width: 2),
+                      ),
+                      child: _isUpdatingGroupPhoto
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.camera_alt,
+                              size: 14,
+                              color: Colors.white,
+                            ),
+                    ),
+                  ),
+              ],
+            ),
           ),
           const SizedBox(height: 10),
           PrimaryText(

@@ -20,7 +20,7 @@ class BottomNavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color active = isActive
         ? DefaultColorSheet.primary
-        : DefaultColorSheet.grey500;
+        : DefaultColorSheet.bottomNavInactive(context);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),

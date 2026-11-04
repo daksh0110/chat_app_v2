@@ -3112,8 +3112,20 @@ class $UserPreferencesTableTable extends UserPreferencesTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _themeModeMeta = const VerificationMeta(
+    'themeMode',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, userId, accessToken];
+  late final GeneratedColumn<String> themeMode = GeneratedColumn<String>(
+    'theme_mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('system'),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, userId, accessToken, themeMode];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -3146,6 +3158,12 @@ class $UserPreferencesTableTable extends UserPreferencesTable
         ),
       );
     }
+    if (data.containsKey('theme_mode')) {
+      context.handle(
+        _themeModeMeta,
+        themeMode.isAcceptableOrUnknown(data['theme_mode']!, _themeModeMeta),
+      );
+    }
     return context;
   }
 
@@ -3170,6 +3188,10 @@ class $UserPreferencesTableTable extends UserPreferencesTable
         DriftSqlType.string,
         data['${effectivePrefix}access_token'],
       ),
+      themeMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}theme_mode'],
+      )!,
     );
   }
 
@@ -3184,10 +3206,12 @@ class UserPreferencesTableData extends DataClass
   final int id;
   final String userId;
   final String? accessToken;
+  final String themeMode;
   const UserPreferencesTableData({
     required this.id,
     required this.userId,
     this.accessToken,
+    required this.themeMode,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3197,6 +3221,7 @@ class UserPreferencesTableData extends DataClass
     if (!nullToAbsent || accessToken != null) {
       map['access_token'] = Variable<String>(accessToken);
     }
+    map['theme_mode'] = Variable<String>(themeMode);
     return map;
   }
 
@@ -3207,6 +3232,7 @@ class UserPreferencesTableData extends DataClass
       accessToken: accessToken == null && nullToAbsent
           ? const Value.absent()
           : Value(accessToken),
+      themeMode: Value(themeMode),
     );
   }
 
@@ -3219,6 +3245,7 @@ class UserPreferencesTableData extends DataClass
       id: serializer.fromJson<int>(json['id']),
       userId: serializer.fromJson<String>(json['userId']),
       accessToken: serializer.fromJson<String?>(json['accessToken']),
+      themeMode: serializer.fromJson<String>(json['themeMode']),
     );
   }
   @override
@@ -3228,6 +3255,7 @@ class UserPreferencesTableData extends DataClass
       'id': serializer.toJson<int>(id),
       'userId': serializer.toJson<String>(userId),
       'accessToken': serializer.toJson<String?>(accessToken),
+      'themeMode': serializer.toJson<String>(themeMode),
     };
   }
 
@@ -3235,10 +3263,12 @@ class UserPreferencesTableData extends DataClass
     int? id,
     String? userId,
     Value<String?> accessToken = const Value.absent(),
+    String? themeMode,
   }) => UserPreferencesTableData(
     id: id ?? this.id,
     userId: userId ?? this.userId,
     accessToken: accessToken.present ? accessToken.value : this.accessToken,
+    themeMode: themeMode ?? this.themeMode,
   );
   UserPreferencesTableData copyWithCompanion(
     UserPreferencesTableCompanion data,
@@ -3249,6 +3279,7 @@ class UserPreferencesTableData extends DataClass
       accessToken: data.accessToken.present
           ? data.accessToken.value
           : this.accessToken,
+      themeMode: data.themeMode.present ? data.themeMode.value : this.themeMode,
     );
   }
 
@@ -3257,20 +3288,22 @@ class UserPreferencesTableData extends DataClass
     return (StringBuffer('UserPreferencesTableData(')
           ..write('id: $id, ')
           ..write('userId: $userId, ')
-          ..write('accessToken: $accessToken')
+          ..write('accessToken: $accessToken, ')
+          ..write('themeMode: $themeMode')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, userId, accessToken);
+  int get hashCode => Object.hash(id, userId, accessToken, themeMode);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is UserPreferencesTableData &&
           other.id == this.id &&
           other.userId == this.userId &&
-          other.accessToken == this.accessToken);
+          other.accessToken == this.accessToken &&
+          other.themeMode == this.themeMode);
 }
 
 class UserPreferencesTableCompanion
@@ -3278,25 +3311,30 @@ class UserPreferencesTableCompanion
   final Value<int> id;
   final Value<String> userId;
   final Value<String?> accessToken;
+  final Value<String> themeMode;
   const UserPreferencesTableCompanion({
     this.id = const Value.absent(),
     this.userId = const Value.absent(),
     this.accessToken = const Value.absent(),
+    this.themeMode = const Value.absent(),
   });
   UserPreferencesTableCompanion.insert({
     this.id = const Value.absent(),
     required String userId,
     this.accessToken = const Value.absent(),
+    this.themeMode = const Value.absent(),
   }) : userId = Value(userId);
   static Insertable<UserPreferencesTableData> custom({
     Expression<int>? id,
     Expression<String>? userId,
     Expression<String>? accessToken,
+    Expression<String>? themeMode,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (userId != null) 'user_id': userId,
       if (accessToken != null) 'access_token': accessToken,
+      if (themeMode != null) 'theme_mode': themeMode,
     });
   }
 
@@ -3304,11 +3342,13 @@ class UserPreferencesTableCompanion
     Value<int>? id,
     Value<String>? userId,
     Value<String?>? accessToken,
+    Value<String>? themeMode,
   }) {
     return UserPreferencesTableCompanion(
       id: id ?? this.id,
       userId: userId ?? this.userId,
       accessToken: accessToken ?? this.accessToken,
+      themeMode: themeMode ?? this.themeMode,
     );
   }
 
@@ -3324,6 +3364,9 @@ class UserPreferencesTableCompanion
     if (accessToken.present) {
       map['access_token'] = Variable<String>(accessToken.value);
     }
+    if (themeMode.present) {
+      map['theme_mode'] = Variable<String>(themeMode.value);
+    }
     return map;
   }
 
@@ -3332,7 +3375,8 @@ class UserPreferencesTableCompanion
     return (StringBuffer('UserPreferencesTableCompanion(')
           ..write('id: $id, ')
           ..write('userId: $userId, ')
-          ..write('accessToken: $accessToken')
+          ..write('accessToken: $accessToken, ')
+          ..write('themeMode: $themeMode')
           ..write(')'))
         .toString();
   }
@@ -7218,12 +7262,14 @@ typedef $$UserPreferencesTableTableCreateCompanionBuilder =
       Value<int> id,
       required String userId,
       Value<String?> accessToken,
+      Value<String> themeMode,
     });
 typedef $$UserPreferencesTableTableUpdateCompanionBuilder =
     UserPreferencesTableCompanion Function({
       Value<int> id,
       Value<String> userId,
       Value<String?> accessToken,
+      Value<String> themeMode,
     });
 
 class $$UserPreferencesTableTableFilterComposer
@@ -7247,6 +7293,11 @@ class $$UserPreferencesTableTableFilterComposer
 
   ColumnFilters<String> get accessToken => $composableBuilder(
     column: $table.accessToken,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get themeMode => $composableBuilder(
+    column: $table.themeMode,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -7274,6 +7325,11 @@ class $$UserPreferencesTableTableOrderingComposer
     column: $table.accessToken,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get themeMode => $composableBuilder(
+    column: $table.themeMode,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$UserPreferencesTableTableAnnotationComposer
@@ -7295,6 +7351,9 @@ class $$UserPreferencesTableTableAnnotationComposer
     column: $table.accessToken,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get themeMode =>
+      $composableBuilder(column: $table.themeMode, builder: (column) => column);
 }
 
 class $$UserPreferencesTableTableTableManager
@@ -7343,20 +7402,24 @@ class $$UserPreferencesTableTableTableManager
                 Value<int> id = const Value.absent(),
                 Value<String> userId = const Value.absent(),
                 Value<String?> accessToken = const Value.absent(),
+                Value<String> themeMode = const Value.absent(),
               }) => UserPreferencesTableCompanion(
                 id: id,
                 userId: userId,
                 accessToken: accessToken,
+                themeMode: themeMode,
               ),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
                 required String userId,
                 Value<String?> accessToken = const Value.absent(),
+                Value<String> themeMode = const Value.absent(),
               }) => UserPreferencesTableCompanion.insert(
                 id: id,
                 userId: userId,
                 accessToken: accessToken,
+                themeMode: themeMode,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

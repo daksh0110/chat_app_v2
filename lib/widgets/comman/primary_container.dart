@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/colors/defaullt_color_sheet.dart';
 
 class PrimaryContainer extends StatelessWidget {
   const PrimaryContainer({super.key, required this.children});
@@ -9,8 +10,8 @@ class PrimaryContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadiusGeometry.directional(
+        color: DefaultColorSheet.containerBg(context),
+        borderRadius: const BorderRadiusGeometry.directional(
           topEnd: Radius.circular(40),
           topStart: Radius.circular(40),
         ),
@@ -23,7 +24,9 @@ class PrimaryContainer extends StatelessWidget {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey.shade400,
+              color: DefaultColorSheet.isDark(context)
+                  ? Colors.grey.shade700
+                  : Colors.grey.shade400,
               borderRadius: BorderRadius.circular(10),
             ),
           ),

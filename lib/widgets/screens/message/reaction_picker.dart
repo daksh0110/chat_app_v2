@@ -57,6 +57,9 @@ class MessageContextMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasActions = canReply || canCopy || canDelete;
+    final isDark = DefaultColorSheet.isDark(context);
+    final cardBg = DefaultColorSheet.cardBg(context);
+    final dividerColor = DefaultColorSheet.divider(context);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -67,10 +70,10 @@ class MessageContextMenu extends StatelessWidget {
         Material(
           elevation: 8,
           borderRadius: BorderRadius.circular(28),
-          color: Colors.white,
+          color: cardBg,
           shadowColor: Colors.black38,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -80,23 +83,26 @@ class MessageContextMenu extends StatelessWidget {
                     onTap: () => onSelect(MessageContextMenuResult.react(emoji)),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      margin: const EdgeInsets.symmetric(horizontal: 1.0),
-                      padding: const EdgeInsets.all(4),
+                      margin: const EdgeInsets.symmetric(horizontal: 0.5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 2.5,
+                        vertical: 2.5,
+                      ),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? const Color(0xFFE8F5E9)
+                            ? DefaultColorSheet.primary.withValues(alpha: 0.18)
                             : Colors.transparent,
                         shape: BoxShape.circle,
                         border: isSelected
                             ? Border.all(
-                                color: const Color(0xFF00A884),
+                                color: DefaultColorSheet.primary,
                                 width: 1.5,
                               )
                             : null,
                       ),
                       child: Text(
                         emoji,
-                        style: const TextStyle(fontSize: 21),
+                        style: const TextStyle(fontSize: 18),
                       ),
                     ),
                   );
@@ -106,15 +112,17 @@ class MessageContextMenu extends StatelessWidget {
                   onTap: onOpenFullEmojiPicker,
                   child: Container(
                     margin: const EdgeInsets.only(left: 2, right: 1),
-                    padding: const EdgeInsets.all(5),
+                    padding: const EdgeInsets.all(3.5),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color: isDark
+                          ? DefaultColorSheet.darkSurface
+                          : Colors.grey.shade100,
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.add,
-                      size: 20,
-                      color: Colors.grey.shade800,
+                      size: 17,
+                      color: DefaultColorSheet.textPrimary(context),
                     ),
                   ),
                 ),
@@ -130,7 +138,7 @@ class MessageContextMenu extends StatelessWidget {
           Material(
             elevation: 6,
             borderRadius: BorderRadius.circular(16),
-            color: Colors.white,
+            color: cardBg,
             shadowColor: Colors.black26,
             child: ConstrainedBox(
               constraints: const BoxConstraints(minWidth: 160, maxWidth: 200),
@@ -147,11 +155,11 @@ class MessageContextMenu extends StatelessWidget {
                         onTap: () => onSelect(const MessageContextMenuResult.reply()),
                       ),
                     if (canReply && canCopy)
-                      Divider(height: 1, thickness: 0.5, color: Colors.grey.shade200),
+                      Divider(height: 1, thickness: 0.5, color: dividerColor),
                     if (canCopy)
                       _ActionTile(
                         icon: LucideIcons.copy,
-                        iconColor: Colors.grey.shade700,
+                        iconColor: DefaultColorSheet.textSecondary(context),
                         title: 'Copy',
                         onTap: () {
                           Clipboard.setData(ClipboardData(text: messageText));
@@ -169,7 +177,7 @@ class MessageContextMenu extends StatelessWidget {
                         Divider(
                           height: 1,
                           thickness: 0.5,
-                          color: Colors.grey.shade200,
+                          color: dividerColor,
                         ),
                       _ActionTile(
                         icon: LucideIcons.trash2,
@@ -221,7 +229,7 @@ class _ActionTile extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14.5,
                 fontWeight: FontWeight.w500,
-                color: titleColor ?? const Color(0xFF1F2937),
+                color: titleColor ?? DefaultColorSheet.textPrimary(context),
               ),
             ),
           ],
@@ -256,7 +264,9 @@ Future<MessageContextMenuResult?> showMessageContextMenu(
       final safeTop = mediaQuery.padding.top + 16.0;
       final safeBottom = screenHeight - mediaQuery.padding.bottom - 16.0;
 
-      const menuWidth = 295.0;
+      // Reaction bar width with 6 emojis + plus icon + paddings is ~240.0
+      // Context menu action card max width is 200.0
+      const menuWidth = 245.0;
       final actionCount =
           (canReply ? 1 : 0) + (canCopy ? 1 : 0) + (canDelete ? 1 : 0);
       final double menuHeight =
@@ -266,8 +276,8 @@ Future<MessageContextMenuResult?> showMessageContextMenu(
       // If sender (right-aligned), anchor toward right side of tap
       // If receiver (left-aligned), anchor toward left side of tap
       double left = isSender
-          ? (tapPosition.dx - menuWidth + 30.0)
-          : (tapPosition.dx - 30.0);
+          ? (tapPosition.dx - menuWidth + 20.0)
+          : (tapPosition.dx - 20.0);
       final maxLeft =
           (screenWidth - menuWidth - 12.0).clamp(12.0, screenWidth);
       left = left.clamp(12.0, maxLeft);
@@ -328,12 +338,12 @@ Future<MessageContextMenuResult?> showMessageContextMenu(
   return null;
 }
 
-/// Bottom sheet with categorized emojis for full selection.
+/// Opens bottom sheet with categorized emoji grid
 Future<String?> showFullEmojiPicker(BuildContext context) {
   return showModalBottomSheet<String>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.white,
+    backgroundColor: DefaultColorSheet.cardBg(context),
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
@@ -394,6 +404,12 @@ class _FullEmojiPickerSheetState extends State<_FullEmojiPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = DefaultColorSheet.isDark(context);
+    final cardBg = DefaultColorSheet.cardBg(context);
+    final textPrimary = DefaultColorSheet.textPrimary(context);
+    final textSecondary = DefaultColorSheet.textSecondary(context);
+    final dividerColor = DefaultColorSheet.divider(context);
+
     return DefaultTabController(
       length: _emojiCategories.length,
       child: DraggableScrollableSheet(
@@ -402,122 +418,128 @@ class _FullEmojiPickerSheetState extends State<_FullEmojiPickerSheet> {
         maxChildSize: 0.9,
         expand: false,
         builder: (context, scrollController) {
-          return Column(
-            children: [
-              // Drag Handle
-              Container(
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
+          return Container(
+            color: cardBg,
+            child: Column(
+              children: [
+                // Drag Handle
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-              ),
 
-              // Title
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                child: Row(
-                  children: [
-                    const Text(
-                      'React with any emoji',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF111827),
+                // Title
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: Row(
+                    children: [
+                      Text(
+                        'React with any emoji',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: textPrimary,
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        icon: Icon(Icons.close, size: 20, color: textSecondary),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Search field
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: TextField(
+                    controller: _searchController,
+                    style: TextStyle(color: textPrimary),
+                    onChanged: (val) => setState(() => _searchQuery = val.trim()),
+                    decoration: InputDecoration(
+                      hintText: 'Search emoji...',
+                      hintStyle: TextStyle(fontSize: 14, color: textSecondary),
+                      prefixIcon: Icon(Icons.search, size: 20, color: textSecondary),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: Icon(Icons.clear, size: 16, color: textSecondary),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _searchQuery = '');
+                              },
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: isDark
+                          ? DefaultColorSheet.darkSurface
+                          : Colors.grey.shade100,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide.none,
                       ),
                     ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.close, size: 20),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Search field
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: (val) => setState(() => _searchQuery = val.trim()),
-                  decoration: InputDecoration(
-                    hintText: 'Search emoji...',
-                    hintStyle: TextStyle(fontSize: 14, color: Colors.grey.shade400),
-                    prefixIcon: Icon(Icons.search, size: 20, color: Colors.grey.shade400),
-                    suffixIcon: _searchQuery.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear, size: 16),
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() => _searchQuery = '');
-                            },
-                          )
-                        : null,
-                    filled: true,
-                    fillColor: Colors.grey.shade100,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(24),
-                      borderSide: BorderSide.none,
-                    ),
                   ),
                 ),
-              ),
 
-              // If searching, show flat filtered results
-              if (_searchQuery.isNotEmpty)
-                Expanded(
-                  child: _buildSearchResults(),
-                )
-              else ...[
-                // Category tabs
-                TabBar(
-                  isScrollable: true,
-                  tabAlignment: TabAlignment.start,
-                  labelColor: const Color(0xFF00A884),
-                  unselectedLabelColor: Colors.grey.shade600,
-                  indicatorColor: const Color(0xFF00A884),
-                  indicatorSize: TabBarIndicatorSize.label,
-                  tabs: _emojiCategories.keys.map((cat) => Tab(text: cat)).toList(),
-                ),
+                // If searching, show flat filtered results
+                if (_searchQuery.isNotEmpty)
+                  Expanded(
+                    child: _buildSearchResults(),
+                  )
+                else ...[
+                  // Category tabs
+                  TabBar(
+                    isScrollable: true,
+                    tabAlignment: TabAlignment.start,
+                    labelColor: DefaultColorSheet.primary,
+                    unselectedLabelColor: textSecondary,
+                    indicatorColor: DefaultColorSheet.primary,
+                    indicatorSize: TabBarIndicatorSize.label,
+                    tabs: _emojiCategories.keys.map((cat) => Tab(text: cat)).toList(),
+                  ),
 
-                const Divider(height: 1),
+                  Divider(height: 1, color: dividerColor),
 
-                // Category views
-                Expanded(
-                  child: TabBarView(
-                    children: _emojiCategories.values.map((emojis) {
-                      return GridView.builder(
-                        controller: scrollController,
-                        padding: const EdgeInsets.all(12),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 7,
-                          mainAxisSpacing: 8,
-                          crossAxisSpacing: 8,
-                        ),
-                        itemCount: emojis.length,
-                        itemBuilder: (context, index) {
-                          final emoji = emojis[index];
-                          return InkWell(
-                            onTap: () => Navigator.of(context).pop(emoji),
-                            borderRadius: BorderRadius.circular(8),
-                            child: Center(
-                              child: Text(
-                                emoji,
-                                style: const TextStyle(fontSize: 28),
+                  // Category views
+                  Expanded(
+                    child: TabBarView(
+                      children: _emojiCategories.values.map((emojis) {
+                        return GridView.builder(
+                          controller: scrollController,
+                          padding: const EdgeInsets.all(12),
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 7,
+                            mainAxisSpacing: 8,
+                            crossAxisSpacing: 8,
+                          ),
+                          itemCount: emojis.length,
+                          itemBuilder: (context, index) {
+                            final emoji = emojis[index];
+                            return InkWell(
+                              onTap: () => Navigator.of(context).pop(emoji),
+                              borderRadius: BorderRadius.circular(8),
+                              child: Center(
+                                child: Text(
+                                  emoji,
+                                  style: const TextStyle(fontSize: 28),
+                                ),
                               ),
-                            ),
-                          );
-                        },
-                      );
-                    }).toList(),
+                            );
+                          },
+                        );
+                      }).toList(),
+                    ),
                   ),
-                ),
+                ],
               ],
-            ],
+            ),
           );
         },
       ),
@@ -526,7 +548,6 @@ class _FullEmojiPickerSheetState extends State<_FullEmojiPickerSheet> {
 
   Widget _buildSearchResults() {
     final allEmojis = _emojiCategories.values.expand((list) => list).toSet().toList();
-    // Filter matching query or display all if no query
     final results = allEmojis;
 
     return GridView.builder(

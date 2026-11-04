@@ -232,6 +232,28 @@ class ChatEventsTableProvider extends Notifier<void> {
     );
   }
 
+  Future<void> insertGroupProfileUpdatedEvent({
+    required String chatId,
+    required String actorName,
+    int? sequence,
+    bool isActorSelf = false,
+    DateTime? createdAt,
+  }) async {
+    final text = isActorSelf
+        ? "You updated the group profile"
+        : (actorName.isNotEmpty
+            ? "$actorName updated the group profile"
+            : "Group profile was updated");
+    final deterministicId =
+        sequence != null ? "event_group_profile_${chatId}_$sequence" : null;
+    await insertBannerEvent(
+      chatId: chatId,
+      id: deterministicId,
+      text: text,
+      createdAt: createdAt,
+    );
+  }
+
   Future<void> updateChatId(String oldChatId, String newChatId) async {
     final db = ref.read(databaseProvider);
     await (db.update(db.chatEventsTable)

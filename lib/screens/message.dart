@@ -1,3 +1,4 @@
+import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/providers/tables/chat_participants_table.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,6 +19,7 @@ import 'package:my_app/providers/tables/user_preference_table_provider.dart';
 import 'package:my_app/providers/user_relationship_provider.dart';
 import 'package:my_app/widgets/screens/message/chat_input_box.dart';
 import 'package:my_app/widgets/screens/message/date_banner.dart';
+import 'package:my_app/widgets/screens/message/friendship_banner.dart';
 import 'package:my_app/widgets/screens/message/header.dart';
 import 'package:my_app/widgets/screens/message/message_item.dart';
 import 'package:my_app/widgets/screens/message/typing_indicator.dart';
@@ -258,10 +260,12 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
     final typingMap = ref.watch(messageTypingProvider);
     final currentUser = ref.watch(userPreferenceTableProvider).value;
 
-    final isBlocked = !isGroup && receiverId.isNotEmpty
-        ? ref.watch(userRelationshipProvider(receiverId)).value ==
-              RelationshipStatus.blocked
-        : false;
+    final relationshipStatus = !isGroup && receiverId.isNotEmpty
+        ? ref.watch(userRelationshipProvider(receiverId)).value ??
+            RelationshipStatus.none
+        : RelationshipStatus.friends;
+
+    final isBlocked = relationshipStatus == RelationshipStatus.blocked;
 
     final isParticipant =
         !isGroup || (ref.watch(isGroupParticipantProvider(chatId)).value ?? true);
@@ -281,7 +285,7 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
         : (!isBlocked && _isOnline ? "Online" : null);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFECE5DD),
+      backgroundColor: DefaultColorSheet.chatBg(context),
       appBar: Header(
         id: chatId.isNotEmpty ? chatId : receiverId,
         name: name,
@@ -429,7 +433,16 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
                   style: TextStyle(color: Colors.white70, fontSize: 14),
                 ),
               )
-            else
+            else ...[
+              if (!isGroup &&
+                  receiverId.isNotEmpty &&
+                  relationshipStatus != RelationshipStatus.friends &&
+                  !isBlocked)
+                FriendshipBanner(
+                receiverId: receiverId,
+                name: name,
+                status: relationshipStatus,
+              ),
               ChatInputBox(
                 onSend: _handleSend,
                 onTyping: onTyping,
@@ -441,9 +454,11 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
                   });
                 },
               ),
+            ],
           ],
         ),
       ),
     );
   }
+
 }

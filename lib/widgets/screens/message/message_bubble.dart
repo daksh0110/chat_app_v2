@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/colors/defaullt_color_sheet.dart';
 
 enum MessageAlignment { left, center, right }
 
@@ -31,9 +32,9 @@ class MessageBubble extends StatelessWidget {
     final resolvedColor =
         backgroundColor ??
         (isRight
-            ? const Color(0xFFDCF8C6)
+            ? DefaultColorSheet.bubbleSender(context)
             : isLeft
-            ? Colors.white
+            ? DefaultColorSheet.bubbleReceiver(context)
             : Colors.transparent);
     final isMediaOnly = resolvedColor == Colors.transparent;
 

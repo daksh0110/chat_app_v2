@@ -42,7 +42,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 15;
+  int get schemaVersion => 16;
 
   // --- Queries ---
   // Stream<List<UsersTableData>> getAllUsers() {
@@ -62,7 +62,9 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(friendsTable);
       }
       if (from < 8) {
-        await m.addColumn(friendsTable, friendsTable.isRead);
+        try {
+          await m.addColumn(friendsTable, friendsTable.isRead);
+        } catch (_) {}
       }
       if (from < 9) {
         await m.createTable(blocksTable);
@@ -77,15 +79,28 @@ class AppDatabase extends _$AppDatabase {
         await _backfillChatEventsForMessages();
       }
       if (from < 13) {
-        await m.addColumn(messages, messages.replyToId);
-        await m.addColumn(messages, messages.replyToSenderName);
-        await m.addColumn(messages, messages.replyToMessage);
+        try {
+          await m.addColumn(messages, messages.replyToId);
+        } catch (_) {}
+        try {
+          await m.addColumn(messages, messages.replyToSenderName);
+        } catch (_) {}
+        try {
+          await m.addColumn(messages, messages.replyToMessage);
+        } catch (_) {}
       }
       if (from < 14) {
         await m.createTable(messageReactionsTable);
       }
       if (from < 15) {
-        await m.addColumn(messages, messages.isDeleted);
+        try {
+          await m.addColumn(messages, messages.isDeleted);
+        } catch (_) {}
+      }
+      if (from < 16) {
+        try {
+          await m.addColumn(userPreferencesTable, userPreferencesTable.themeMode);
+        } catch (_) {}
       }
     },
 

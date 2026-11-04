@@ -49,14 +49,21 @@ class RequestUserProvider extends Notifier {
       return RelationshipStatus.none;
     }
 
-    switch (friendRow.status) {
+    return parseStatus(friendRow.status, isBlocked: isBlocked);
+  }
+
+  static RelationshipStatus parseStatus(String? status, {bool isBlocked = false}) {
+    if (isBlocked) return RelationshipStatus.blocked;
+    if (status == null) return RelationshipStatus.none;
+    switch (status.toUpperCase()) {
       case 'PENDING_OUTGOING':
+      case 'PENDING_OUTCOMING':
+      case 'PENDING':
         return RelationshipStatus.pendingOutgoing;
       case 'PENDING_INCOMING':
         return RelationshipStatus.pendingIncoming;
-      case 'PENDING':
-        return RelationshipStatus.pendingOutgoing;
       case 'FRIENDS':
+      case 'ACCEPTED':
         return RelationshipStatus.friends;
       case 'BLOCKED':
         return RelationshipStatus.blocked;

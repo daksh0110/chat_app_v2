@@ -14,19 +14,19 @@ class AccountsPage extends ConsumerWidget {
     final blockedUsersAsync = ref.watch(blockedUsersProvider);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: DefaultColorSheet.scaffoldBg(context),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: DefaultColorSheet.appBarBg(context),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          color: Colors.black,
+          icon: Icon(Icons.arrow_back, color: DefaultColorSheet.appBarIcon(context)),
           onPressed: () => Navigator.pop(context),
         ),
         title: PrimaryText(
           "Account",
           fontSize: 22,
           fontWeight: FontWeight.w500,
+          color: DefaultColorSheet.appBarTitle(context),
         ),
         centerTitle: true,
       ),

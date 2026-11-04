@@ -156,7 +156,7 @@ class MessageItem extends ConsumerWidget {
                     style: TextStyle(
                       fontSize: 13.5,
                       fontStyle: FontStyle.italic,
-                      color: Colors.grey.shade600,
+                      color: DefaultColorSheet.textSecondary(context),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -372,9 +372,9 @@ class _QuotedReplyPreview extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             message,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
-              color: Color(0xFF3B4A54),
+              color: DefaultColorSheet.textSecondary(context),
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -412,8 +412,8 @@ class _TextWithTimestamp extends StatelessWidget {
         Flexible(
           child: Text(
             message,
-            style: const TextStyle(
-              color: Color(0xFF111B21),
+            style: TextStyle(
+              color: DefaultColorSheet.bubbleText(context),
               fontSize: 14.5,
               height: 1.35,
             ),
@@ -454,7 +454,9 @@ class _TimestampChip extends StatelessWidget {
           timeStr,
           style: TextStyle(
             fontSize: 10,
-            color: overlayOnMedia ? Colors.white : const Color(0xFF8696A0),
+            color: overlayOnMedia
+                ? Colors.white
+                : DefaultColorSheet.bubbleTime(context, isSender: isSender),
             fontWeight: FontWeight.w400,
           ),
         ),

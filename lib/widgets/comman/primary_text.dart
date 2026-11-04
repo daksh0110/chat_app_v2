@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/colors/defaullt_color_sheet.dart';
 
 class PrimaryText extends StatelessWidget {
   final String text;
   final double fontSize;
   final FontWeight fontWeight;
   final String? fontFamily;
-  final Color color;
+  final Color? color;
   final TextAlign textAlign;
   final int? maxLines;
   final TextOverflow overflow;
@@ -18,7 +19,7 @@ class PrimaryText extends StatelessWidget {
     this.fontSize = 14,
     this.fontWeight = FontWeight.w400,
     this.fontFamily,
-    this.color = Colors.black,
+    this.color,
     this.textAlign = TextAlign.start,
     this.maxLines,
     this.overflow = TextOverflow.visible,
@@ -37,7 +38,7 @@ class PrimaryText extends StatelessWidget {
         fontSize: fontSize,
         fontWeight: fontWeight,
         fontFamily: fontFamily,
-        color: color,
+        color: color ?? DefaultColorSheet.textPrimary(context),
         height: height,
         fontStyle: fontStyle,
       ),

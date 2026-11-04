@@ -23,14 +23,14 @@ class ProfileDetailItem extends StatelessWidget {
         children: [
           PrimaryText(
             title,
-            color: DefaultColorSheet.grey500,
+            color: DefaultColorSheet.textSecondary(context),
             fontWeight: FontWeight.w500,
             fontSize: 14,
           ),
           const SizedBox(height: 5),
           PrimaryText(
             value,
-            color: Colors.black,
+            color: DefaultColorSheet.textPrimary(context),
             fontSize: 18,
             fontWeight: FontWeight.w500,
           ),

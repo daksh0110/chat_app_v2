@@ -32,8 +32,16 @@ class SearchItem {
           ? UploadAttachment.fromJson(json['media'] as Map<String, dynamic>)
           : null,
       actorType: json['actor_type'],
-      relationshipStatus:
-          json['relationship_status'] ?? json['status'] ?? "NONE",
+      relationshipStatus: _normalizeStatus(
+        json['relationship_status'] ?? json['status'] ?? "NONE",
+      ),
     );
+  }
+
+  static String _normalizeStatus(dynamic status) {
+    if (status == null) return "NONE";
+    final s = status.toString().toUpperCase();
+    if (s == "PENDING_OUTCOMING") return "PENDING_OUTGOING";
+    return s;
   }
 }

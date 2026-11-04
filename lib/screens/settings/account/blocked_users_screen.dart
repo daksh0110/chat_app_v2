@@ -86,18 +86,19 @@ class _BlockedUsersScreenState extends ConsumerState<BlockedUsersScreen> {
     final blockedAsync = ref.watch(blockedUsersProvider);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: DefaultColorSheet.scaffoldBg(context),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: DefaultColorSheet.appBarBg(context),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back, color: DefaultColorSheet.appBarIcon(context)),
           onPressed: () => Navigator.pop(context),
         ),
         title: PrimaryText(
           "Blocked Contacts",
           fontSize: 20,
           fontWeight: FontWeight.w600,
+          color: DefaultColorSheet.appBarTitle(context),
         ),
         centerTitle: true,
       ),

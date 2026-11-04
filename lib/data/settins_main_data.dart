@@ -9,29 +9,10 @@ final List<SettingsMainModal> settingMenuData = [
     icon: Icons.key_sharp,
     link: AppRoutes.accountsMain,
   ),
-  // SettingsMainModal(
-  //   name: "Chat",
-  //   description: "Chat history, theme, wallpapers",
-  //   icon: Icons.chat_bubble_outline,
-  // ),
-  // SettingsMainModal(
-  //   name: "Notifications",
-  //   description: "Messages, group and others",
-  //   icon: Icons.notifications_none,
-  // ),
-  // SettingsMainModal(
-  //   name: "Help",
-  //   description: "Help center, contact us, privacy policy",
-  //   icon: Icons.help_outline,
-  // ),
-  // SettingsMainModal(
-  //   name: "Storage and data",
-  //   description: "Network usage, storage usage",
-  //   icon: Icons.storage,
-  // ),
-  // SettingsMainModal(
-  //   name: "Invite a friend",
-  //   description: "",
-  //   icon: Icons.person_add_alt_1,
-  // ),
+  SettingsMainModal(
+    name: "Appearance",
+    description: "Theme mode (Light, Dark, System default)",
+    icon: Icons.dark_mode_outlined,
+    link: "theme_settings",
+  ),
 ];

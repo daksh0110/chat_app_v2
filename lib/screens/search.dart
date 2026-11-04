@@ -46,9 +46,9 @@ class _SearchState extends ConsumerState<Search> {
         .watch(searchProvider.notifier)
         .getSearchResults(_searchInputController.text.trim());
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: DefaultColorSheet.scaffoldBg(context),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: DefaultColorSheet.appBarBg(context),
         elevation: 0,
         centerTitle: true,
         automaticallyImplyLeading: false,
@@ -57,12 +57,16 @@ class _SearchState extends ConsumerState<Search> {
           height: 44,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: DefaultColorSheet.disbaledButton,
+            color: DefaultColorSheet.inputFieldBg(context),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Row(
             children: [
-              const Icon(LucideIcons.search, size: 20),
+              Icon(
+                LucideIcons.search,
+                size: 20,
+                color: DefaultColorSheet.iconSecondary(context),
+              ),
 
               const SizedBox(width: 8),
 
@@ -70,8 +74,15 @@ class _SearchState extends ConsumerState<Search> {
                 child: TextField(
                   controller: _searchInputController,
                   onChanged: (value) => onSearching(value),
+                  style: TextStyle(
+                    color: DefaultColorSheet.inputTextColor(context),
+                    fontSize: 15,
+                  ),
                   decoration: InputDecoration(
                     hintText: "Search",
+                    hintStyle: TextStyle(
+                      color: DefaultColorSheet.inputHintColor(context),
+                    ),
                     border: InputBorder.none,
                     isDense: true,
                   ),
@@ -88,7 +99,11 @@ class _SearchState extends ConsumerState<Search> {
                     data.clear();
                   });
                 },
-                icon: const Icon(LucideIcons.x, size: 20),
+                icon: Icon(
+                  LucideIcons.x,
+                  size: 20,
+                  color: DefaultColorSheet.iconSecondary(context),
+                ),
               ),
             ],
           ),

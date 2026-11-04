@@ -111,9 +111,9 @@ class _ChatInputBoxState extends State<ChatInputBox> {
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: DefaultColorSheet.surfaceBg(context),
         border: Border(
-          top: BorderSide(color: DefaultColorSheet.white100, width: 1),
+          top: BorderSide(color: DefaultColorSheet.divider(context), width: 1),
         ),
       ),
       child: Column(
@@ -125,7 +125,7 @@ class _ChatInputBoxState extends State<ChatInputBox> {
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFFF0F2F5),
+                color: DefaultColorSheet.inputFieldBg(context),
                 borderRadius: BorderRadius.circular(12),
                 border: const Border(
                   left: BorderSide(
@@ -289,10 +289,10 @@ class _ChatInputBoxState extends State<ChatInputBox> {
                       onDocuments: () => handleAttachment('file'),
                     );
                   },
-                  icon: const Icon(
+                  icon: Icon(
                     LucideIcons.paperclip,
                     size: 22,
-                    color: DefaultColorSheet.lightBlack,
+                    color: DefaultColorSheet.iconColor(context),
                   ),
                 ),
               ),
@@ -307,7 +307,7 @@ class _ChatInputBoxState extends State<ChatInputBox> {
                     maxHeight: 110,
                   ),
                   decoration: BoxDecoration(
-                    color: DefaultColorSheet.disbaledButton,
+                    color: DefaultColorSheet.inputFieldBg(context),
                     borderRadius: BorderRadius.circular(24),
                   ),
                   child: TextField(
@@ -316,22 +316,22 @@ class _ChatInputBoxState extends State<ChatInputBox> {
                     minLines: 1,
                     maxLines: 4,
                     textAlignVertical: TextAlignVertical.center,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
-                      color: DefaultColorSheet.lightBlack,
+                      color: DefaultColorSheet.inputTextColor(context),
                       fontWeight: FontWeight.w400,
                       height: 1.35,
                     ),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: InputBorder.none,
                       isDense: true,
                       hintText: "Write a message",
                       hintStyle: TextStyle(
                         fontSize: 14,
-                        color: DefaultColorSheet.grey500,
+                        color: DefaultColorSheet.inputHintColor(context),
                         fontWeight: FontWeight.w500,
                       ),
-                      contentPadding: EdgeInsets.symmetric(
+                      contentPadding: const EdgeInsets.symmetric(
                         horizontal: 18,
                         vertical: 13,
                       ),

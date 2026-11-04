@@ -9,6 +9,7 @@ import 'package:my_app/providers/tables/user_preference_table_provider.dart';
 import 'package:my_app/widgets/comman/primary_container.dart';
 import 'package:my_app/widgets/screens/search/search_group_item.dart';
 import 'package:my_app/widgets/screens/settings/settingsMain/setting_menu_item.dart';
+import 'package:my_app/widgets/screens/settings/settingsMain/theme_selection_sheet.dart';
 
 class SettingsMain extends ConsumerWidget {
   const SettingsMain({super.key});
@@ -54,15 +55,22 @@ class SettingsMain extends ConsumerWidget {
             ),
 
             const SizedBox(height: 20),
-            Divider(color: const Color(0xFFF5F6F6)),
+            Divider(color: DefaultColorSheet.divider(context)),
             const SizedBox(height: 10),
             Expanded(
               child: ListView.separated(
                 shrinkWrap: true,
                 itemBuilder: (context, index) {
-                  return SettingMenuItem(item: settingMenuData[index]);
+                  final item = settingMenuData[index];
+                  return SettingMenuItem(
+                    item: item,
+                    onTap: item.link == 'theme_settings'
+                        ? () => ThemeSelectionSheet.show(context)
+                        : null,
+                  );
                 },
-                separatorBuilder: (context, index) => SizedBox(height: 30),
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 30),
                 itemCount: settingMenuData.length,
               ),
             ),

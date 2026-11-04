@@ -55,7 +55,7 @@ class SearchGroupItem extends StatelessWidget {
                   PrimaryText(
                     item.bio ?? "",
                     fontSize: 12,
-                    color: DefaultColorSheet.grey500,
+                    color: DefaultColorSheet.textSecondary(context),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -68,7 +68,7 @@ class SearchGroupItem extends StatelessWidget {
                   PrimaryText(
                     item.email ?? "",
                     fontSize: 12,
-                    color: DefaultColorSheet.grey500,
+                    color: DefaultColorSheet.textSecondary(context),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),

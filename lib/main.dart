@@ -1,3 +1,5 @@
+import 'package:my_app/colors/defaullt_color_sheet.dart';
+import 'package:my_app/providers/theme_provider.dart';
 import 'package:my_app/providers/group_socket_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:my_app/core/app_routes.dart';
@@ -7,7 +9,6 @@ import 'package:my_app/providers/auth_notifier_provider.dart';
 import 'package:my_app/providers/friend_requests_provider.dart';
 import 'package:my_app/providers/message_provider.dart';
 
-import 'package:my_app/providers/server_connection_provider.dart';
 import 'package:my_app/providers/socket_provider.dart';
 import 'package:my_app/providers/token_provider.dart';
 import 'package:my_app/screens/main_screen.dart';
@@ -41,9 +42,6 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    Future.microtask(() {
-      ref.read(serverConnectedProvider.notifier).verifyServerConnection();
-    });
   }
 
   @override
@@ -109,15 +107,30 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
     });
 
     final authState = ref.watch(authProvider);
+    final isAuthenticated = authState.when(
+      data: (state) => state == AuthState.authenticated,
+      loading: () => false,
+      error: (_, _) => false,
+    );
+
+    final themeModeAsync = ref.watch(themeModeProvider);
+    final currentThemeMode = themeModeAsync.value ?? ThemeMode.system;
 
     return MaterialApp(
       navigatorKey: navigatorKey,
       navigatorObservers: [routeObserver],
       title: 'Flutter Demo',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(fontFamily: "Caros"),
+      theme: DefaultColorSheet.lightTheme,
+      darkTheme: DefaultColorSheet.darkTheme,
+      themeMode: currentThemeMode,
       builder: (context, child) {
-        return Stack(children: [child!, const OverLayBanner()]);
+        return Stack(
+          children: [
+            child!,
+            OverLayBanner(enabled: isAuthenticated),
+          ],
+        );
       },
       home: authState.when(
         loading: () =>

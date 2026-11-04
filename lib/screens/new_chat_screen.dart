@@ -17,27 +17,27 @@ class NewChatScreen extends ConsumerWidget {
     final usersAsync = ref.watch(allUsersProvider);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: DefaultColorSheet.scaffoldBg(context),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: DefaultColorSheet.appBarBg(context),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back,
-            color: DefaultColorSheet.lightBlack,
+            color: DefaultColorSheet.appBarIcon(context),
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const PrimaryText(
+        title: PrimaryText(
           'New Chat',
           fontSize: 18,
           fontWeight: FontWeight.w600,
-          color: DefaultColorSheet.lightBlack,
+          color: DefaultColorSheet.appBarTitle(context),
         ),
         centerTitle: true,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(color: DefaultColorSheet.grey200, height: 1),
+          child: Container(color: DefaultColorSheet.divider(context), height: 1),
         ),
       ),
       body: Column(
@@ -194,7 +194,7 @@ class _ContactTile extends StatelessWidget {
                     user.name,
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: DefaultColorSheet.lightBlack,
+                    color: DefaultColorSheet.textPrimary(context),
                   ),
                   if (user.email.isNotEmpty) ...[
                     const SizedBox(height: 2),

@@ -1,10 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/providers/server_connection_provider.dart';
+import 'package:my_app/providers/socket_provider.dart';
 
 class OverLayBanner extends ConsumerStatefulWidget {
-  const OverLayBanner({super.key});
+  const OverLayBanner({super.key, required this.enabled});
+
+  final bool enabled;
 
   @override
   ConsumerState<OverLayBanner> createState() => _OverLayBannerState();
@@ -12,12 +17,23 @@ class OverLayBanner extends ConsumerStatefulWidget {
 
 class _OverLayBannerState extends ConsumerState<OverLayBanner> {
   bool _shouldShow = false;
+  Timer? _hideTimer;
 
   @override
-  void initState() {
-    super.initState();
+  void didUpdateWidget(covariant OverLayBanner oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.enabled == widget.enabled) return;
+
+    _hideTimer?.cancel();
+    final socketInitialized = ref.read(socketProvider).isInitialized;
     final isConnected = ref.read(serverConnectedProvider).isConnected;
-    _shouldShow = !isConnected;
+    _shouldShow = widget.enabled && socketInitialized && !isConnected;
+  }
+
+  @override
+  void dispose() {
+    _hideTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -28,12 +44,15 @@ class _OverLayBannerState extends ConsumerState<OverLayBanner> {
       previous,
       next,
     ) {
+      if (!widget.enabled || !ref.read(socketProvider).isInitialized) return;
+
       if (next.isConnected) {
         if (previous == null || !previous.isConnected) {
+          _hideTimer?.cancel();
           setState(() {
             _shouldShow = true;
           });
-          Future.delayed(const Duration(seconds: 3), () {
+          _hideTimer = Timer(const Duration(seconds: 3), () {
             if (mounted) {
               setState(() {
                 _shouldShow = false;
@@ -42,6 +61,7 @@ class _OverLayBannerState extends ConsumerState<OverLayBanner> {
           });
         }
       } else {
+        _hideTimer?.cancel();
         setState(() {
           _shouldShow = true;
         });
@@ -49,19 +69,21 @@ class _OverLayBannerState extends ConsumerState<OverLayBanner> {
     });
 
     final isError = !serverState.isConnected;
+    final shouldShow =
+        widget.enabled && ref.read(socketProvider).isInitialized && _shouldShow;
 
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 350),
       curve: Curves.easeInOut,
-      top: _shouldShow ? 8 : -120,
+      top: shouldShow ? 8 : -120,
       left: 12,
       right: 12,
       child: SafeArea(
         child: IgnorePointer(
-          ignoring: !_shouldShow,
+          ignoring: !shouldShow,
           child: AnimatedOpacity(
             duration: const Duration(milliseconds: 250),
-            opacity: _shouldShow ? 1.0 : 0.0,
+            opacity: shouldShow ? 1.0 : 0.0,
             child: Material(
               color: Colors.transparent,
               child: Container(

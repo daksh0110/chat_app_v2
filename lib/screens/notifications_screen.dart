@@ -123,28 +123,28 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     final requestsAsync = ref.watch(friendRequestsProvider);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: DefaultColorSheet.scaffoldBg(context),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: DefaultColorSheet.appBarBg(context),
         elevation: 0,
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios_new_rounded,
-            color: DefaultColorSheet.lightBlack,
+            color: DefaultColorSheet.appBarIcon(context),
             size: 20,
           ),
         ),
-        title: const PrimaryText(
+        title: PrimaryText(
           'Notifications',
           fontSize: 20,
           fontWeight: FontWeight.w600,
-          color: DefaultColorSheet.lightBlack,
+          color: DefaultColorSheet.appBarTitle(context),
         ),
         centerTitle: true,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: DefaultColorSheet.grey200),
+          child: Container(height: 1, color: DefaultColorSheet.divider(context)),
         ),
       ),
       body: requestsAsync.when(
@@ -250,7 +250,11 @@ class _FriendRequestTile extends StatelessWidget {
     final isFriends = item.status == 'FRIENDS';
 
     return Material(
-      color: item.isRead ? Colors.transparent : DefaultColorSheet.white100,
+      color: item.isRead
+          ? Colors.transparent
+          : (DefaultColorSheet.isDark(context)
+              ? DefaultColorSheet.darkSurface
+              : DefaultColorSheet.white100),
       child: InkWell(
         onTap: onTap,
         child: Padding(
@@ -280,7 +284,7 @@ class _FriendRequestTile extends StatelessWidget {
                             item.name,
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
-                            color: DefaultColorSheet.lightBlack,
+                            color: DefaultColorSheet.textPrimary(context),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),

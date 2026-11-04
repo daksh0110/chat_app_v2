@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/colors/defaullt_color_sheet.dart';
 
 class DateBanner extends StatelessWidget {
   final String label;
@@ -12,12 +13,15 @@ class DateBanner extends StatelessWidget {
         margin: const EdgeInsets.symmetric(vertical: 10),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         decoration: BoxDecoration(
-          color: Colors.grey.shade300,
+          color: DefaultColorSheet.bannerBg(context),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
           label,
-          style: const TextStyle(fontSize: 12, color: Colors.black54),
+          style: TextStyle(
+            fontSize: 12,
+            color: DefaultColorSheet.bannerText(context),
+          ),
         ),
       ),
     );

@@ -26,7 +26,6 @@ class Header extends StatefulWidget implements PreferredSizeWidget {
 
   @override
   Size get preferredSize {
-    // default fallback
     return const Size.fromHeight(kToolbarHeight);
   }
 
@@ -50,13 +49,22 @@ class _HeaderState extends State<Header> {
   @override
   Widget build(BuildContext context) {
     final toolbarHeight = getToolbarHeight(context);
+    final iconColor = DefaultColorSheet.appBarIcon(context);
 
     return AppBar(
       toolbarHeight: toolbarHeight,
       shadowColor: const Color(0x05111222),
-      backgroundColor: Colors.white,
+      backgroundColor: DefaultColorSheet.appBarBg(context),
+      iconTheme: IconThemeData(color: iconColor),
       scrolledUnderElevation: 0.0,
-      titleSpacing: 1,
+      titleSpacing: 0,
+      leading: IconButton(
+        icon: Icon(
+          Icons.arrow_back,
+          color: iconColor,
+        ),
+        onPressed: () => Navigator.maybePop(context),
+      ),
       title: InkWell(
         onTap: () {
           Navigator.pushNamed(
@@ -91,9 +99,9 @@ class _HeaderState extends State<Header> {
       actionsPadding: const EdgeInsets.only(right: 15, left: 10),
       actions: [
         IconButton(
-          icon: const Icon(
+          icon: Icon(
             LucideIcons.ellipsisVertical,
-            color: DefaultColorSheet.lightBlack,
+            color: iconColor,
             size: 20,
           ),
           tooltip: widget.isGroupChat ? 'Group info' : 'Contact info',
