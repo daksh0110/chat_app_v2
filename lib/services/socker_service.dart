@@ -314,6 +314,146 @@ class SocketService {
   }
 
 
+  Future<dynamic> updateChatSettings({
+    required String chatId,
+    required Map<String, dynamic> updates,
+  }) {
+    final completer = Completer<dynamic>();
+    if (socket == null) {
+      completer.completeError('Socket not connected');
+      return completer.future;
+    }
+
+    socket!.emitWithAck(
+      "update_chat_settings",
+      {"chatId": chatId, "updates": updates},
+      ack: (response) {
+        if (response is Map && response['success'] == true) {
+          completer.complete(response);
+        } else {
+          completer.completeError(
+            Exception(
+              response is Map
+                  ? (response['message'] ?? 'Failed to update chat settings')
+                  : 'Failed to update chat settings',
+            ),
+          );
+        }
+      },
+    );
+    return completer.future;
+  }
+
+  Future<dynamic> updateDisappearingMessages({
+    required String chatId,
+    required int duration,
+  }) {
+    final completer = Completer<dynamic>();
+    if (socket == null) {
+      completer.completeError('Socket not connected');
+      return completer.future;
+    }
+
+    socket!.emitWithAck(
+      "update_disappearing_messages",
+      {"chatId": chatId, "duration": duration},
+      ack: (response) {
+        if (response is Map && response['success'] == true) {
+          completer.complete(response);
+        } else {
+          completer.completeError(
+            Exception(
+              response is Map
+                  ? (response['message'] ?? 'Failed to set disappearing messages')
+                  : 'Failed to set disappearing messages',
+            ),
+          );
+        }
+      },
+    );
+    return completer.future;
+  }
+
+  void listenChatSettingsUpdated(void Function(dynamic data) callback) {
+    if (socket == null) return;
+    socket!.on("chat_settings_updated", callback);
+  }
+
+  Future<dynamic> editMessage({
+    required String messageId,
+    required String chatId,
+    required String message,
+  }) {
+    final completer = Completer<dynamic>();
+    if (socket == null) {
+      completer.completeError('Socket not connected');
+      return completer.future;
+    }
+
+    socket!.emitWithAck(
+      "edit_message",
+      {
+        "message_id": messageId,
+        "chat_id": chatId,
+        "message": message,
+      },
+      ack: (response) {
+        if (response is Map && response['error'] != true) {
+          completer.complete(response);
+        } else {
+          completer.completeError(
+            Exception(
+              response is Map
+                  ? (response['message'] ?? 'Failed to edit message')
+                  : 'Failed to edit message',
+            ),
+          );
+        }
+      },
+    );
+    return completer.future;
+  }
+
+  Future<dynamic> pinMessage({
+    required String messageId,
+    required String chatId,
+    required bool isPinned,
+  }) {
+    final completer = Completer<dynamic>();
+    if (socket == null) {
+      completer.completeError('Socket not connected');
+      return completer.future;
+    }
+
+    socket!.emitWithAck(
+      "pin_message",
+      {
+        "message_id": messageId,
+        "chat_id": chatId,
+        "is_pinned": isPinned,
+      },
+      ack: (response) {
+        if (response is Map && response['error'] != true) {
+          completer.complete(response);
+        } else {
+          completer.completeError(
+            Exception(
+              response is Map
+                  ? (response['message'] ?? 'Failed to pin message')
+                  : 'Failed to pin message',
+            ),
+          );
+        }
+      },
+    );
+    return completer.future;
+  }
+
+  void listenDisappearingMessagesUpdated(void Function(dynamic data) callback) {
+    if (socket == null) return;
+    socket!.on("disappearing_messages_updated", callback);
+  }
+
   void listenGroupCreated(void Function(dynamic data) callback) {
     if (socket == null) return;
     socket!.on("group-created", callback);

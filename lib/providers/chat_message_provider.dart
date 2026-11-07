@@ -143,6 +143,8 @@ List<ChatTimelineEvent> _buildTimelineEventsFromGroups(
           rawMessage: rawMessage,
           model: MessageItemModel(
             id: message.id,
+            serverId: message.serverId,
+            chatId: message.chatId,
             attachments: group.attachments,
             message: message.message,
             isSender: isSender,
@@ -156,6 +158,9 @@ List<ChatTimelineEvent> _buildTimelineEventsFromGroups(
             replyToSenderName: message.replyToSenderName,
             replyToMessage: message.replyToMessage,
             isDeleted: message.isDeleted,
+            isEdited: message.isEdited,
+            isPinned: message.isPinned,
+            pinnedAt: message.pinnedAt,
           ),
         ),
       );
@@ -194,7 +199,8 @@ final chatMessagesProvider =
           ),
           leftOuterJoin(
             db.messageStatusTable,
-            db.messageStatusTable.messageId.equalsExp(db.messages.serverId),
+            db.messageStatusTable.messageId.equalsExp(db.messages.serverId) |
+                db.messageStatusTable.messageId.equalsExp(db.messages.id),
           ),
           leftOuterJoin(
             db.mediaTable,

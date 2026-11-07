@@ -141,6 +141,19 @@ class GroupSocketNotifier extends Notifier<void> {
               isActorSelf: isActorSelf,
             );
 
+        if (!isSelf) {
+          final actionText = isActorSelf
+              ? 'You added ${event.memberName}'
+              : (event.actorName.isNotEmpty
+                  ? '${event.actorName} added ${event.memberName}'
+                  : '${event.memberName} joined the group');
+
+          await ref.read(chatListTableProvider.notifier).updateLastMessage(
+                chatId: event.chatId,
+                lastMessage: actionText,
+              );
+        }
+
         ref.invalidate(groupProfile(event.chatId));
       } catch (e) {
         debugPrint('Error handling group-member-added: $e');
@@ -183,6 +196,19 @@ class GroupSocketNotifier extends Notifier<void> {
               isActorSelf: isActorSelf,
             );
 
+        final actionText = isSelf
+            ? (event.actorName.isNotEmpty
+                ? '${event.actorName} removed you'
+                : 'You were removed')
+            : (isActorSelf
+                ? 'You removed ${event.memberName}'
+                : '${event.actorName} removed ${event.memberName}');
+
+        await ref.read(chatListTableProvider.notifier).updateLastMessage(
+              chatId: event.chatId,
+              lastMessage: actionText,
+            );
+
         ref.invalidate(groupProfile(event.chatId));
       } catch (e) {
         debugPrint('Error handling group-member-removed: $e');
@@ -220,6 +246,15 @@ class GroupSocketNotifier extends Notifier<void> {
               memberName: event.memberName,
               sequence: event.sequence,
               isSelf: isSelf,
+            );
+
+        final actionText = isSelf
+            ? 'You left the group'
+            : '${event.memberName} left the group';
+
+        await ref.read(chatListTableProvider.notifier).updateLastMessage(
+              chatId: event.chatId,
+              lastMessage: actionText,
             );
 
         if (event.promotedAdminId != null &&
@@ -274,6 +309,18 @@ class GroupSocketNotifier extends Notifier<void> {
               sequence: event.sequence,
               isSelf: isSelf,
               isActorSelf: isActorSelf,
+            );
+
+        final roleStr = event.role.toLowerCase() == 'admin' ? 'an admin' : 'a member';
+        final actionText = isActorSelf
+            ? 'You made ${event.memberName} $roleStr'
+            : (isSelf
+                ? '${event.actorName} made you $roleStr'
+                : '${event.actorName} made ${event.memberName} $roleStr');
+
+        await ref.read(chatListTableProvider.notifier).updateLastMessage(
+              chatId: event.chatId,
+              lastMessage: actionText,
             );
 
         ref.invalidate(groupProfile(event.chatId));
@@ -369,6 +416,17 @@ class GroupSocketNotifier extends Notifier<void> {
               actorName: event.actorName,
               sequence: event.sequence,
               isActorSelf: isActorSelf,
+            );
+
+        final actionText = isActorSelf
+            ? 'You updated the group profile'
+            : (event.actorName.isNotEmpty
+                ? '${event.actorName} updated the group profile'
+                : 'Group profile updated');
+
+        await ref.read(chatListTableProvider.notifier).updateLastMessage(
+              chatId: event.chatId,
+              lastMessage: actionText,
             );
       } catch (e) {
         debugPrint('Error handling group-profile-updated: $e');

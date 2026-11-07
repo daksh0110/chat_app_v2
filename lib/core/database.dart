@@ -3,6 +3,7 @@ import 'package:my_app/modal/tables/blocks_table.dart';
 import 'package:my_app/modal/tables/chat_events_table.dart';
 import 'package:my_app/modal/tables/chat_list_table.dart';
 import 'package:my_app/modal/tables/chat_participant_table.dart';
+import 'package:my_app/modal/tables/chat_settings_table.dart';
 import 'package:my_app/modal/tables/friends_table.dart';
 import 'package:my_app/modal/tables/groups_table.dart';
 import 'package:my_app/modal/tables/media_modal.dart';
@@ -36,13 +37,14 @@ part 'database.g.dart';
     NotificationsTable,
     ChatEventsTable,
     MessageReactionsTable,
+    ChatSettingsTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 16;
+  int get schemaVersion => 18;
 
   // --- Queries ---
   // Stream<List<UsersTableData>> getAllUsers() {
@@ -100,6 +102,22 @@ class AppDatabase extends _$AppDatabase {
       if (from < 16) {
         try {
           await m.addColumn(userPreferencesTable, userPreferencesTable.themeMode);
+        } catch (_) {}
+      }
+      if (from < 17) {
+        try {
+          await m.createTable(chatSettingsTable);
+        } catch (_) {}
+      }
+      if (from < 18) {
+        try {
+          await m.addColumn(messages, messages.isEdited);
+        } catch (_) {}
+        try {
+          await m.addColumn(messages, messages.isPinned);
+        } catch (_) {}
+        try {
+          await m.addColumn(messages, messages.pinnedAt);
         } catch (_) {}
       }
     },

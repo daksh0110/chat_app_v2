@@ -1,6 +1,7 @@
 import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/providers/theme_provider.dart';
 import 'package:my_app/providers/group_socket_provider.dart';
+import 'package:my_app/providers/chat_settings_socket_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/core/util/route_observer.dart';
@@ -84,6 +85,8 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
             await notifier.receiveMessage();
             await notifier.listenForReactions();
             await notifier.listenForMessageDeleted();
+            await notifier.listenForMessageEdited();
+            await notifier.listenForMessagePinned();
             await notifier.messageDelivered();
             await notifier.markRead();
             notifier.sendChatSyncEvent();
@@ -96,6 +99,7 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
                 .listenUserUpdateDetails();
             ref.read(friendRequestSocketProvider.notifier).listen();
             ref.read(groupSocketProvider.notifier).listen();
+            ref.read(chatSettingsSocketProvider.notifier).listen();
             // notifier.groupsCountSync();
 
             await NotificationService.handleInitialMessage();

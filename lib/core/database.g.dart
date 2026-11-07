@@ -143,6 +143,47 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _isEditedMeta = const VerificationMeta(
+    'isEdited',
+  );
+  @override
+  late final GeneratedColumn<bool> isEdited = GeneratedColumn<bool>(
+    'is_edited',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_edited" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _isPinnedMeta = const VerificationMeta(
+    'isPinned',
+  );
+  @override
+  late final GeneratedColumn<bool> isPinned = GeneratedColumn<bool>(
+    'is_pinned',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_pinned" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _pinnedAtMeta = const VerificationMeta(
+    'pinnedAt',
+  );
+  @override
+  late final GeneratedColumn<int> pinnedAt = GeneratedColumn<int>(
+    'pinned_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -157,6 +198,9 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
     replyToSenderName,
     replyToMessage,
     isDeleted,
+    isEdited,
+    isPinned,
+    pinnedAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -258,6 +302,24 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
         isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
       );
     }
+    if (data.containsKey('is_edited')) {
+      context.handle(
+        _isEditedMeta,
+        isEdited.isAcceptableOrUnknown(data['is_edited']!, _isEditedMeta),
+      );
+    }
+    if (data.containsKey('is_pinned')) {
+      context.handle(
+        _isPinnedMeta,
+        isPinned.isAcceptableOrUnknown(data['is_pinned']!, _isPinnedMeta),
+      );
+    }
+    if (data.containsKey('pinned_at')) {
+      context.handle(
+        _pinnedAtMeta,
+        pinnedAt.isAcceptableOrUnknown(data['pinned_at']!, _pinnedAtMeta),
+      );
+    }
     return context;
   }
 
@@ -315,6 +377,18 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
         DriftSqlType.bool,
         data['${effectivePrefix}is_deleted'],
       )!,
+      isEdited: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_edited'],
+      )!,
+      isPinned: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_pinned'],
+      )!,
+      pinnedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}pinned_at'],
+      ),
     );
   }
 
@@ -337,6 +411,9 @@ class Message extends DataClass implements Insertable<Message> {
   final String? replyToSenderName;
   final String? replyToMessage;
   final bool isDeleted;
+  final bool isEdited;
+  final bool isPinned;
+  final int? pinnedAt;
   const Message({
     required this.id,
     required this.chatId,
@@ -350,6 +427,9 @@ class Message extends DataClass implements Insertable<Message> {
     this.replyToSenderName,
     this.replyToMessage,
     required this.isDeleted,
+    required this.isEdited,
+    required this.isPinned,
+    this.pinnedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -376,6 +456,11 @@ class Message extends DataClass implements Insertable<Message> {
       map['reply_to_message'] = Variable<String>(replyToMessage);
     }
     map['is_deleted'] = Variable<bool>(isDeleted);
+    map['is_edited'] = Variable<bool>(isEdited);
+    map['is_pinned'] = Variable<bool>(isPinned);
+    if (!nullToAbsent || pinnedAt != null) {
+      map['pinned_at'] = Variable<int>(pinnedAt);
+    }
     return map;
   }
 
@@ -403,6 +488,11 @@ class Message extends DataClass implements Insertable<Message> {
           ? const Value.absent()
           : Value(replyToMessage),
       isDeleted: Value(isDeleted),
+      isEdited: Value(isEdited),
+      isPinned: Value(isPinned),
+      pinnedAt: pinnedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pinnedAt),
     );
   }
 
@@ -426,6 +516,9 @@ class Message extends DataClass implements Insertable<Message> {
       ),
       replyToMessage: serializer.fromJson<String?>(json['replyToMessage']),
       isDeleted: serializer.fromJson<bool>(json['isDeleted']),
+      isEdited: serializer.fromJson<bool>(json['isEdited']),
+      isPinned: serializer.fromJson<bool>(json['isPinned']),
+      pinnedAt: serializer.fromJson<int?>(json['pinnedAt']),
     );
   }
   @override
@@ -444,6 +537,9 @@ class Message extends DataClass implements Insertable<Message> {
       'replyToSenderName': serializer.toJson<String?>(replyToSenderName),
       'replyToMessage': serializer.toJson<String?>(replyToMessage),
       'isDeleted': serializer.toJson<bool>(isDeleted),
+      'isEdited': serializer.toJson<bool>(isEdited),
+      'isPinned': serializer.toJson<bool>(isPinned),
+      'pinnedAt': serializer.toJson<int?>(pinnedAt),
     };
   }
 
@@ -460,6 +556,9 @@ class Message extends DataClass implements Insertable<Message> {
     Value<String?> replyToSenderName = const Value.absent(),
     Value<String?> replyToMessage = const Value.absent(),
     bool? isDeleted,
+    bool? isEdited,
+    bool? isPinned,
+    Value<int?> pinnedAt = const Value.absent(),
   }) => Message(
     id: id ?? this.id,
     chatId: chatId ?? this.chatId,
@@ -479,6 +578,9 @@ class Message extends DataClass implements Insertable<Message> {
         ? replyToMessage.value
         : this.replyToMessage,
     isDeleted: isDeleted ?? this.isDeleted,
+    isEdited: isEdited ?? this.isEdited,
+    isPinned: isPinned ?? this.isPinned,
+    pinnedAt: pinnedAt.present ? pinnedAt.value : this.pinnedAt,
   );
   Message copyWithCompanion(MessagesCompanion data) {
     return Message(
@@ -500,6 +602,9 @@ class Message extends DataClass implements Insertable<Message> {
           ? data.replyToMessage.value
           : this.replyToMessage,
       isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
+      isEdited: data.isEdited.present ? data.isEdited.value : this.isEdited,
+      isPinned: data.isPinned.present ? data.isPinned.value : this.isPinned,
+      pinnedAt: data.pinnedAt.present ? data.pinnedAt.value : this.pinnedAt,
     );
   }
 
@@ -517,7 +622,10 @@ class Message extends DataClass implements Insertable<Message> {
           ..write('replyToId: $replyToId, ')
           ..write('replyToSenderName: $replyToSenderName, ')
           ..write('replyToMessage: $replyToMessage, ')
-          ..write('isDeleted: $isDeleted')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('isEdited: $isEdited, ')
+          ..write('isPinned: $isPinned, ')
+          ..write('pinnedAt: $pinnedAt')
           ..write(')'))
         .toString();
   }
@@ -536,6 +644,9 @@ class Message extends DataClass implements Insertable<Message> {
     replyToSenderName,
     replyToMessage,
     isDeleted,
+    isEdited,
+    isPinned,
+    pinnedAt,
   );
   @override
   bool operator ==(Object other) =>
@@ -552,7 +663,10 @@ class Message extends DataClass implements Insertable<Message> {
           other.replyToId == this.replyToId &&
           other.replyToSenderName == this.replyToSenderName &&
           other.replyToMessage == this.replyToMessage &&
-          other.isDeleted == this.isDeleted);
+          other.isDeleted == this.isDeleted &&
+          other.isEdited == this.isEdited &&
+          other.isPinned == this.isPinned &&
+          other.pinnedAt == this.pinnedAt);
 }
 
 class MessagesCompanion extends UpdateCompanion<Message> {
@@ -568,6 +682,9 @@ class MessagesCompanion extends UpdateCompanion<Message> {
   final Value<String?> replyToSenderName;
   final Value<String?> replyToMessage;
   final Value<bool> isDeleted;
+  final Value<bool> isEdited;
+  final Value<bool> isPinned;
+  final Value<int?> pinnedAt;
   final Value<int> rowid;
   const MessagesCompanion({
     this.id = const Value.absent(),
@@ -582,6 +699,9 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     this.replyToSenderName = const Value.absent(),
     this.replyToMessage = const Value.absent(),
     this.isDeleted = const Value.absent(),
+    this.isEdited = const Value.absent(),
+    this.isPinned = const Value.absent(),
+    this.pinnedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   MessagesCompanion.insert({
@@ -597,6 +717,9 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     this.replyToSenderName = const Value.absent(),
     this.replyToMessage = const Value.absent(),
     this.isDeleted = const Value.absent(),
+    this.isEdited = const Value.absent(),
+    this.isPinned = const Value.absent(),
+    this.pinnedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        chatId = Value(chatId),
@@ -616,6 +739,9 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     Expression<String>? replyToSenderName,
     Expression<String>? replyToMessage,
     Expression<bool>? isDeleted,
+    Expression<bool>? isEdited,
+    Expression<bool>? isPinned,
+    Expression<int>? pinnedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -631,6 +757,9 @@ class MessagesCompanion extends UpdateCompanion<Message> {
       if (replyToSenderName != null) 'reply_to_sender_name': replyToSenderName,
       if (replyToMessage != null) 'reply_to_message': replyToMessage,
       if (isDeleted != null) 'is_deleted': isDeleted,
+      if (isEdited != null) 'is_edited': isEdited,
+      if (isPinned != null) 'is_pinned': isPinned,
+      if (pinnedAt != null) 'pinned_at': pinnedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -648,6 +777,9 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     Value<String?>? replyToSenderName,
     Value<String?>? replyToMessage,
     Value<bool>? isDeleted,
+    Value<bool>? isEdited,
+    Value<bool>? isPinned,
+    Value<int?>? pinnedAt,
     Value<int>? rowid,
   }) {
     return MessagesCompanion(
@@ -663,6 +795,9 @@ class MessagesCompanion extends UpdateCompanion<Message> {
       replyToSenderName: replyToSenderName ?? this.replyToSenderName,
       replyToMessage: replyToMessage ?? this.replyToMessage,
       isDeleted: isDeleted ?? this.isDeleted,
+      isEdited: isEdited ?? this.isEdited,
+      isPinned: isPinned ?? this.isPinned,
+      pinnedAt: pinnedAt ?? this.pinnedAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -706,6 +841,15 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     if (isDeleted.present) {
       map['is_deleted'] = Variable<bool>(isDeleted.value);
     }
+    if (isEdited.present) {
+      map['is_edited'] = Variable<bool>(isEdited.value);
+    }
+    if (isPinned.present) {
+      map['is_pinned'] = Variable<bool>(isPinned.value);
+    }
+    if (pinnedAt.present) {
+      map['pinned_at'] = Variable<int>(pinnedAt.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -727,6 +871,9 @@ class MessagesCompanion extends UpdateCompanion<Message> {
           ..write('replyToSenderName: $replyToSenderName, ')
           ..write('replyToMessage: $replyToMessage, ')
           ..write('isDeleted: $isDeleted, ')
+          ..write('isEdited: $isEdited, ')
+          ..write('isPinned: $isPinned, ')
+          ..write('pinnedAt: $pinnedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5574,6 +5721,693 @@ class MessageReactionsTableCompanion
   }
 }
 
+class $ChatSettingsTableTable extends ChatSettingsTable
+    with TableInfo<$ChatSettingsTableTable, ChatSettingsTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ChatSettingsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _chatIdMeta = const VerificationMeta('chatId');
+  @override
+  late final GeneratedColumn<String> chatId = GeneratedColumn<String>(
+    'chat_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isMutedMeta = const VerificationMeta(
+    'isMuted',
+  );
+  @override
+  late final GeneratedColumn<bool> isMuted = GeneratedColumn<bool>(
+    'is_muted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_muted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _mutedUntilMeta = const VerificationMeta(
+    'mutedUntil',
+  );
+  @override
+  late final GeneratedColumn<int> mutedUntil = GeneratedColumn<int>(
+    'muted_until',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notificationSoundMeta = const VerificationMeta(
+    'notificationSound',
+  );
+  @override
+  late final GeneratedColumn<String> notificationSound =
+      GeneratedColumn<String>(
+        'notification_sound',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('default'),
+      );
+  static const VerificationMeta _wallpaperMeta = const VerificationMeta(
+    'wallpaper',
+  );
+  @override
+  late final GeneratedColumn<String> wallpaper = GeneratedColumn<String>(
+    'wallpaper',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isPinnedMeta = const VerificationMeta(
+    'isPinned',
+  );
+  @override
+  late final GeneratedColumn<bool> isPinned = GeneratedColumn<bool>(
+    'is_pinned',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_pinned" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _pinnedAtMeta = const VerificationMeta(
+    'pinnedAt',
+  );
+  @override
+  late final GeneratedColumn<int> pinnedAt = GeneratedColumn<int>(
+    'pinned_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isArchivedMeta = const VerificationMeta(
+    'isArchived',
+  );
+  @override
+  late final GeneratedColumn<bool> isArchived = GeneratedColumn<bool>(
+    'is_archived',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_archived" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _archivedAtMeta = const VerificationMeta(
+    'archivedAt',
+  );
+  @override
+  late final GeneratedColumn<int> archivedAt = GeneratedColumn<int>(
+    'archived_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _disappearingDurationMeta =
+      const VerificationMeta('disappearingDuration');
+  @override
+  late final GeneratedColumn<int> disappearingDuration = GeneratedColumn<int>(
+    'disappearing_duration',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _mediaAutoDownloadMeta = const VerificationMeta(
+    'mediaAutoDownload',
+  );
+  @override
+  late final GeneratedColumn<String> mediaAutoDownload =
+      GeneratedColumn<String>(
+        'media_auto_download',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('default'),
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    chatId,
+    isMuted,
+    mutedUntil,
+    notificationSound,
+    wallpaper,
+    isPinned,
+    pinnedAt,
+    isArchived,
+    archivedAt,
+    disappearingDuration,
+    mediaAutoDownload,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'chat_settings_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ChatSettingsTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('chat_id')) {
+      context.handle(
+        _chatIdMeta,
+        chatId.isAcceptableOrUnknown(data['chat_id']!, _chatIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_chatIdMeta);
+    }
+    if (data.containsKey('is_muted')) {
+      context.handle(
+        _isMutedMeta,
+        isMuted.isAcceptableOrUnknown(data['is_muted']!, _isMutedMeta),
+      );
+    }
+    if (data.containsKey('muted_until')) {
+      context.handle(
+        _mutedUntilMeta,
+        mutedUntil.isAcceptableOrUnknown(data['muted_until']!, _mutedUntilMeta),
+      );
+    }
+    if (data.containsKey('notification_sound')) {
+      context.handle(
+        _notificationSoundMeta,
+        notificationSound.isAcceptableOrUnknown(
+          data['notification_sound']!,
+          _notificationSoundMeta,
+        ),
+      );
+    }
+    if (data.containsKey('wallpaper')) {
+      context.handle(
+        _wallpaperMeta,
+        wallpaper.isAcceptableOrUnknown(data['wallpaper']!, _wallpaperMeta),
+      );
+    }
+    if (data.containsKey('is_pinned')) {
+      context.handle(
+        _isPinnedMeta,
+        isPinned.isAcceptableOrUnknown(data['is_pinned']!, _isPinnedMeta),
+      );
+    }
+    if (data.containsKey('pinned_at')) {
+      context.handle(
+        _pinnedAtMeta,
+        pinnedAt.isAcceptableOrUnknown(data['pinned_at']!, _pinnedAtMeta),
+      );
+    }
+    if (data.containsKey('is_archived')) {
+      context.handle(
+        _isArchivedMeta,
+        isArchived.isAcceptableOrUnknown(data['is_archived']!, _isArchivedMeta),
+      );
+    }
+    if (data.containsKey('archived_at')) {
+      context.handle(
+        _archivedAtMeta,
+        archivedAt.isAcceptableOrUnknown(data['archived_at']!, _archivedAtMeta),
+      );
+    }
+    if (data.containsKey('disappearing_duration')) {
+      context.handle(
+        _disappearingDurationMeta,
+        disappearingDuration.isAcceptableOrUnknown(
+          data['disappearing_duration']!,
+          _disappearingDurationMeta,
+        ),
+      );
+    }
+    if (data.containsKey('media_auto_download')) {
+      context.handle(
+        _mediaAutoDownloadMeta,
+        mediaAutoDownload.isAcceptableOrUnknown(
+          data['media_auto_download']!,
+          _mediaAutoDownloadMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {chatId};
+  @override
+  ChatSettingsTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ChatSettingsTableData(
+      chatId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}chat_id'],
+      )!,
+      isMuted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_muted'],
+      )!,
+      mutedUntil: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}muted_until'],
+      ),
+      notificationSound: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notification_sound'],
+      )!,
+      wallpaper: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}wallpaper'],
+      ),
+      isPinned: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_pinned'],
+      )!,
+      pinnedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}pinned_at'],
+      ),
+      isArchived: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_archived'],
+      )!,
+      archivedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}archived_at'],
+      ),
+      disappearingDuration: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}disappearing_duration'],
+      )!,
+      mediaAutoDownload: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}media_auto_download'],
+      )!,
+    );
+  }
+
+  @override
+  $ChatSettingsTableTable createAlias(String alias) {
+    return $ChatSettingsTableTable(attachedDatabase, alias);
+  }
+}
+
+class ChatSettingsTableData extends DataClass
+    implements Insertable<ChatSettingsTableData> {
+  final String chatId;
+  final bool isMuted;
+  final int? mutedUntil;
+  final String notificationSound;
+  final String? wallpaper;
+  final bool isPinned;
+  final int? pinnedAt;
+  final bool isArchived;
+  final int? archivedAt;
+  final int disappearingDuration;
+  final String mediaAutoDownload;
+  const ChatSettingsTableData({
+    required this.chatId,
+    required this.isMuted,
+    this.mutedUntil,
+    required this.notificationSound,
+    this.wallpaper,
+    required this.isPinned,
+    this.pinnedAt,
+    required this.isArchived,
+    this.archivedAt,
+    required this.disappearingDuration,
+    required this.mediaAutoDownload,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['chat_id'] = Variable<String>(chatId);
+    map['is_muted'] = Variable<bool>(isMuted);
+    if (!nullToAbsent || mutedUntil != null) {
+      map['muted_until'] = Variable<int>(mutedUntil);
+    }
+    map['notification_sound'] = Variable<String>(notificationSound);
+    if (!nullToAbsent || wallpaper != null) {
+      map['wallpaper'] = Variable<String>(wallpaper);
+    }
+    map['is_pinned'] = Variable<bool>(isPinned);
+    if (!nullToAbsent || pinnedAt != null) {
+      map['pinned_at'] = Variable<int>(pinnedAt);
+    }
+    map['is_archived'] = Variable<bool>(isArchived);
+    if (!nullToAbsent || archivedAt != null) {
+      map['archived_at'] = Variable<int>(archivedAt);
+    }
+    map['disappearing_duration'] = Variable<int>(disappearingDuration);
+    map['media_auto_download'] = Variable<String>(mediaAutoDownload);
+    return map;
+  }
+
+  ChatSettingsTableCompanion toCompanion(bool nullToAbsent) {
+    return ChatSettingsTableCompanion(
+      chatId: Value(chatId),
+      isMuted: Value(isMuted),
+      mutedUntil: mutedUntil == null && nullToAbsent
+          ? const Value.absent()
+          : Value(mutedUntil),
+      notificationSound: Value(notificationSound),
+      wallpaper: wallpaper == null && nullToAbsent
+          ? const Value.absent()
+          : Value(wallpaper),
+      isPinned: Value(isPinned),
+      pinnedAt: pinnedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pinnedAt),
+      isArchived: Value(isArchived),
+      archivedAt: archivedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(archivedAt),
+      disappearingDuration: Value(disappearingDuration),
+      mediaAutoDownload: Value(mediaAutoDownload),
+    );
+  }
+
+  factory ChatSettingsTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ChatSettingsTableData(
+      chatId: serializer.fromJson<String>(json['chatId']),
+      isMuted: serializer.fromJson<bool>(json['isMuted']),
+      mutedUntil: serializer.fromJson<int?>(json['mutedUntil']),
+      notificationSound: serializer.fromJson<String>(json['notificationSound']),
+      wallpaper: serializer.fromJson<String?>(json['wallpaper']),
+      isPinned: serializer.fromJson<bool>(json['isPinned']),
+      pinnedAt: serializer.fromJson<int?>(json['pinnedAt']),
+      isArchived: serializer.fromJson<bool>(json['isArchived']),
+      archivedAt: serializer.fromJson<int?>(json['archivedAt']),
+      disappearingDuration: serializer.fromJson<int>(
+        json['disappearingDuration'],
+      ),
+      mediaAutoDownload: serializer.fromJson<String>(json['mediaAutoDownload']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'chatId': serializer.toJson<String>(chatId),
+      'isMuted': serializer.toJson<bool>(isMuted),
+      'mutedUntil': serializer.toJson<int?>(mutedUntil),
+      'notificationSound': serializer.toJson<String>(notificationSound),
+      'wallpaper': serializer.toJson<String?>(wallpaper),
+      'isPinned': serializer.toJson<bool>(isPinned),
+      'pinnedAt': serializer.toJson<int?>(pinnedAt),
+      'isArchived': serializer.toJson<bool>(isArchived),
+      'archivedAt': serializer.toJson<int?>(archivedAt),
+      'disappearingDuration': serializer.toJson<int>(disappearingDuration),
+      'mediaAutoDownload': serializer.toJson<String>(mediaAutoDownload),
+    };
+  }
+
+  ChatSettingsTableData copyWith({
+    String? chatId,
+    bool? isMuted,
+    Value<int?> mutedUntil = const Value.absent(),
+    String? notificationSound,
+    Value<String?> wallpaper = const Value.absent(),
+    bool? isPinned,
+    Value<int?> pinnedAt = const Value.absent(),
+    bool? isArchived,
+    Value<int?> archivedAt = const Value.absent(),
+    int? disappearingDuration,
+    String? mediaAutoDownload,
+  }) => ChatSettingsTableData(
+    chatId: chatId ?? this.chatId,
+    isMuted: isMuted ?? this.isMuted,
+    mutedUntil: mutedUntil.present ? mutedUntil.value : this.mutedUntil,
+    notificationSound: notificationSound ?? this.notificationSound,
+    wallpaper: wallpaper.present ? wallpaper.value : this.wallpaper,
+    isPinned: isPinned ?? this.isPinned,
+    pinnedAt: pinnedAt.present ? pinnedAt.value : this.pinnedAt,
+    isArchived: isArchived ?? this.isArchived,
+    archivedAt: archivedAt.present ? archivedAt.value : this.archivedAt,
+    disappearingDuration: disappearingDuration ?? this.disappearingDuration,
+    mediaAutoDownload: mediaAutoDownload ?? this.mediaAutoDownload,
+  );
+  ChatSettingsTableData copyWithCompanion(ChatSettingsTableCompanion data) {
+    return ChatSettingsTableData(
+      chatId: data.chatId.present ? data.chatId.value : this.chatId,
+      isMuted: data.isMuted.present ? data.isMuted.value : this.isMuted,
+      mutedUntil: data.mutedUntil.present
+          ? data.mutedUntil.value
+          : this.mutedUntil,
+      notificationSound: data.notificationSound.present
+          ? data.notificationSound.value
+          : this.notificationSound,
+      wallpaper: data.wallpaper.present ? data.wallpaper.value : this.wallpaper,
+      isPinned: data.isPinned.present ? data.isPinned.value : this.isPinned,
+      pinnedAt: data.pinnedAt.present ? data.pinnedAt.value : this.pinnedAt,
+      isArchived: data.isArchived.present
+          ? data.isArchived.value
+          : this.isArchived,
+      archivedAt: data.archivedAt.present
+          ? data.archivedAt.value
+          : this.archivedAt,
+      disappearingDuration: data.disappearingDuration.present
+          ? data.disappearingDuration.value
+          : this.disappearingDuration,
+      mediaAutoDownload: data.mediaAutoDownload.present
+          ? data.mediaAutoDownload.value
+          : this.mediaAutoDownload,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ChatSettingsTableData(')
+          ..write('chatId: $chatId, ')
+          ..write('isMuted: $isMuted, ')
+          ..write('mutedUntil: $mutedUntil, ')
+          ..write('notificationSound: $notificationSound, ')
+          ..write('wallpaper: $wallpaper, ')
+          ..write('isPinned: $isPinned, ')
+          ..write('pinnedAt: $pinnedAt, ')
+          ..write('isArchived: $isArchived, ')
+          ..write('archivedAt: $archivedAt, ')
+          ..write('disappearingDuration: $disappearingDuration, ')
+          ..write('mediaAutoDownload: $mediaAutoDownload')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    chatId,
+    isMuted,
+    mutedUntil,
+    notificationSound,
+    wallpaper,
+    isPinned,
+    pinnedAt,
+    isArchived,
+    archivedAt,
+    disappearingDuration,
+    mediaAutoDownload,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ChatSettingsTableData &&
+          other.chatId == this.chatId &&
+          other.isMuted == this.isMuted &&
+          other.mutedUntil == this.mutedUntil &&
+          other.notificationSound == this.notificationSound &&
+          other.wallpaper == this.wallpaper &&
+          other.isPinned == this.isPinned &&
+          other.pinnedAt == this.pinnedAt &&
+          other.isArchived == this.isArchived &&
+          other.archivedAt == this.archivedAt &&
+          other.disappearingDuration == this.disappearingDuration &&
+          other.mediaAutoDownload == this.mediaAutoDownload);
+}
+
+class ChatSettingsTableCompanion
+    extends UpdateCompanion<ChatSettingsTableData> {
+  final Value<String> chatId;
+  final Value<bool> isMuted;
+  final Value<int?> mutedUntil;
+  final Value<String> notificationSound;
+  final Value<String?> wallpaper;
+  final Value<bool> isPinned;
+  final Value<int?> pinnedAt;
+  final Value<bool> isArchived;
+  final Value<int?> archivedAt;
+  final Value<int> disappearingDuration;
+  final Value<String> mediaAutoDownload;
+  final Value<int> rowid;
+  const ChatSettingsTableCompanion({
+    this.chatId = const Value.absent(),
+    this.isMuted = const Value.absent(),
+    this.mutedUntil = const Value.absent(),
+    this.notificationSound = const Value.absent(),
+    this.wallpaper = const Value.absent(),
+    this.isPinned = const Value.absent(),
+    this.pinnedAt = const Value.absent(),
+    this.isArchived = const Value.absent(),
+    this.archivedAt = const Value.absent(),
+    this.disappearingDuration = const Value.absent(),
+    this.mediaAutoDownload = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ChatSettingsTableCompanion.insert({
+    required String chatId,
+    this.isMuted = const Value.absent(),
+    this.mutedUntil = const Value.absent(),
+    this.notificationSound = const Value.absent(),
+    this.wallpaper = const Value.absent(),
+    this.isPinned = const Value.absent(),
+    this.pinnedAt = const Value.absent(),
+    this.isArchived = const Value.absent(),
+    this.archivedAt = const Value.absent(),
+    this.disappearingDuration = const Value.absent(),
+    this.mediaAutoDownload = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : chatId = Value(chatId);
+  static Insertable<ChatSettingsTableData> custom({
+    Expression<String>? chatId,
+    Expression<bool>? isMuted,
+    Expression<int>? mutedUntil,
+    Expression<String>? notificationSound,
+    Expression<String>? wallpaper,
+    Expression<bool>? isPinned,
+    Expression<int>? pinnedAt,
+    Expression<bool>? isArchived,
+    Expression<int>? archivedAt,
+    Expression<int>? disappearingDuration,
+    Expression<String>? mediaAutoDownload,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (chatId != null) 'chat_id': chatId,
+      if (isMuted != null) 'is_muted': isMuted,
+      if (mutedUntil != null) 'muted_until': mutedUntil,
+      if (notificationSound != null) 'notification_sound': notificationSound,
+      if (wallpaper != null) 'wallpaper': wallpaper,
+      if (isPinned != null) 'is_pinned': isPinned,
+      if (pinnedAt != null) 'pinned_at': pinnedAt,
+      if (isArchived != null) 'is_archived': isArchived,
+      if (archivedAt != null) 'archived_at': archivedAt,
+      if (disappearingDuration != null)
+        'disappearing_duration': disappearingDuration,
+      if (mediaAutoDownload != null) 'media_auto_download': mediaAutoDownload,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ChatSettingsTableCompanion copyWith({
+    Value<String>? chatId,
+    Value<bool>? isMuted,
+    Value<int?>? mutedUntil,
+    Value<String>? notificationSound,
+    Value<String?>? wallpaper,
+    Value<bool>? isPinned,
+    Value<int?>? pinnedAt,
+    Value<bool>? isArchived,
+    Value<int?>? archivedAt,
+    Value<int>? disappearingDuration,
+    Value<String>? mediaAutoDownload,
+    Value<int>? rowid,
+  }) {
+    return ChatSettingsTableCompanion(
+      chatId: chatId ?? this.chatId,
+      isMuted: isMuted ?? this.isMuted,
+      mutedUntil: mutedUntil ?? this.mutedUntil,
+      notificationSound: notificationSound ?? this.notificationSound,
+      wallpaper: wallpaper ?? this.wallpaper,
+      isPinned: isPinned ?? this.isPinned,
+      pinnedAt: pinnedAt ?? this.pinnedAt,
+      isArchived: isArchived ?? this.isArchived,
+      archivedAt: archivedAt ?? this.archivedAt,
+      disappearingDuration: disappearingDuration ?? this.disappearingDuration,
+      mediaAutoDownload: mediaAutoDownload ?? this.mediaAutoDownload,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (chatId.present) {
+      map['chat_id'] = Variable<String>(chatId.value);
+    }
+    if (isMuted.present) {
+      map['is_muted'] = Variable<bool>(isMuted.value);
+    }
+    if (mutedUntil.present) {
+      map['muted_until'] = Variable<int>(mutedUntil.value);
+    }
+    if (notificationSound.present) {
+      map['notification_sound'] = Variable<String>(notificationSound.value);
+    }
+    if (wallpaper.present) {
+      map['wallpaper'] = Variable<String>(wallpaper.value);
+    }
+    if (isPinned.present) {
+      map['is_pinned'] = Variable<bool>(isPinned.value);
+    }
+    if (pinnedAt.present) {
+      map['pinned_at'] = Variable<int>(pinnedAt.value);
+    }
+    if (isArchived.present) {
+      map['is_archived'] = Variable<bool>(isArchived.value);
+    }
+    if (archivedAt.present) {
+      map['archived_at'] = Variable<int>(archivedAt.value);
+    }
+    if (disappearingDuration.present) {
+      map['disappearing_duration'] = Variable<int>(disappearingDuration.value);
+    }
+    if (mediaAutoDownload.present) {
+      map['media_auto_download'] = Variable<String>(mediaAutoDownload.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ChatSettingsTableCompanion(')
+          ..write('chatId: $chatId, ')
+          ..write('isMuted: $isMuted, ')
+          ..write('mutedUntil: $mutedUntil, ')
+          ..write('notificationSound: $notificationSound, ')
+          ..write('wallpaper: $wallpaper, ')
+          ..write('isPinned: $isPinned, ')
+          ..write('pinnedAt: $pinnedAt, ')
+          ..write('isArchived: $isArchived, ')
+          ..write('archivedAt: $archivedAt, ')
+          ..write('disappearingDuration: $disappearingDuration, ')
+          ..write('mediaAutoDownload: $mediaAutoDownload, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -5600,6 +6434,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $MessageReactionsTableTable messageReactionsTable =
       $MessageReactionsTableTable(this);
+  late final $ChatSettingsTableTable chatSettingsTable =
+      $ChatSettingsTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -5619,6 +6455,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     notificationsTable,
     chatEventsTable,
     messageReactionsTable,
+    chatSettingsTable,
   ];
 }
 
@@ -5636,6 +6473,9 @@ typedef $$MessagesTableCreateCompanionBuilder =
       Value<String?> replyToSenderName,
       Value<String?> replyToMessage,
       Value<bool> isDeleted,
+      Value<bool> isEdited,
+      Value<bool> isPinned,
+      Value<int?> pinnedAt,
       Value<int> rowid,
     });
 typedef $$MessagesTableUpdateCompanionBuilder =
@@ -5652,6 +6492,9 @@ typedef $$MessagesTableUpdateCompanionBuilder =
       Value<String?> replyToSenderName,
       Value<String?> replyToMessage,
       Value<bool> isDeleted,
+      Value<bool> isEdited,
+      Value<bool> isPinned,
+      Value<int?> pinnedAt,
       Value<int> rowid,
     });
 
@@ -5721,6 +6564,21 @@ class $$MessagesTableFilterComposer
 
   ColumnFilters<bool> get isDeleted => $composableBuilder(
     column: $table.isDeleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isEdited => $composableBuilder(
+    column: $table.isEdited,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isPinned => $composableBuilder(
+    column: $table.isPinned,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get pinnedAt => $composableBuilder(
+    column: $table.pinnedAt,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -5793,6 +6651,21 @@ class $$MessagesTableOrderingComposer
     column: $table.isDeleted,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get isEdited => $composableBuilder(
+    column: $table.isEdited,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isPinned => $composableBuilder(
+    column: $table.isPinned,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get pinnedAt => $composableBuilder(
+    column: $table.pinnedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$MessagesTableAnnotationComposer
@@ -5845,6 +6718,15 @@ class $$MessagesTableAnnotationComposer
 
   GeneratedColumn<bool> get isDeleted =>
       $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
+  GeneratedColumn<bool> get isEdited =>
+      $composableBuilder(column: $table.isEdited, builder: (column) => column);
+
+  GeneratedColumn<bool> get isPinned =>
+      $composableBuilder(column: $table.isPinned, builder: (column) => column);
+
+  GeneratedColumn<int> get pinnedAt =>
+      $composableBuilder(column: $table.pinnedAt, builder: (column) => column);
 }
 
 class $$MessagesTableTableManager
@@ -5887,6 +6769,9 @@ class $$MessagesTableTableManager
                 Value<String?> replyToSenderName = const Value.absent(),
                 Value<String?> replyToMessage = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
+                Value<bool> isEdited = const Value.absent(),
+                Value<bool> isPinned = const Value.absent(),
+                Value<int?> pinnedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MessagesCompanion(
                 id: id,
@@ -5901,6 +6786,9 @@ class $$MessagesTableTableManager
                 replyToSenderName: replyToSenderName,
                 replyToMessage: replyToMessage,
                 isDeleted: isDeleted,
+                isEdited: isEdited,
+                isPinned: isPinned,
+                pinnedAt: pinnedAt,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -5917,6 +6805,9 @@ class $$MessagesTableTableManager
                 Value<String?> replyToSenderName = const Value.absent(),
                 Value<String?> replyToMessage = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
+                Value<bool> isEdited = const Value.absent(),
+                Value<bool> isPinned = const Value.absent(),
+                Value<int?> pinnedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MessagesCompanion.insert(
                 id: id,
@@ -5931,6 +6822,9 @@ class $$MessagesTableTableManager
                 replyToSenderName: replyToSenderName,
                 replyToMessage: replyToMessage,
                 isDeleted: isDeleted,
+                isEdited: isEdited,
+                isPinned: isPinned,
+                pinnedAt: pinnedAt,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -8704,6 +9598,345 @@ typedef $$MessageReactionsTableTableProcessedTableManager =
       MessageReactionsTableData,
       PrefetchHooks Function()
     >;
+typedef $$ChatSettingsTableTableCreateCompanionBuilder =
+    ChatSettingsTableCompanion Function({
+      required String chatId,
+      Value<bool> isMuted,
+      Value<int?> mutedUntil,
+      Value<String> notificationSound,
+      Value<String?> wallpaper,
+      Value<bool> isPinned,
+      Value<int?> pinnedAt,
+      Value<bool> isArchived,
+      Value<int?> archivedAt,
+      Value<int> disappearingDuration,
+      Value<String> mediaAutoDownload,
+      Value<int> rowid,
+    });
+typedef $$ChatSettingsTableTableUpdateCompanionBuilder =
+    ChatSettingsTableCompanion Function({
+      Value<String> chatId,
+      Value<bool> isMuted,
+      Value<int?> mutedUntil,
+      Value<String> notificationSound,
+      Value<String?> wallpaper,
+      Value<bool> isPinned,
+      Value<int?> pinnedAt,
+      Value<bool> isArchived,
+      Value<int?> archivedAt,
+      Value<int> disappearingDuration,
+      Value<String> mediaAutoDownload,
+      Value<int> rowid,
+    });
+
+class $$ChatSettingsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $ChatSettingsTableTable> {
+  $$ChatSettingsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get chatId => $composableBuilder(
+    column: $table.chatId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isMuted => $composableBuilder(
+    column: $table.isMuted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get mutedUntil => $composableBuilder(
+    column: $table.mutedUntil,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notificationSound => $composableBuilder(
+    column: $table.notificationSound,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get wallpaper => $composableBuilder(
+    column: $table.wallpaper,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isPinned => $composableBuilder(
+    column: $table.isPinned,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get pinnedAt => $composableBuilder(
+    column: $table.pinnedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isArchived => $composableBuilder(
+    column: $table.isArchived,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get archivedAt => $composableBuilder(
+    column: $table.archivedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get disappearingDuration => $composableBuilder(
+    column: $table.disappearingDuration,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mediaAutoDownload => $composableBuilder(
+    column: $table.mediaAutoDownload,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ChatSettingsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $ChatSettingsTableTable> {
+  $$ChatSettingsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get chatId => $composableBuilder(
+    column: $table.chatId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isMuted => $composableBuilder(
+    column: $table.isMuted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get mutedUntil => $composableBuilder(
+    column: $table.mutedUntil,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notificationSound => $composableBuilder(
+    column: $table.notificationSound,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get wallpaper => $composableBuilder(
+    column: $table.wallpaper,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isPinned => $composableBuilder(
+    column: $table.isPinned,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get pinnedAt => $composableBuilder(
+    column: $table.pinnedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isArchived => $composableBuilder(
+    column: $table.isArchived,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get archivedAt => $composableBuilder(
+    column: $table.archivedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get disappearingDuration => $composableBuilder(
+    column: $table.disappearingDuration,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mediaAutoDownload => $composableBuilder(
+    column: $table.mediaAutoDownload,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ChatSettingsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ChatSettingsTableTable> {
+  $$ChatSettingsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get chatId =>
+      $composableBuilder(column: $table.chatId, builder: (column) => column);
+
+  GeneratedColumn<bool> get isMuted =>
+      $composableBuilder(column: $table.isMuted, builder: (column) => column);
+
+  GeneratedColumn<int> get mutedUntil => $composableBuilder(
+    column: $table.mutedUntil,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notificationSound => $composableBuilder(
+    column: $table.notificationSound,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get wallpaper =>
+      $composableBuilder(column: $table.wallpaper, builder: (column) => column);
+
+  GeneratedColumn<bool> get isPinned =>
+      $composableBuilder(column: $table.isPinned, builder: (column) => column);
+
+  GeneratedColumn<int> get pinnedAt =>
+      $composableBuilder(column: $table.pinnedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get isArchived => $composableBuilder(
+    column: $table.isArchived,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get archivedAt => $composableBuilder(
+    column: $table.archivedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get disappearingDuration => $composableBuilder(
+    column: $table.disappearingDuration,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get mediaAutoDownload => $composableBuilder(
+    column: $table.mediaAutoDownload,
+    builder: (column) => column,
+  );
+}
+
+class $$ChatSettingsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ChatSettingsTableTable,
+          ChatSettingsTableData,
+          $$ChatSettingsTableTableFilterComposer,
+          $$ChatSettingsTableTableOrderingComposer,
+          $$ChatSettingsTableTableAnnotationComposer,
+          $$ChatSettingsTableTableCreateCompanionBuilder,
+          $$ChatSettingsTableTableUpdateCompanionBuilder,
+          (
+            ChatSettingsTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $ChatSettingsTableTable,
+              ChatSettingsTableData
+            >,
+          ),
+          ChatSettingsTableData,
+          PrefetchHooks Function()
+        > {
+  $$ChatSettingsTableTableTableManager(
+    _$AppDatabase db,
+    $ChatSettingsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ChatSettingsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ChatSettingsTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ChatSettingsTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> chatId = const Value.absent(),
+                Value<bool> isMuted = const Value.absent(),
+                Value<int?> mutedUntil = const Value.absent(),
+                Value<String> notificationSound = const Value.absent(),
+                Value<String?> wallpaper = const Value.absent(),
+                Value<bool> isPinned = const Value.absent(),
+                Value<int?> pinnedAt = const Value.absent(),
+                Value<bool> isArchived = const Value.absent(),
+                Value<int?> archivedAt = const Value.absent(),
+                Value<int> disappearingDuration = const Value.absent(),
+                Value<String> mediaAutoDownload = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ChatSettingsTableCompanion(
+                chatId: chatId,
+                isMuted: isMuted,
+                mutedUntil: mutedUntil,
+                notificationSound: notificationSound,
+                wallpaper: wallpaper,
+                isPinned: isPinned,
+                pinnedAt: pinnedAt,
+                isArchived: isArchived,
+                archivedAt: archivedAt,
+                disappearingDuration: disappearingDuration,
+                mediaAutoDownload: mediaAutoDownload,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String chatId,
+                Value<bool> isMuted = const Value.absent(),
+                Value<int?> mutedUntil = const Value.absent(),
+                Value<String> notificationSound = const Value.absent(),
+                Value<String?> wallpaper = const Value.absent(),
+                Value<bool> isPinned = const Value.absent(),
+                Value<int?> pinnedAt = const Value.absent(),
+                Value<bool> isArchived = const Value.absent(),
+                Value<int?> archivedAt = const Value.absent(),
+                Value<int> disappearingDuration = const Value.absent(),
+                Value<String> mediaAutoDownload = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ChatSettingsTableCompanion.insert(
+                chatId: chatId,
+                isMuted: isMuted,
+                mutedUntil: mutedUntil,
+                notificationSound: notificationSound,
+                wallpaper: wallpaper,
+                isPinned: isPinned,
+                pinnedAt: pinnedAt,
+                isArchived: isArchived,
+                archivedAt: archivedAt,
+                disappearingDuration: disappearingDuration,
+                mediaAutoDownload: mediaAutoDownload,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ChatSettingsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ChatSettingsTableTable,
+      ChatSettingsTableData,
+      $$ChatSettingsTableTableFilterComposer,
+      $$ChatSettingsTableTableOrderingComposer,
+      $$ChatSettingsTableTableAnnotationComposer,
+      $$ChatSettingsTableTableCreateCompanionBuilder,
+      $$ChatSettingsTableTableUpdateCompanionBuilder,
+      (
+        ChatSettingsTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $ChatSettingsTableTable,
+          ChatSettingsTableData
+        >,
+      ),
+      ChatSettingsTableData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -8736,4 +9969,6 @@ class $AppDatabaseManager {
       $$ChatEventsTableTableTableManager(_db, _db.chatEventsTable);
   $$MessageReactionsTableTableTableManager get messageReactionsTable =>
       $$MessageReactionsTableTableTableManager(_db, _db.messageReactionsTable);
+  $$ChatSettingsTableTableTableManager get chatSettingsTable =>
+      $$ChatSettingsTableTableTableManager(_db, _db.chatSettingsTable);
 }

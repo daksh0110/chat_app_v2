@@ -9,6 +9,9 @@ class ChatListModal {
   final String type;
   final String? bio;
   final String? receiverId;
+  final bool isPinned;
+  final bool isArchived;
+  final bool isMuted;
 
   ChatListModal({
     required this.id,
@@ -21,5 +24,8 @@ class ChatListModal {
     this.type = "DIRECT",
     this.bio,
     this.receiverId,
+    this.isPinned = false,
+    this.isArchived = false,
+    this.isMuted = false,
   });
 }

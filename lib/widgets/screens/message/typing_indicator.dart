@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
 
 class TypingIndicator extends StatefulWidget {
+  const TypingIndicator({super.key});
+
   @override
   State<TypingIndicator> createState() {
     return _TypingIndicatorState();

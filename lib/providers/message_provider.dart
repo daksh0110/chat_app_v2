@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:drift/drift.dart';
+import 'package:my_app/core/database.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -33,6 +34,7 @@ import 'package:my_app/modal/message_reaction_modal.dart';
 import 'package:my_app/providers/tables/message_reactions_table_provider.dart';
 import 'package:my_app/providers/tables/messages_table_provider.dart';
 import 'package:my_app/providers/tables/user_preference_table_provider.dart';
+import 'package:my_app/core/util/format_message_preview.dart';
 import 'package:uuid/uuid.dart';
 import 'package:mime/mime.dart';
 
@@ -169,6 +171,74 @@ class MessageNotifer extends Notifier {
     );
   }
 
+  Future<void> listenForMessageEdited() async {
+    ref.read(socketProvider).listenOnce("message_edited", (dynamic data) async {
+      acknowledgeEvent(data);
+      if (data is Map) {
+        final messageId = data["message_id"]?.toString();
+        final message = data["message"]?.toString();
+        if (messageId == null || message == null) return;
+
+        await ref
+            .read(messagesTableProvider.notifier)
+            .editMessageContent(messageId, message);
+      }
+    });
+  }
+
+  Future<void> listenForMessagePinned() async {
+    ref.read(socketProvider).listenOnce("message_pinned", (dynamic data) async {
+      acknowledgeEvent(data);
+      if (data is Map) {
+        final messageId = data["message_id"]?.toString();
+        final isPinned = data["is_pinned"] == true;
+        if (messageId == null) return;
+
+        await ref
+            .read(messagesTableProvider.notifier)
+            .togglePinMessage(messageId, isPinned);
+      }
+    });
+  }
+
+  Future<void> editMessage({
+    required String messageId,
+    required String chatId,
+    required String newText,
+  }) async {
+    try {
+      await ref
+          .read(messagesTableProvider.notifier)
+          .editMessageContent(messageId, newText);
+      await ref.read(socketProvider).editMessage(
+            messageId: messageId,
+            chatId: chatId,
+            message: newText,
+          );
+    } catch (e) {
+      debugPrint("Error editing message: $e");
+    }
+  }
+
+  Future<void> togglePinMessage({
+    required String messageId,
+    required String chatId,
+    required bool isPinned,
+  }) async {
+    try {
+      await ref
+          .read(messagesTableProvider.notifier)
+          .togglePinMessage(messageId, isPinned);
+      await ref.read(socketProvider).pinMessage(
+            messageId: messageId,
+            chatId: chatId,
+            isPinned: isPinned,
+          );
+    } catch (e) {
+      debugPrint("Error pinning message: $e");
+    }
+  }
+
   //
 
   Future<void> _handleMessage(SendMessageAck data) async {
@@ -256,14 +326,15 @@ class MessageNotifer extends Notifier {
             .read(messagesTableProvider.notifier)
             .unreadCount(chatId);
 
+        final preview = formatMessagePreview(
+          message: data.message,
+          attachments: data.attachments,
+        );
+
         final ChatListModal chatData = ChatListModal(
           id: chatId,
           chatId: chatId,
-          lastMessage: data.message.isNotEmpty
-              ? data.message
-              : data.attachments.isNotEmpty
-              ? "You recieved media"
-              : "",
+          lastMessage: preview,
           lastMessageTime: createdAt.toString(),
           receiverId: data.senderId,
           type: "",
@@ -318,16 +389,17 @@ class MessageNotifer extends Notifier {
           currentChatId = "local_${request.receiverId}";
         }
 
+        final preview = formatMessagePreview(
+          message: request.message,
+          localAttachments: request.attachments,
+        );
+
         await chatListTableProviderRef.createOrUpdateChatList(
           ChatListModal(
             id: currentChatId,
             chatId: currentChatId,
             name: request.receiverName,
-            lastMessage: (request.message.isNotEmpty)
-                ? request.message
-                : request.attachments.isNotEmpty
-                ? "You sent media"
-                : "",
+            lastMessage: preview,
             lastMessageTime: now.toString(),
             unReadCount: 0,
             type: request.type ?? "DIRECT",
@@ -550,25 +622,25 @@ class MessageNotifer extends Notifier {
       userId: currentUser,
     );
 
-    if (unreadStatuses.isEmpty) return;
+    if (unreadStatuses.isNotEmpty) {
+      final messageIds = unreadStatuses.map((e) => e.messageId).toList();
 
-    final messageIds = unreadStatuses.map((e) => e.messageId).toList();
+      await statusProvider.bulkUpdateMessageReadStatus(
+        messageIds: messageIds,
+        userId: currentUser,
+        readAt: now,
+      );
 
-    await statusProvider.bulkUpdateMessageReadStatus(
-      messageIds: messageIds,
-      userId: currentUser,
-      readAt: now,
-    );
+      final socket = ref.read(socketProvider);
 
-    final socket = ref.read(socketProvider);
-
-    for (final id in messageIds) {
-      socket.emitEvent("message_read", {"message_id": id, "chat_id": chatId});
+      for (final id in messageIds) {
+        socket.emitEvent("message_read", {"message_id": id, "chat_id": chatId});
+      }
     }
 
-    await db.managers.chatListTable
-        .filter((f) => f.chatId.equals(chatId))
-        .update((o) => o(unReadCount: const Value(0)));
+    await (db.update(db.chatListTable)..where((tbl) => tbl.chatId.equals(chatId))).write(
+      ChatListTableCompanion(unReadCount: const Value(0)),
+    );
   }
 
   void sendChatSyncEvent() {

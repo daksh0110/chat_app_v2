@@ -261,7 +261,9 @@ class ChatListTableProvider extends Notifier {
           receiverId: chat.receiverId,
           name: chat.name,
           profilePicUrl: chat.profilePicUrl,
-          unReadCount: 1,
+          unReadCount: isIncomingMessage
+              ? (chat.unReadCount > 0 ? chat.unReadCount : 1)
+              : 0,
           type: chat.type,
           bio: chat.bio,
         );
@@ -270,6 +272,37 @@ class ChatListTableProvider extends Notifier {
     } catch (e) {
       debugPrint("error at createorUpdateChatList: ${e.toString()}");
     }
+  }
+
+  Future<void> updateLastMessage({
+    required String chatId,
+    required String lastMessage,
+    int? timestamp,
+    bool incrementUnread = false,
+  }) async {
+    final db = ref.read(databaseProvider);
+    final now = timestamp ?? DateTime.now().millisecondsSinceEpoch;
+
+    final existing = await (db.select(db.chatListTable)
+          ..where((t) => t.chatId.equals(chatId)))
+        .getSingleOrNull();
+
+    if (existing == null) return;
+
+    final newUnread = incrementUnread
+        ? existing.unReadCount + 1
+        : existing.unReadCount;
+
+    await (db.update(db.chatListTable)
+          ..where((t) => t.chatId.equals(chatId)))
+        .write(
+      ChatListTableCompanion(
+        lastMessage: Value(lastMessage),
+        lastMessageTime: Value(now),
+        unReadCount: Value(newUnread),
+        isDeleted: const Value(false),
+      ),
+    );
   }
 
   Future<void> updateChatId(String oldChatId, String currentChatId) async {

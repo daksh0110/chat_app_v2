@@ -95,6 +95,14 @@ class MessageItem extends ConsumerWidget {
   final void Function(MessageItemModel data)? onReply;
   final void Function(String messageId, String emoji)? onReact;
   final void Function(MessageItemModel data, bool deleteForEveryone)? onDelete;
+  final void Function(MessageItemModel data)? onEdit;
+  final void Function(MessageItemModel data)? onPin;
+  final void Function(MessageItemModel data)? onForward;
+  final void Function(MessageItemModel data)? onSelect;
+  final void Function(MessageItemModel data)? onInfo;
+  final VoidCallback? onSelectionTap;
+  final bool isSelected;
+  final bool isSelecting;
   final bool isGroupAdmin;
 
   const MessageItem({
@@ -103,6 +111,14 @@ class MessageItem extends ConsumerWidget {
     this.onReply,
     this.onReact,
     this.onDelete,
+    this.onEdit,
+    this.onPin,
+    this.onForward,
+    this.onSelect,
+    this.onInfo,
+    this.onSelectionTap,
+    this.isSelected = false,
+    this.isSelecting = false,
     this.isGroupAdmin = false,
   });
 
@@ -210,6 +226,11 @@ class MessageItem extends ConsumerWidget {
                 isSender: data.isSender,
                 status: data.status,
                 isMediaOnly: isMediaOnly,
+                isEdited: data.isEdited,
+                isPinned: data.isPinned,
+                onTimestampTap: (data.isSender && onInfo != null && !isSelecting)
+                    ? () => onInfo!(data)
+                    : null,
               ),
 
             // Timestamp for media-only messages
@@ -223,6 +244,11 @@ class MessageItem extends ConsumerWidget {
                     isSender: data.isSender,
                     status: data.status,
                     overlayOnMedia: true,
+                    isEdited: data.isEdited,
+                    isPinned: data.isPinned,
+                    onTap: (data.isSender && onInfo != null && !isSelecting)
+                        ? () => onInfo!(data)
+                        : null,
                   ),
                 ),
               ),
@@ -234,7 +260,13 @@ class MessageItem extends ConsumerWidget {
     final gestureBubble = data.isDeleted
         ? bubble
         : GestureDetector(
+            onTap: isSelecting ? onSelectionTap : null,
             onLongPressStart: (details) async {
+              if (isSelecting) {
+                onSelectionTap?.call();
+                return;
+              }
+
               final myEmojis = data.reactions
                   .where((r) => r.hasReactedByMe)
                   .map((r) => r.emoji)
@@ -247,6 +279,15 @@ class MessageItem extends ConsumerWidget {
                 myReactedEmojis: myEmojis,
                 canReply: onReply != null,
                 canCopy: data.message.isNotEmpty,
+                canEdit: data.isSender &&
+                    !data.isDeleted &&
+                    data.message.isNotEmpty &&
+                    onEdit != null,
+                canPin: onPin != null && !data.isDeleted,
+                isPinned: data.isPinned,
+                canForward: onForward != null && !data.isDeleted,
+                canSelect: onSelect != null && !data.isDeleted,
+                canInfo: data.isSender && !data.isDeleted && onInfo != null,
                 canDelete: onDelete != null,
                 messageText: data.message,
               );
@@ -264,6 +305,21 @@ class MessageItem extends ConsumerWidget {
                   break;
                 case MessageContextActionType.copy:
                   break;
+                case MessageContextActionType.edit:
+                  onEdit?.call(data);
+                  break;
+                case MessageContextActionType.pin:
+                  onPin?.call(data);
+                  break;
+                case MessageContextActionType.forward:
+                  onForward?.call(data);
+                  break;
+                case MessageContextActionType.select:
+                  onSelect?.call(data);
+                  break;
+                case MessageContextActionType.info:
+                  onInfo?.call(data);
+                  break;
                 case MessageContextActionType.delete:
                   final canDeleteForEveryone = data.isSender || isGroupAdmin;
                   if (!context.mounted) break;
@@ -277,7 +333,9 @@ class MessageItem extends ConsumerWidget {
                   break;
               }
             },
-            onDoubleTap: onReply != null ? () => onReply!(data) : null,
+            onDoubleTap: (!isSelecting && onReply != null)
+                ? () => onReply!(data)
+                : null,
             child: bubble,
           );
 
@@ -301,7 +359,18 @@ class MessageItem extends ConsumerWidget {
       ],
     );
 
-    if (onReply == null || data.isDeleted) return itemWithReactions;
+    final wrappedBubble = Container(
+      width: double.infinity,
+      color: isSelected
+          ? DefaultColorSheet.green500.withValues(alpha: 0.16)
+          : Colors.transparent,
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: itemWithReactions,
+    );
+
+    if (onReply == null || data.isDeleted || isSelecting) {
+      return wrappedBubble;
+    }
 
     return Dismissible(
       key: ValueKey('msg_${data.id}_${data.timestamp}'),
@@ -319,7 +388,7 @@ class MessageItem extends ConsumerWidget {
           color: DefaultColorSheet.green500,
         ),
       ),
-      child: itemWithReactions,
+      child: wrappedBubble,
     );
   }
 }
@@ -392,6 +461,9 @@ class _TextWithTimestamp extends StatelessWidget {
   final bool isSender;
   final MessageStatus? status;
   final bool isMediaOnly;
+  final bool isEdited;
+  final bool isPinned;
+  final VoidCallback? onTimestampTap;
 
   const _TextWithTimestamp({
     required this.message,
@@ -399,6 +471,9 @@ class _TextWithTimestamp extends StatelessWidget {
     required this.isSender,
     required this.status,
     required this.isMediaOnly,
+    this.isEdited = false,
+    this.isPinned = false,
+    this.onTimestampTap,
   });
 
   @override
@@ -425,6 +500,9 @@ class _TextWithTimestamp extends StatelessWidget {
           isSender: isSender,
           status: status,
           overlayOnMedia: false,
+          isEdited: isEdited,
+          isPinned: isPinned,
+          onTap: onTimestampTap,
         ),
       ],
     );
@@ -436,12 +514,18 @@ class _TimestampChip extends StatelessWidget {
   final bool isSender;
   final MessageStatus? status;
   final bool overlayOnMedia;
+  final bool isEdited;
+  final bool isPinned;
+  final VoidCallback? onTap;
 
   const _TimestampChip({
     required this.timeStr,
     required this.isSender,
     required this.status,
     required this.overlayOnMedia,
+    this.isEdited = false,
+    this.isPinned = false,
+    this.onTap,
   });
 
   @override
@@ -450,6 +534,29 @@ class _TimestampChip extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        if (isPinned) ...[
+          Icon(
+            LucideIcons.pin,
+            size: 10,
+            color: overlayOnMedia
+                ? Colors.white.withValues(alpha: 0.85)
+                : DefaultColorSheet.bubbleTime(context, isSender: isSender),
+          ),
+          const SizedBox(width: 3),
+        ],
+        if (isEdited) ...[
+          Text(
+            'edited',
+            style: TextStyle(
+              fontSize: 9.5,
+              fontStyle: FontStyle.italic,
+              color: overlayOnMedia
+                  ? Colors.white.withValues(alpha: 0.85)
+                  : DefaultColorSheet.bubbleTime(context, isSender: isSender),
+            ),
+          ),
+          const SizedBox(width: 3),
+        ],
         Text(
           timeStr,
           style: TextStyle(
@@ -467,17 +574,25 @@ class _TimestampChip extends StatelessWidget {
       ],
     );
 
-    if (!overlayOnMedia) return timeWidget;
+    final effectiveWidget = overlayOnMedia
+        ? DecoratedBox(
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.45),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+              child: timeWidget,
+            ),
+          )
+        : timeWidget;
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.45),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-        child: timeWidget,
-      ),
+    if (onTap == null) return effectiveWidget;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: effectiveWidget,
     );
   }
 }

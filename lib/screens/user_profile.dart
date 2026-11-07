@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/core/app_routes.dart';
+import 'package:my_app/screens/chat_settings_screen.dart';
 import 'package:my_app/modal/screens/search/message_screen_arguments.dart';
 import 'package:my_app/providers/user_relationship_provider.dart';
 import 'package:my_app/modal/group_profile_modal.dart';
@@ -304,6 +305,24 @@ class UserProfileState extends ConsumerState<UserProfile> {
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back, color: Colors.white),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(LucideIcons.settings, color: Colors.white),
+            tooltip: 'Chat Settings',
+            onPressed: () {
+              Navigator.pushNamed(
+                context,
+                AppRoutes.chatSettings,
+                arguments: ChatSettingsArguments(
+                  chatId: group.chatId,
+                  name: displayName,
+                  profilePicUrl: args.profilePicUrl ?? group.profilePicUrl,
+                  isGroupChat: true,
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: _buildProfileBody(
         children: [
@@ -574,6 +593,23 @@ class UserProfileState extends ConsumerState<UserProfile> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(LucideIcons.settings, color: Colors.white),
+            tooltip: 'Chat Settings',
+            onPressed: () {
+              Navigator.pushNamed(
+                context,
+                AppRoutes.chatSettings,
+                arguments: ChatSettingsArguments(
+                  chatId: info.id ?? "",
+                  name: info.name ?? "",
+                  profilePicUrl: info.profilePic,
+                  isGroupChat: false,
+                  receiverId: info.id,
+                ),
+              );
+            },
+          ),
           PopupMenuButton<String>(
             icon: const Icon(LucideIcons.ellipsisVertical, color: Colors.white),
             color: Colors.grey[900],

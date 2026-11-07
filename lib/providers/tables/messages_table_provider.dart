@@ -6,6 +6,8 @@ import 'package:my_app/modal/screens/message/message_body_request.dart';
 import 'package:my_app/modal/tables/chat_events_table.dart';
 import 'package:my_app/modal/user_profile_modal.dart';
 import 'package:my_app/providers/database_provider.dart';
+import 'package:my_app/providers/tables/chat_list_table_provider.dart';
+import 'package:my_app/providers/tables/user_preference_table_provider.dart';
 
 final messagesTableProvider = NotifierProvider<MessagesTableProvider, void>(
   MessagesTableProvider.new,
@@ -155,9 +157,15 @@ class MessagesTableProvider extends Notifier {
 
   Future<int> unreadCount(String chatId) async {
     final db = ref.read(databaseProvider);
+    final currentUser = ref.read(userPreferenceTableProvider).value;
     final messages =
         await (db.select(db.messages)..where(
-              (tbl) => tbl.chatId.equals(chatId) & tbl.isRead.equals(false),
+              (tbl) =>
+                  tbl.chatId.equals(chatId) &
+                  tbl.isRead.equals(false) &
+                  (currentUser != null
+                      ? tbl.senderId.isNotValue(currentUser)
+                      : const Constant(true)),
             ))
             .get();
 
@@ -169,30 +177,27 @@ class MessagesTableProvider extends Notifier {
     final db = ref.read(databaseProvider);
 
     await db.transaction(() async {
-      await (db.update(db.messages)
-            ..where(
-              (tbl) =>
-                  tbl.id.equals(messageId) |
-                  tbl.serverId.equals(messageId),
-            ))
+      await (db.update(db.messages)..where(
+            (tbl) => tbl.id.equals(messageId) | tbl.serverId.equals(messageId),
+          ))
           .write(
-        const MessagesCompanion(
-          message: Value('This message was deleted'),
-          isDeleted: Value(true),
-          replyToId: Value(null),
-          replyToSenderName: Value(null),
-          replyToMessage: Value(null),
-        ),
-      );
+            const MessagesCompanion(
+              message: Value('This message was deleted'),
+              isDeleted: Value(true),
+              replyToId: Value(null),
+              replyToSenderName: Value(null),
+              replyToMessage: Value(null),
+            ),
+          );
 
       // Remove attachments & reactions associated with the deleted message
-      await (db.delete(db.mediaTable)
-            ..where((tbl) => tbl.actorId.equals(messageId)))
-          .go();
+      await (db.delete(
+        db.mediaTable,
+      )..where((tbl) => tbl.actorId.equals(messageId))).go();
 
-      await (db.delete(db.messageReactionsTable)
-            ..where((tbl) => tbl.messageId.equals(messageId)))
-          .go();
+      await (db.delete(
+        db.messageReactionsTable,
+      )..where((tbl) => tbl.messageId.equals(messageId))).go();
 
       await updateChatLastMessageAfterDeletion(chatId);
     });
@@ -203,33 +208,27 @@ class MessagesTableProvider extends Notifier {
     final db = ref.read(databaseProvider);
 
     await db.transaction(() async {
-      await (db.delete(db.messages)
-            ..where(
-              (tbl) =>
-                  tbl.id.equals(messageId) |
-                  tbl.serverId.equals(messageId),
-            ))
+      await (db.delete(db.messages)..where(
+            (tbl) => tbl.id.equals(messageId) | tbl.serverId.equals(messageId),
+          ))
           .go();
 
-      await (db.delete(db.chatEventsTable)
-            ..where(
-              (tbl) =>
-                  tbl.id.equals(messageId) |
-                  tbl.contentId.equals(messageId),
-            ))
+      await (db.delete(db.chatEventsTable)..where(
+            (tbl) => tbl.id.equals(messageId) | tbl.contentId.equals(messageId),
+          ))
           .go();
 
-      await (db.delete(db.mediaTable)
-            ..where((tbl) => tbl.actorId.equals(messageId)))
-          .go();
+      await (db.delete(
+        db.mediaTable,
+      )..where((tbl) => tbl.actorId.equals(messageId))).go();
 
-      await (db.delete(db.messageStatusTable)
-            ..where((tbl) => tbl.messageId.equals(messageId)))
-          .go();
+      await (db.delete(
+        db.messageStatusTable,
+      )..where((tbl) => tbl.messageId.equals(messageId))).go();
 
-      await (db.delete(db.messageReactionsTable)
-            ..where((tbl) => tbl.messageId.equals(messageId)))
-          .go();
+      await (db.delete(
+        db.messageReactionsTable,
+      )..where((tbl) => tbl.messageId.equals(messageId))).go();
 
       await updateChatLastMessageAfterDeletion(chatId);
     });
@@ -239,32 +238,86 @@ class MessagesTableProvider extends Notifier {
   Future<void> updateChatLastMessageAfterDeletion(String chatId) async {
     final db = ref.read(databaseProvider);
 
-    final newestMessage = await (db.select(db.messages)
-          ..where((tbl) => tbl.chatId.equals(chatId))
-          ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)])
-          ..limit(1))
-        .getSingleOrNull();
+    final newestMessage =
+        await (db.select(db.messages)
+              ..where((tbl) => tbl.chatId.equals(chatId))
+              ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)])
+              ..limit(1))
+            .getSingleOrNull();
 
     if (newestMessage != null) {
       final preview = newestMessage.isDeleted
           ? 'This message was deleted'
           : (newestMessage.message.isNotEmpty
-              ? newestMessage.message
-              : 'Media');
-      await (db.update(db.chatListTable)..where((tbl) => tbl.chatId.equals(chatId)))
-          .write(
+                ? newestMessage.message
+                : 'Media');
+      await (db.update(
+        db.chatListTable,
+      )..where((tbl) => tbl.chatId.equals(chatId))).write(
         ChatListTableCompanion(
           lastMessage: Value(preview),
           lastMessageTime: Value(newestMessage.createdAt),
         ),
       );
     } else {
-      await (db.update(db.chatListTable)..where((tbl) => tbl.chatId.equals(chatId)))
-          .write(
-        const ChatListTableCompanion(
-          lastMessage: Value(''),
-        ),
-      );
+      await (db.update(db.chatListTable)
+            ..where((tbl) => tbl.chatId.equals(chatId)))
+          .write(const ChatListTableCompanion(lastMessage: Value('')));
     }
   }
+
+  Future<void> editMessageContent(String messageId, String newText) async {
+    final db = ref.read(databaseProvider);
+    await (db.update(db.messages)..where(
+          (tbl) => tbl.id.equals(messageId) | tbl.serverId.equals(messageId),
+        ))
+        .write(
+          MessagesCompanion(
+            message: Value(newText),
+            isEdited: const Value(true),
+          ),
+        );
+
+    final msg =
+        await (db.select(db.messages)..where(
+              (tbl) =>
+                  tbl.id.equals(messageId) | tbl.serverId.equals(messageId),
+            ))
+            .getSingleOrNull();
+    if (msg != null) {
+      await ref
+          .read(chatListTableProvider.notifier)
+          .updateLastMessage(chatId: msg.chatId, lastMessage: newText);
+    }
+  }
+
+  Future<void> togglePinMessage(String messageId, bool isPinned) async {
+    final db = ref.read(databaseProvider);
+    final now = DateTime.now().millisecondsSinceEpoch;
+    await (db.update(db.messages)..where(
+          (tbl) => tbl.id.equals(messageId) | tbl.serverId.equals(messageId),
+        ))
+        .write(
+          MessagesCompanion(
+            isPinned: Value(isPinned),
+            pinnedAt: Value(isPinned ? now : null),
+          ),
+        );
+  }
 }
+
+final pinnedMessagesProvider = StreamProvider.family<List<Message>, String>((
+  ref,
+  chatId,
+) {
+  final db = ref.watch(databaseProvider);
+  return (db.select(db.messages)
+        ..where(
+          (tbl) =>
+              tbl.chatId.equals(chatId) &
+              tbl.isPinned.equals(true) &
+              tbl.isDeleted.equals(false),
+        )
+        ..orderBy([(tbl) => OrderingTerm.desc(tbl.pinnedAt)]))
+      .watch();
+});

@@ -16,6 +16,7 @@ import 'package:my_app/screens/homescreen.dart';
 import 'package:my_app/screens/settings/settings_main.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
 import 'package:my_app/widgets/screens/home/bottom_nav_item.dart';
+import 'package:my_app/providers/tables/chat_settings_table_provider.dart';
 import 'package:drift/drift.dart' hide Column;
 
 class MainScreen extends ConsumerStatefulWidget {
@@ -76,6 +77,24 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     await db.managers.chatListTable
         .filter((f) => f.chatId.isIn(selectedList))
         .update((o) => o(isDeleted: const Value(true)));
+    ref.read(selectedChatListProvider.notifier).clearList();
+  }
+
+  void onTogglePin() async {
+    for (final chatId in selectedList) {
+      await ref
+          .read(chatSettingsTableProvider.notifier)
+          .togglePin(chatId: chatId);
+    }
+    ref.read(selectedChatListProvider.notifier).clearList();
+  }
+
+  void onToggleArchive() async {
+    for (final chatId in selectedList) {
+      await ref
+          .read(chatSettingsTableProvider.notifier)
+          .toggleArchive(chatId: chatId);
+    }
     ref.read(selectedChatListProvider.notifier).clearList();
   }
 
@@ -151,17 +170,23 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     _actionItem(
+                      icon: LucideIcons.pin,
+                      label: "Pin",
+                      color: DefaultColorSheet.primary,
+                      onTap: onTogglePin,
+                    ),
+                    _actionItem(
+                      icon: LucideIcons.archive,
+                      label: "Archive",
+                      color: DefaultColorSheet.green500,
+                      onTap: onToggleArchive,
+                    ),
+                    _actionItem(
                       icon: Icons.delete,
                       label: "Delete",
                       color: DefaultColorSheet.red100,
                       onTap: onDelete,
                     ),
-                    // _actionItem(
-                    //   icon: LucideIcons.pin,
-                    //   label: "Pin",
-                    //   color: Colors.blue,
-                    //   onTap: () {},
-                    // ),
                   ],
                 ),
               ),

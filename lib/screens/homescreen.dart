@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/core/util/route_observer.dart';
@@ -56,6 +57,7 @@ class _HomeScreenState extends ConsumerState<Homescreen> with RouteAware {
   @override
   Widget build(BuildContext context) {
     final chatsAsync = ref.watch(chatListProvider);
+    final archivedChats = ref.watch(archivedChatListProvider).value ?? [];
     final selectedListNotifier = ref.watch(selectedChatListProvider.notifier);
     final selectedList = ref.watch(selectedChatListProvider);
     return chatsAsync.when(
@@ -65,64 +67,82 @@ class _HomeScreenState extends ConsumerState<Homescreen> with RouteAware {
             // StatusBar(),
             Expanded(
               child: PrimaryContainer(
-                children: chats.isEmpty
-                    ? const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.chat_bubble_outline,
-                              size: 64,
-                              color: DefaultColorSheet.green500,
-                            ),
-                            SizedBox(height: 16),
-                            PrimaryText(
-                              'No chats yet',
-
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            SizedBox(height: 8),
-                            PrimaryText(
-                              'Start a conversation to see your chats here.',
-                              textAlign: TextAlign.center,
-                              color: DefaultColorSheet.green500,
-                            ),
-                          ],
-                        ),
-                      )
-                    : ListView.separated(
-                        itemCount: chats.length,
-                        padding: const EdgeInsets.symmetric(vertical: 20),
-                        itemBuilder: (context, index) {
-                          final chat = chats[index];
-
-                          return ChatListItem(
-                            chat: chat,
-                            onTap: () {
-                              if (selectedList.isEmpty) {
-                                Navigator.pushNamed(
-                                  context,
-                                  AppRoutes.message,
-                                  arguments: MessageScreenArguments(
-                                    chatId: chat.chatId,
-                                    name: chat.name ?? "",
-                                    profilePicUrl: chat.profilePicUrl,
-                                    isGroupChat: chat.type,
-                                  ),
-                                );
-                                return;
-                              } else {
-                                selectedListNotifier.modifyList(chat.chatId);
-                              }
-                            },
-                            onHold: () =>
-                                selectedListNotifier.modifyList(chat.chatId),
-                            isSelected: selectedList.contains(chat.chatId),
-                          );
+                children: Column(
+                  children: [
+                    if (archivedChats.isNotEmpty) ...[
+                      _ArchivedChatsTile(
+                        count: archivedChats.length,
+                        onTap: () {
+                          Navigator.pushNamed(context, AppRoutes.archivedChats);
                         },
-                        separatorBuilder: (_, __) => const SizedBox(height: 1),
                       ),
+                      const Divider(height: 1, thickness: 0.5),
+                    ],
+                    Expanded(
+                      child: chats.isEmpty
+                          ? const Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.chat_bubble_outline,
+                                    size: 64,
+                                    color: DefaultColorSheet.green500,
+                                  ),
+                                  SizedBox(height: 16),
+                                  PrimaryText(
+                                    'No chats yet',
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  SizedBox(height: 8),
+                                  PrimaryText(
+                                    'Start a conversation to see your chats here.',
+                                    textAlign: TextAlign.center,
+                                    color: DefaultColorSheet.green500,
+                                  ),
+                                ],
+                              ),
+                            )
+                          : ListView.separated(
+                              itemCount: chats.length,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              itemBuilder: (context, index) {
+                                final chat = chats[index];
+
+                                return ChatListItem(
+                                  chat: chat,
+                                  onTap: () {
+                                    if (selectedList.isEmpty) {
+                                      Navigator.pushNamed(
+                                        context,
+                                        AppRoutes.message,
+                                        arguments: MessageScreenArguments(
+                                          chatId: chat.chatId,
+                                          name: chat.name ?? "",
+                                          profilePicUrl: chat.profilePicUrl,
+                                          isGroupChat: chat.type,
+                                          receiverId: chat.receiverId ?? "",
+                                        ),
+                                      );
+                                      return;
+                                    } else {
+                                      selectedListNotifier
+                                          .modifyList(chat.chatId);
+                                    }
+                                  },
+                                  onHold: () => selectedListNotifier
+                                      .modifyList(chat.chatId),
+                                  isSelected:
+                                      selectedList.contains(chat.chatId),
+                                );
+                              },
+                              separatorBuilder: (_, _) =>
+                                  const SizedBox(height: 1),
+                            ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -130,6 +150,72 @@ class _HomeScreenState extends ConsumerState<Homescreen> with RouteAware {
       },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Text(e.toString()),
+    );
+  }
+}
+
+class _ArchivedChatsTile extends StatelessWidget {
+  final int count;
+  final VoidCallback onTap;
+
+  const _ArchivedChatsTile({
+    required this.count,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = DefaultColorSheet.isDark(context);
+    final textPrimary = DefaultColorSheet.textPrimary(context);
+
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(9),
+              decoration: BoxDecoration(
+                color: DefaultColorSheet.accentGreen
+                    .withValues(alpha: isDark ? 0.2 : 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                LucideIcons.archive,
+                size: 19,
+                color: DefaultColorSheet.accentGreen,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                'Archived',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: textPrimary,
+                ),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 2),
+              decoration: BoxDecoration(
+                color: DefaultColorSheet.accentGreen.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '$count',
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  color: DefaultColorSheet.accentGreen,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

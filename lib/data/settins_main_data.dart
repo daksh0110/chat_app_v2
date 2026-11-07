@@ -15,4 +15,10 @@ final List<SettingsMainModal> settingMenuData = [
     icon: Icons.dark_mode_outlined,
     link: "theme_settings",
   ),
+  SettingsMainModal(
+    name: "Archived Chats",
+    description: "View and manage archived conversations",
+    icon: Icons.archive_outlined,
+    link: AppRoutes.archivedChats,
+  ),
 ];

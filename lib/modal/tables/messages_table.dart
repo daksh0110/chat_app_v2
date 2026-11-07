@@ -13,6 +13,9 @@ class Messages extends Table {
   TextColumn get replyToSenderName => text().nullable()();
   TextColumn get replyToMessage => text().nullable()();
   BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
+  BoolColumn get isEdited => boolean().withDefault(const Constant(false))();
+  BoolColumn get isPinned => boolean().withDefault(const Constant(false))();
+  IntColumn get pinnedAt => integer().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_app/core/database.dart';
 import 'package:my_app/providers/database_provider.dart';
 import 'package:my_app/providers/tables/blocks_table_provider.dart';
+import 'package:my_app/providers/tables/chat_list_table_provider.dart';
 import 'package:my_app/providers/user_relationship_provider.dart';
 
 final requestUserProvider = NotifierProvider<RequestUserProvider, void>(
@@ -46,6 +47,13 @@ class RequestUserProvider extends Notifier {
     )..where((t) => t.userId.equals(userId))).getSingleOrNull();
 
     if (friendRow == null) {
+      final existingChatId = await ref
+          .read(chatListTableProvider.notifier)
+          .findDirectChatIdWithUser(userId);
+      if (existingChatId != null && existingChatId.isNotEmpty) {
+        await insertOrUpdateRequest(userId, 'FRIENDS');
+        return RelationshipStatus.friends;
+      }
       return RelationshipStatus.none;
     }
 

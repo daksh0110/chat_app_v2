@@ -9,6 +9,11 @@ enum MessageContextActionType {
   react,
   reply,
   copy,
+  edit,
+  pin,
+  forward,
+  select,
+  info,
   delete,
 }
 
@@ -24,6 +29,21 @@ class MessageContextMenuResult {
   const MessageContextMenuResult.copy()
       : action = MessageContextActionType.copy,
         emoji = null;
+  const MessageContextMenuResult.edit()
+      : action = MessageContextActionType.edit,
+        emoji = null;
+  const MessageContextMenuResult.pin()
+      : action = MessageContextActionType.pin,
+        emoji = null;
+  const MessageContextMenuResult.forward()
+      : action = MessageContextActionType.forward,
+        emoji = null;
+  const MessageContextMenuResult.select()
+      : action = MessageContextActionType.select,
+        emoji = null;
+  const MessageContextMenuResult.info()
+      : action = MessageContextActionType.info,
+        emoji = null;
   const MessageContextMenuResult.delete()
       : action = MessageContextActionType.delete,
         emoji = null;
@@ -31,12 +51,18 @@ class MessageContextMenuResult {
 
 /// A floating context menu with:
 /// 1. Quick reaction emojis + a "+" button for all emojis
-/// 2. Action items (Reply, Copy)
+/// 2. Action items (Reply, Copy, Edit, Pin, Forward, Select, Delete)
 class MessageContextMenu extends StatelessWidget {
   final Set<String> myReactedEmojis;
   final bool isSender;
   final bool canReply;
   final bool canCopy;
+  final bool canEdit;
+  final bool canPin;
+  final bool isPinned;
+  final bool canForward;
+  final bool canSelect;
+  final bool canInfo;
   final bool canDelete;
   final String messageText;
   final void Function(MessageContextMenuResult result) onSelect;
@@ -48,6 +74,12 @@ class MessageContextMenu extends StatelessWidget {
     this.isSender = false,
     this.canReply = true,
     this.canCopy = true,
+    this.canEdit = false,
+    this.canPin = true,
+    this.isPinned = false,
+    this.canForward = true,
+    this.canSelect = true,
+    this.canInfo = false,
     this.canDelete = true,
     this.messageText = '',
     required this.onSelect,
@@ -56,10 +88,101 @@ class MessageContextMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasActions = canReply || canCopy || canDelete;
+    final hasActions = canReply ||
+        canCopy ||
+        canEdit ||
+        canPin ||
+        canForward ||
+        canSelect ||
+        canInfo ||
+        canDelete;
     final isDark = DefaultColorSheet.isDark(context);
     final cardBg = DefaultColorSheet.cardBg(context);
     final dividerColor = DefaultColorSheet.divider(context);
+
+    final actions = <Widget>[];
+
+    if (canReply) {
+      actions.add(_ActionTile(
+        icon: LucideIcons.reply,
+        iconColor: DefaultColorSheet.green500,
+        title: 'Reply',
+        onTap: () => onSelect(const MessageContextMenuResult.reply()),
+      ));
+    }
+
+    if (canCopy) {
+      actions.add(_ActionTile(
+        icon: LucideIcons.copy,
+        iconColor: DefaultColorSheet.textSecondary(context),
+        title: 'Copy',
+        onTap: () {
+          Clipboard.setData(ClipboardData(text: messageText));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Message copied'),
+              duration: Duration(seconds: 1),
+            ),
+          );
+          onSelect(const MessageContextMenuResult.copy());
+        },
+      ));
+    }
+
+    if (canEdit) {
+      actions.add(_ActionTile(
+        icon: LucideIcons.pencil,
+        iconColor: DefaultColorSheet.primary,
+        title: 'Edit',
+        onTap: () => onSelect(const MessageContextMenuResult.edit()),
+      ));
+    }
+
+    if (canPin) {
+      actions.add(_ActionTile(
+        icon: isPinned ? LucideIcons.pinOff : LucideIcons.pin,
+        iconColor: Colors.amber.shade700,
+        title: isPinned ? 'Unpin' : 'Pin',
+        onTap: () => onSelect(const MessageContextMenuResult.pin()),
+      ));
+    }
+
+    if (canForward) {
+      actions.add(_ActionTile(
+        icon: LucideIcons.forward,
+        iconColor: DefaultColorSheet.textSecondary(context),
+        title: 'Forward',
+        onTap: () => onSelect(const MessageContextMenuResult.forward()),
+      ));
+    }
+
+    if (canSelect) {
+      actions.add(_ActionTile(
+        icon: LucideIcons.squareCheck,
+        iconColor: DefaultColorSheet.textSecondary(context),
+        title: 'Select',
+        onTap: () => onSelect(const MessageContextMenuResult.select()),
+      ));
+    }
+
+    if (canInfo) {
+      actions.add(_ActionTile(
+        icon: LucideIcons.info,
+        iconColor: DefaultColorSheet.textSecondary(context),
+        title: 'Info',
+        onTap: () => onSelect(const MessageContextMenuResult.info()),
+      ));
+    }
+
+    if (canDelete) {
+      actions.add(_ActionTile(
+        icon: LucideIcons.trash2,
+        iconColor: Colors.redAccent,
+        title: 'Delete',
+        titleColor: Colors.redAccent,
+        onTap: () => onSelect(const MessageContextMenuResult.delete()),
+      ));
+    }
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -147,46 +270,14 @@ class MessageContextMenu extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (canReply)
-                      _ActionTile(
-                        icon: LucideIcons.reply,
-                        iconColor: DefaultColorSheet.green500,
-                        title: 'Reply',
-                        onTap: () => onSelect(const MessageContextMenuResult.reply()),
-                      ),
-                    if (canReply && canCopy)
-                      Divider(height: 1, thickness: 0.5, color: dividerColor),
-                    if (canCopy)
-                      _ActionTile(
-                        icon: LucideIcons.copy,
-                        iconColor: DefaultColorSheet.textSecondary(context),
-                        title: 'Copy',
-                        onTap: () {
-                          Clipboard.setData(ClipboardData(text: messageText));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Message copied'),
-                              duration: Duration(seconds: 1),
-                            ),
-                          );
-                          onSelect(const MessageContextMenuResult.copy());
-                        },
-                      ),
-                    if (canDelete) ...[
-                      if (canReply || canCopy)
+                    for (int i = 0; i < actions.length; i++) ...[
+                      if (i > 0)
                         Divider(
                           height: 1,
                           thickness: 0.5,
                           color: dividerColor,
                         ),
-                      _ActionTile(
-                        icon: LucideIcons.trash2,
-                        iconColor: Colors.redAccent,
-                        title: 'Delete',
-                        titleColor: Colors.redAccent,
-                        onTap: () =>
-                            onSelect(const MessageContextMenuResult.delete()),
-                      ),
+                      actions[i],
                     ],
                   ],
                 ),
@@ -251,6 +342,12 @@ Future<MessageContextMenuResult?> showMessageContextMenu(
   Set<String> myReactedEmojis = const {},
   bool canReply = true,
   bool canCopy = true,
+  bool canEdit = false,
+  bool canPin = true,
+  bool isPinned = false,
+  bool canForward = true,
+  bool canSelect = true,
+  bool canInfo = false,
   bool canDelete = true,
   String messageText = '',
 }) async {
@@ -267,8 +364,14 @@ Future<MessageContextMenuResult?> showMessageContextMenu(
       // Reaction bar width with 6 emojis + plus icon + paddings is ~240.0
       // Context menu action card max width is 200.0
       const menuWidth = 245.0;
-      final actionCount =
-          (canReply ? 1 : 0) + (canCopy ? 1 : 0) + (canDelete ? 1 : 0);
+      final actionCount = (canReply ? 1 : 0) +
+          (canCopy ? 1 : 0) +
+          (canEdit ? 1 : 0) +
+          (canPin ? 1 : 0) +
+          (canForward ? 1 : 0) +
+          (canSelect ? 1 : 0) +
+          (canInfo ? 1 : 0) +
+          (canDelete ? 1 : 0);
       final double menuHeight =
           48.0 + (actionCount > 0 ? (8.0 + actionCount * 44.0) : 0.0);
 
@@ -308,6 +411,12 @@ Future<MessageContextMenuResult?> showMessageContextMenu(
               myReactedEmojis: myReactedEmojis,
               canReply: canReply,
               canCopy: canCopy,
+              canEdit: canEdit,
+              canPin: canPin,
+              isPinned: isPinned,
+              canForward: canForward,
+              canSelect: canSelect,
+              canInfo: canInfo,
               canDelete: canDelete,
               messageText: messageText,
               onSelect: (result) => Navigator.of(ctx).pop(result),

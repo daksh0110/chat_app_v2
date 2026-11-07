@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart';
+import 'package:my_app/screens/archived_chats_screen.dart';
 import 'package:my_app/screens/change_password.dart';
+import 'package:my_app/screens/chat_settings_screen.dart';
 import 'package:my_app/screens/create_group_chat.dart';
 import 'package:my_app/screens/google_password_setup.dart';
 import 'package:my_app/screens/log_in.dart';
@@ -38,6 +40,8 @@ class AppRoutes {
   static const String newChat = "/new-chat";
 
   static const String notifications = "/notifications";
+  static const String chatSettings = "/chat-settings";
+  static const String archivedChats = "/archived-chats";
 
   static Map<String, WidgetBuilder> get routes => {
     home: (context) => MainScreen(),
@@ -58,5 +62,7 @@ class AppRoutes {
     accountsMain: (context) => const AccountsPage(),
     blockedUsers: (context) => const BlockedUsersScreen(),
     notifications: (context) => const NotificationsScreen(),
+    chatSettings: (context) => const ChatSettingsScreen(),
+    archivedChats: (context) => const ArchivedChatsScreen(),
   };
 }

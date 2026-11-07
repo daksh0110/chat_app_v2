@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/modal/screens/search/search_item.dart';
 import 'package:my_app/modal/screens/search/user_profile_arguments.dart';
+import 'package:my_app/providers/tables/chat_settings_table_provider.dart';
+import 'package:my_app/screens/chat_settings_screen.dart';
 import 'package:my_app/widgets/screens/search/search_group_item.dart';
 
-class Header extends StatefulWidget implements PreferredSizeWidget {
+class Header extends ConsumerStatefulWidget implements PreferredSizeWidget {
   const Header({
     super.key,
     required this.name,
@@ -30,10 +33,10 @@ class Header extends StatefulWidget implements PreferredSizeWidget {
   }
 
   @override
-  State<StatefulWidget> createState() => _HeaderState();
+  ConsumerState<Header> createState() => _HeaderState();
 }
 
-class _HeaderState extends State<Header> {
+class _HeaderState extends ConsumerState<Header> {
   double getToolbarHeight(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
 
@@ -59,10 +62,7 @@ class _HeaderState extends State<Header> {
       scrolledUnderElevation: 0.0,
       titleSpacing: 0,
       leading: IconButton(
-        icon: Icon(
-          Icons.arrow_back,
-          color: iconColor,
-        ),
+        icon: Icon(Icons.arrow_back, color: iconColor),
         onPressed: () => Navigator.maybePop(context),
       ),
       title: InkWell(
@@ -96,29 +96,147 @@ class _HeaderState extends State<Header> {
           ),
         ),
       ),
-      actionsPadding: const EdgeInsets.only(right: 15, left: 10),
+      actionsPadding: const EdgeInsets.only(right: 8, left: 4),
       actions: [
-        IconButton(
+        PopupMenuButton<String>(
           icon: Icon(
             LucideIcons.ellipsisVertical,
             color: iconColor,
             size: 20,
           ),
-          tooltip: widget.isGroupChat ? 'Group info' : 'Contact info',
-          onPressed: () {
-            Navigator.pushNamed(
-              context,
-              AppRoutes.userProfile,
-              arguments: UserProfileArguments(
-                id: widget.id,
-                isGroupChat: widget.isGroupChat,
-                name: widget.name,
-                profilePicUrl: widget.profilePicUrl,
-              ),
-            );
+          color: DefaultColorSheet.cardBg(context),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          onSelected: (value) {
+            switch (value) {
+              case 'info':
+                Navigator.pushNamed(
+                  context,
+                  AppRoutes.userProfile,
+                  arguments: UserProfileArguments(
+                    id: widget.id,
+                    isGroupChat: widget.isGroupChat,
+                    name: widget.name,
+                    profilePicUrl: widget.profilePicUrl,
+                  ),
+                );
+                break;
+              case 'settings':
+                Navigator.pushNamed(
+                  context,
+                  AppRoutes.chatSettings,
+                  arguments: ChatSettingsArguments(
+                    chatId: widget.id,
+                    name: widget.name,
+                    profilePicUrl: widget.profilePicUrl,
+                    isGroupChat: widget.isGroupChat,
+                  ),
+                );
+                break;
+              case 'clear':
+                _showClearChatDialog(context);
+                break;
+            }
           },
+          itemBuilder: (context) => [
+            PopupMenuItem(
+              value: 'info',
+              child: Row(
+                children: [
+                  Icon(
+                    widget.isGroupChat ? LucideIcons.users : LucideIcons.user,
+                    size: 18,
+                    color: DefaultColorSheet.textPrimary(context),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    widget.isGroupChat ? 'Group info' : 'Contact info',
+                    style: TextStyle(
+                      color: DefaultColorSheet.textPrimary(context),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: 'settings',
+              child: Row(
+                children: [
+                  Icon(
+                    LucideIcons.settings,
+                    size: 18,
+                    color: DefaultColorSheet.textPrimary(context),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Chat settings',
+                    style: TextStyle(
+                      color: DefaultColorSheet.textPrimary(context),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: 'clear',
+              child: Row(
+                children: [
+                  const Icon(
+                    LucideIcons.trash2,
+                    size: 18,
+                    color: Colors.redAccent,
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Clear chat',
+                    style: TextStyle(
+                      color: Colors.redAccent,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ],
+    );
+  }
+
+  void _showClearChatDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: DefaultColorSheet.cardBg(context),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          "Clear this chat?",
+          style: TextStyle(color: DefaultColorSheet.textPrimary(context)),
+        ),
+        content: Text(
+          "Messages will only be removed from this device.",
+          style: TextStyle(color: DefaultColorSheet.textSecondary(context)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(dialogCtx);
+              await ref
+                  .read(chatSettingsTableProvider.notifier)
+                  .clearChatHistory(chatId: widget.id);
+            },
+            child: const Text(
+              "Clear",
+              style: TextStyle(color: Colors.redAccent),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

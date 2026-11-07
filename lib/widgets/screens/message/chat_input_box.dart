@@ -9,6 +9,7 @@ import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/core/util/media_file_helper.dart';
 import 'package:my_app/modal/screens/message/reply_message_info.dart';
 import 'package:my_app/widgets/screens/message/attachment_bottom_sheet.dart';
+import 'package:my_app/widgets/screens/message/editing_message_info.dart';
 import 'package:my_app/widgets/screens/message/media_picker_sheet.dart';
 
 class ChatInputBox extends StatefulWidget {
@@ -17,6 +18,9 @@ class ChatInputBox extends StatefulWidget {
   final Function() onStopTyping;
   final ReplyMessageInfo? replyingTo;
   final VoidCallback? onCancelReply;
+  final EditingMessageInfo? editingMessage;
+  final void Function(String messageId, String newText)? onEdit;
+  final VoidCallback? onCancelEdit;
 
   const ChatInputBox({
     super.key,
@@ -25,6 +29,9 @@ class ChatInputBox extends StatefulWidget {
     required this.onStopTyping,
     this.replyingTo,
     this.onCancelReply,
+    this.editingMessage,
+    this.onEdit,
+    this.onCancelEdit,
   });
 
   @override
@@ -35,6 +42,21 @@ class _ChatInputBoxState extends State<ChatInputBox> {
   final chatMessageController = TextEditingController();
   final List<XFile> attachments = [];
   final ImagePicker _picker = ImagePicker();
+
+  @override
+  void didUpdateWidget(covariant ChatInputBox oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.editingMessage != oldWidget.editingMessage) {
+      if (widget.editingMessage != null) {
+        chatMessageController.text = widget.editingMessage!.text;
+        chatMessageController.selection = TextSelection.fromPosition(
+          TextPosition(offset: chatMessageController.text.length),
+        );
+      } else if (oldWidget.editingMessage != null) {
+        chatMessageController.clear();
+      }
+    }
+  }
 
   void onTyping(String text) {
     if (text.isEmpty) {
@@ -171,6 +193,78 @@ class _ChatInputBoxState extends State<ChatInputBox> {
                   InkWell(
                     borderRadius: BorderRadius.circular(16),
                     onTap: widget.onCancelReply,
+                    child: const Padding(
+                      padding: EdgeInsets.all(4),
+                      child: Icon(
+                        LucideIcons.x,
+                        size: 16,
+                        color: DefaultColorSheet.grey500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          // Edit message preview
+          if (widget.editingMessage != null) ...[
+            Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: DefaultColorSheet.inputFieldBg(context),
+                borderRadius: BorderRadius.circular(12),
+                border: const Border(
+                  left: BorderSide(
+                    color: DefaultColorSheet.green500,
+                    width: 4,
+                  ),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    LucideIcons.pencil,
+                    size: 16,
+                    color: DefaultColorSheet.green500,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          "Edit Message",
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: DefaultColorSheet.green500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          widget.editingMessage!.text,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: DefaultColorSheet.grey500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: () {
+                      widget.onCancelEdit?.call();
+                      chatMessageController.clear();
+                      widget.onStopTyping();
+                    },
                     child: const Padding(
                       padding: EdgeInsets.all(4),
                       child: Icon(
@@ -342,7 +436,7 @@ class _ChatInputBoxState extends State<ChatInputBox> {
 
               const SizedBox(width: 8),
 
-              // Existing send button
+              // Send / Confirm Edit button
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 180),
                 switchInCurve: Curves.easeOutBack,
@@ -354,13 +448,26 @@ class _ChatInputBoxState extends State<ChatInputBox> {
                   );
                 },
                 child: SizedBox(
-                  key: const ValueKey('send'),
+                  key: ValueKey(widget.editingMessage != null ? 'edit' : 'send'),
                   width: 48,
                   height: 48,
                   child: InkWell(
                     borderRadius: BorderRadius.circular(24),
                     onTap: () {
                       final text = chatMessageController.text.trim();
+
+                      if (widget.editingMessage != null) {
+                        if (text.isNotEmpty) {
+                          widget.onEdit?.call(
+                            widget.editingMessage!.messageId,
+                            text,
+                          );
+                        }
+                        widget.onCancelEdit?.call();
+                        widget.onStopTyping();
+                        chatMessageController.clear();
+                        return;
+                      }
 
                       if (text.isEmpty && attachments.isEmpty) {
                         return;
@@ -381,9 +488,11 @@ class _ChatInputBoxState extends State<ChatInputBox> {
                         color: DefaultColorSheet.green500,
                         shape: BoxShape.circle,
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Icon(
-                          LucideIcons.sendHorizontal,
+                          widget.editingMessage != null
+                              ? LucideIcons.check
+                              : LucideIcons.sendHorizontal,
                           color: Colors.white,
                           size: 20,
                         ),

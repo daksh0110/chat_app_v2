@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:my_app/modal/chat_list_modal.dart';
 import 'package:my_app/providers/message_typing_provider.dart';
@@ -127,26 +128,46 @@ class ChatListItem extends ConsumerWidget {
                     color: DefaultColorSheet.textSecondary(context),
                   ),
                   const SizedBox(height: 6),
-
-                  if (chat.unReadCount > 0)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: DefaultColorSheet.red100,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        chat.unReadCount.toString(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (chat.isMuted) ...[
+                        Icon(
+                          Icons.volume_off,
+                          size: 14,
+                          color: DefaultColorSheet.textSecondary(context),
                         ),
-                      ),
-                    ),
+                        const SizedBox(width: 4),
+                      ],
+                      if (chat.isPinned) ...[
+                        const Icon(
+                          LucideIcons.pin,
+                          size: 14,
+                          color: DefaultColorSheet.primary,
+                        ),
+                        const SizedBox(width: 4),
+                      ],
+                      if (chat.unReadCount > 0)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: DefaultColorSheet.red100,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            chat.unReadCount.toString(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ],
               ),
             ],

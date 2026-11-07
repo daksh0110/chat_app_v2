@@ -5,6 +5,8 @@ import 'package:my_app/modal/tables/chat_events_table.dart';
 
 class MessageItemModel {
   final String id;
+  final String? serverId;
+  final String? chatId;
   final String message;
   final bool isSender;
   final MessageStatus? status;
@@ -19,9 +21,14 @@ class MessageItemModel {
   final String? replyToMessage;
   final List<ReactionGroup> reactions;
   final bool isDeleted;
+  final bool isEdited;
+  final bool isPinned;
+  final int? pinnedAt;
 
   const MessageItemModel({
     this.id = '',
+    this.serverId,
+    this.chatId,
     required this.message,
     required this.isSender,
     required this.timestamp,
@@ -36,10 +43,15 @@ class MessageItemModel {
     this.replyToMessage,
     this.reactions = const [],
     this.isDeleted = false,
+    this.isEdited = false,
+    this.isPinned = false,
+    this.pinnedAt,
   });
 
   MessageItemModel copyWith({
     String? id,
+    String? serverId,
+    String? chatId,
     String? message,
     bool? isSender,
     MessageStatus? status,
@@ -54,9 +66,14 @@ class MessageItemModel {
     String? replyToMessage,
     List<ReactionGroup>? reactions,
     bool? isDeleted,
+    bool? isEdited,
+    bool? isPinned,
+    int? pinnedAt,
   }) {
     return MessageItemModel(
       id: id ?? this.id,
+      serverId: serverId ?? this.serverId,
+      chatId: chatId ?? this.chatId,
       message: message ?? this.message,
       isSender: isSender ?? this.isSender,
       status: status ?? this.status,
@@ -71,6 +88,9 @@ class MessageItemModel {
       replyToMessage: replyToMessage ?? this.replyToMessage,
       reactions: reactions ?? this.reactions,
       isDeleted: isDeleted ?? this.isDeleted,
+      isEdited: isEdited ?? this.isEdited,
+      isPinned: isPinned ?? this.isPinned,
+      pinnedAt: pinnedAt ?? this.pinnedAt,
     );
   }
 }
