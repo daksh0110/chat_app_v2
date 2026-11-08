@@ -46,21 +46,27 @@ class RequestUserProvider extends Notifier {
       db.friendsTable,
     )..where((t) => t.userId.equals(userId))).getSingleOrNull();
 
-    if (friendRow == null) {
-      final existingChatId = await ref
-          .read(chatListTableProvider.notifier)
-          .findDirectChatIdWithUser(userId);
-      if (existingChatId != null && existingChatId.isNotEmpty) {
+    final existingChatId = await ref
+        .read(chatListTableProvider.notifier)
+        .findDirectChatIdWithUser(userId);
+    if (existingChatId != null && existingChatId.isNotEmpty) {
+      if (friendRow == null || friendRow.status != 'FRIENDS') {
         await insertOrUpdateRequest(userId, 'FRIENDS');
-        return RelationshipStatus.friends;
       }
+      return RelationshipStatus.friends;
+    }
+
+    if (friendRow == null) {
       return RelationshipStatus.none;
     }
 
     return parseStatus(friendRow.status, isBlocked: isBlocked);
   }
 
-  static RelationshipStatus parseStatus(String? status, {bool isBlocked = false}) {
+  static RelationshipStatus parseStatus(
+    String? status, {
+    bool isBlocked = false,
+  }) {
     if (isBlocked) return RelationshipStatus.blocked;
     if (status == null) return RelationshipStatus.none;
     switch (status.toUpperCase()) {

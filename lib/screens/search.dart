@@ -50,62 +50,68 @@ class _SearchState extends ConsumerState<Search> {
       appBar: AppBar(
         backgroundColor: DefaultColorSheet.appBarBg(context),
         elevation: 0,
-        centerTitle: true,
-        automaticallyImplyLeading: false,
-
-        title: Container(
-          height: 44,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: DefaultColorSheet.inputFieldBg(context),
-            borderRadius: BorderRadius.circular(16),
+        titleSpacing: 0,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back,
+            color: DefaultColorSheet.appBarIcon(context),
           ),
-          child: Row(
-            children: [
-              Icon(
-                LucideIcons.search,
-                size: 20,
-                color: DefaultColorSheet.iconSecondary(context),
-              ),
-
-              const SizedBox(width: 8),
-
-              Expanded(
-                child: TextField(
-                  controller: _searchInputController,
-                  onChanged: (value) => onSearching(value),
-                  style: TextStyle(
-                    color: DefaultColorSheet.inputTextColor(context),
-                    fontSize: 15,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: "Search",
-                    hintStyle: TextStyle(
-                      color: DefaultColorSheet.inputHintColor(context),
-                    ),
-                    border: InputBorder.none,
-                    isDense: true,
-                  ),
-                ),
-              ),
-
-              const SizedBox(width: 8),
-
-              IconButton(
-                onPressed: () {
-                  _searchInputController.clear();
-
-                  setState(() {
-                    data.clear();
-                  });
-                },
-                icon: Icon(
-                  LucideIcons.x,
+          onPressed: () => Navigator.maybePop(context),
+        ),
+        title: Padding(
+          padding: const EdgeInsets.only(right: 16),
+          child: Container(
+            height: 44,
+            padding: const EdgeInsets.only(left: 12, right: 6),
+            decoration: BoxDecoration(
+              color: DefaultColorSheet.inputFieldBg(context),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  LucideIcons.search,
                   size: 20,
                   color: DefaultColorSheet.iconSecondary(context),
                 ),
-              ),
-            ],
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: _searchInputController,
+                    onChanged: (value) => onSearching(value),
+                    cursorColor: DefaultColorSheet.primary,
+                    style: TextStyle(
+                      color: DefaultColorSheet.inputTextColor(context),
+                      fontSize: 15,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: "Search",
+                      hintStyle: TextStyle(
+                        color: DefaultColorSheet.inputHintColor(context),
+                      ),
+                      border: InputBorder.none,
+                      isDense: true,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                  splashRadius: 20,
+                  onPressed: () {
+                    _searchInputController.clear();
+                    setState(() {
+                      data.clear();
+                    });
+                  },
+                  icon: Icon(
+                    LucideIcons.x,
+                    size: 22,
+                    color: DefaultColorSheet.iconSecondary(context),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

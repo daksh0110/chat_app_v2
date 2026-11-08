@@ -17,17 +17,24 @@ class OtpInputField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textPrimary = DefaultColorSheet.textPrimary(context);
+    final borderColor = DefaultColorSheet.isDark(context)
+        ? Colors.grey.shade600
+        : Colors.grey.shade400;
+    final boxBg = DefaultColorSheet.inputFieldBg(context);
+
     final defaultPinTheme = PinTheme(
       width: 50,
       height: 55,
-      textStyle: const TextStyle(
+      textStyle: TextStyle(
         fontSize: 20,
         fontWeight: FontWeight.w600,
-        color: Colors.black,
+        color: textPrimary,
       ),
       decoration: BoxDecoration(
+        color: boxBg,
         border: Border.all(
-          color: Colors.grey,
+          color: borderColor,
           width: 1,
         ),
         borderRadius: BorderRadius.circular(8),
@@ -35,6 +42,11 @@ class OtpInputField extends StatelessWidget {
     );
 
     final focusedPinTheme = defaultPinTheme.copyWith(
+      textStyle: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: textPrimary,
+      ),
       decoration: defaultPinTheme.decoration?.copyWith(
         border: Border.all(
           color: DefaultColorSheet.green400,
@@ -43,7 +55,13 @@ class OtpInputField extends StatelessWidget {
       ),
     );
 
-    final submittedPinTheme = defaultPinTheme;
+    final submittedPinTheme = defaultPinTheme.copyWith(
+      textStyle: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: textPrimary,
+      ),
+    );
 
     return Pinput(
       length: length,

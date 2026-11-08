@@ -38,42 +38,42 @@ class SearchGroupItem extends StatelessWidget {
             ),
 
             const SizedBox(width: 10),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 2),
-                PrimaryText(
-                  item.name,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 18,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (item.bio != null) ...[
-                  const SizedBox(height: 4),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   PrimaryText(
-                    item.bio ?? "",
-                    fontSize: 12,
-                    color: DefaultColorSheet.textSecondary(context),
+                    item.name,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 18,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  if (item.bio != null) ...[
+                    const SizedBox(height: 2),
+                    PrimaryText(
+                      item.bio ?? "",
+                      fontSize: 12,
+                      color: DefaultColorSheet.textSecondary(context),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                  if (item.email != null &&
+                      item.email!.isNotEmpty &&
+                      item.bio == null) ...[
+                    const SizedBox(height: 2),
+                    PrimaryText(
+                      item.email ?? "",
+                      fontSize: 12,
+                      color: DefaultColorSheet.textSecondary(context),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ],
-
-                if (item.email != null &&
-                    item.email!.isNotEmpty &&
-                    item.bio == null) ...[
-                  const SizedBox(height: 4),
-                  PrimaryText(
-                    item.email ?? "",
-                    fontSize: 12,
-                    color: DefaultColorSheet.textSecondary(context),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ],
+              ),
             ),
             ...[
               if (actionWidget != null) ...[

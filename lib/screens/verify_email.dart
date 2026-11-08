@@ -204,11 +204,11 @@ class _VerifyEmailState extends ConsumerState<VerifyEmailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: DefaultColorSheet.scaffoldBg(context),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: DefaultColorSheet.appBarBg(context),
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: IconThemeData(color: DefaultColorSheet.appBarIcon(context)),
       ),
       body: SafeArea(
         child: Padding(
@@ -244,14 +244,18 @@ class _VerifyEmailState extends ConsumerState<VerifyEmailScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const PrimaryText("Didn't receive OTP? ", fontSize: 12),
+                  PrimaryText(
+                    "Didn't receive OTP? ",
+                    fontSize: 12,
+                    color: DefaultColorSheet.textSecondary(context),
+                  ),
 
                   GestureDetector(
                     onTap: resendOtpDisable ? null : resendOtp,
                     child: PrimaryText(
                       resendOtpDisable ? "Resend in $_start s" : "Resend OTP",
                       color: resendOtpDisable
-                          ? DefaultSelectionStyle.defaultColor
+                          ? DefaultColorSheet.textSecondary(context)
                           : DefaultColorSheet.green400,
                       fontSize: 12,
                     ),
@@ -264,10 +268,14 @@ class _VerifyEmailState extends ConsumerState<VerifyEmailScreen> {
                 text: loading ? "Verifying..." : "Verify",
                 onPressed: isDisabled || loading ? () {} : onSubmit,
                 backgroundColor: isDisabled || loading
-                    ? DefaultColorSheet.disbaledButton
+                    ? (DefaultColorSheet.isDark(context)
+                        ? DefaultColorSheet.darkSurface
+                        : DefaultColorSheet.disbaledButton)
                     : DefaultColorSheet.primary,
                 borderColor: isDisabled || loading
-                    ? DefaultColorSheet.disbaledButton
+                    ? (DefaultColorSheet.isDark(context)
+                        ? DefaultColorSheet.darkSurface
+                        : DefaultColorSheet.disbaledButton)
                     : DefaultColorSheet.primary,
                 textColor: isDisabled || loading
                     ? DefaultColorSheet.grey500

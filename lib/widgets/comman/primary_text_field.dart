@@ -53,11 +53,24 @@ class _PrimaryTextFieldState extends State<PrimaryTextField> {
           obscureText: _obscureText,
           validator: widget.validator,
           autovalidateMode: AutovalidateMode.onUserInteraction,
+          cursorColor: DefaultColorSheet.primary,
+          style: TextStyle(
+            color: DefaultColorSheet.textPrimary(context),
+            fontSize: 16,
+          ),
           decoration: InputDecoration(
             border: const UnderlineInputBorder(),
             enabled: !widget.disabled,
+            hintStyle: TextStyle(
+              color: DefaultColorSheet.inputHintColor(context),
+            ),
             enabledBorder: UnderlineInputBorder(
               borderSide: BorderSide(color: DefaultColorSheet.primary),
+            ),
+            disabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(
+                color: DefaultColorSheet.border(context),
+              ),
             ),
 
             focusedBorder: UnderlineInputBorder(

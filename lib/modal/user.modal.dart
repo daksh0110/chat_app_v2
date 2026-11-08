@@ -30,4 +30,17 @@ class UserModel {
           : null,
     );
   }
+
+  @override
+  String toString() {
+    return 'UserModel('
+        'id: $id, '
+        'name: $name, '
+        'email: $email, '
+        'bio: $bio, '
+        'profilePic: $profilePic, '
+        'media: $media, '
+        'relationshipStatus: $relationshipStatus'
+        ')';
+  }
 }

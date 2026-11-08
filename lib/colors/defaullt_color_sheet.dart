@@ -140,12 +140,16 @@ class DefaultColorSheet {
   static Color divider(BuildContext context) =>
       isDark(context) ? darkDivider : lightDivider;
 
+  static Color dividerColor(BuildContext context) => divider(context);
+
   static Color border(BuildContext context) =>
       isDark(context) ? darkDivider : grey200;
 
   // Icons
   static Color iconColor(BuildContext context) =>
       isDark(context) ? darkTextPrimary : lightBlack;
+
+  static Color iconPrimary(BuildContext context) => iconColor(context);
 
   static Color iconSecondary(BuildContext context) =>
       isDark(context) ? darkTextSecondary : grey500;

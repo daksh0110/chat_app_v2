@@ -278,11 +278,11 @@ class _ChangePasswordState extends State<ChangePassword> {
     final currentState = data[currentIndex];
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: DefaultColorSheet.scaffoldBg(context),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: DefaultColorSheet.appBarBg(context),
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: IconThemeData(color: DefaultColorSheet.appBarIcon(context)),
       ),
       body: SafeArea(
         child: Padding(

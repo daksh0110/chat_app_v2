@@ -44,6 +44,36 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       if (!authResponse.success &&
           await ref.read(tokenProvider.future) == token) {
         await logout();
+      } else if (authResponse.success) {
+        try {
+          final profile = await UserApiService(
+            ApiClient(),
+          ).getMyProfile(token: token);
+
+          if (profile.data != null) {
+            final userTableProvider = ref.read(usersTableProvider.notifier);
+            await userTableProvider.updateUserProfile(
+              UserModel(
+                id: profile.data!.id,
+                name: profile.data!.name,
+                email: profile.data!.email,
+                bio: profile.data?.bio ?? "",
+              ),
+              profile.data!.media != null
+                  ? UploadAttachment(
+                      key: profile.data!.media!.key,
+                      contentType: profile.data!.media!.contentType,
+                      type: profile.data!.media!.type,
+                      actorId: profile.data!.id,
+                      name: profile.data!.media!.name,
+                      url: profile.data!.media!.url,
+                    )
+                  : null,
+            );
+          }
+        } catch (e) {
+          debugPrint('Unable to sync profile on session restore: $e');
+        }
       }
     } catch (error) {
       debugPrint('Unable to validate saved session while offline: $error');
@@ -76,6 +106,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
               type: profile.data!.media!.type,
               actorId: profile.data!.id,
               name: profile.data!.media!.name,
+              url: profile.data!.media!.url,
             )
           : null,
     );

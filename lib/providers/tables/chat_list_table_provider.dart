@@ -283,9 +283,9 @@ class ChatListTableProvider extends Notifier {
     final db = ref.read(databaseProvider);
     final now = timestamp ?? DateTime.now().millisecondsSinceEpoch;
 
-    final existing = await (db.select(db.chatListTable)
-          ..where((t) => t.chatId.equals(chatId)))
-        .getSingleOrNull();
+    final existing = await (db.select(
+      db.chatListTable,
+    )..where((t) => t.chatId.equals(chatId))).getSingleOrNull();
 
     if (existing == null) return;
 
@@ -293,9 +293,9 @@ class ChatListTableProvider extends Notifier {
         ? existing.unReadCount + 1
         : existing.unReadCount;
 
-    await (db.update(db.chatListTable)
-          ..where((t) => t.chatId.equals(chatId)))
-        .write(
+    await (db.update(
+      db.chatListTable,
+    )..where((t) => t.chatId.equals(chatId))).write(
       ChatListTableCompanion(
         lastMessage: Value(lastMessage),
         lastMessageTime: Value(now),
@@ -324,17 +324,56 @@ class ChatListTableProvider extends Notifier {
 
   Future<String?> findDirectChatIdWithUser(String targetUserId) async {
     final db = ref.read(databaseProvider);
-    final query = db.select(db.chatListTable).join([
-      innerJoin(
-        db.chatParticipants,
-        db.chatParticipants.chatId.equalsExp(db.chatListTable.chatId),
-      ),
-    ])..where(
-        db.chatListTable.type.equals("DIRECT") &
-        db.chatParticipants.userId.equals(targetUserId),
-      );
+    final query =
+        db.select(db.chatListTable).join([
+          innerJoin(
+            db.chatParticipants,
+            db.chatParticipants.chatId.equalsExp(db.chatListTable.chatId),
+          ),
+        ])..where(
+          db.chatListTable.type.upper().equals("DIRECT") &
+              db.chatParticipants.userId.equals(targetUserId),
+        );
 
     final result = await query.getSingleOrNull();
-    return result?.readTable(db.chatListTable).chatId;
+    if (result != null) {
+      return result.readTable(db.chatListTable).chatId;
+    }
+
+    final msgQuery =
+        db.select(db.chatListTable).join([
+          innerJoin(
+            db.messages,
+            db.messages.chatId.equalsExp(db.chatListTable.chatId),
+          ),
+        ])..where(
+          db.chatListTable.type.upper().equals("DIRECT") &
+              db.messages.senderId.equals(targetUserId),
+        );
+
+    final msgResult = await msgQuery.getSingleOrNull();
+    if (msgResult != null) {
+      final foundChatId = msgResult.readTable(db.chatListTable).chatId;
+      final currentUser = ref.read(userPreferenceTableProvider).value;
+      if (currentUser != null && currentUser.isNotEmpty) {
+        await ref
+            .read(chatParticipantsTableProvider.notifier)
+            .bulkInsertParticipants([
+              Participant(
+                chatId: foundChatId,
+                userId: currentUser,
+                role: "MEMBER",
+              ),
+              Participant(
+                chatId: foundChatId,
+                userId: targetUserId,
+                role: "MEMBER",
+              ),
+            ]);
+      }
+      return foundChatId;
+    }
+
+    return null;
   }
 }

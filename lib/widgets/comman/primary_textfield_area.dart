@@ -27,14 +27,20 @@ class PrimaryTextAreaField extends StatelessWidget {
       maxLength: maxLength,
       textAlign: TextAlign.start,
       enabled: !disabled,
+      cursorColor: DefaultColorSheet.primary,
+      style: TextStyle(
+        color: DefaultColorSheet.textPrimary(context),
+        fontSize: 16,
+      ),
       decoration: InputDecoration(
         alignLabelWithHint: true,
         labelText: labelText,
+        labelStyle: TextStyle(color: DefaultColorSheet.textSecondary(context)),
         hintText: hintText,
+        hintStyle: TextStyle(color: DefaultColorSheet.inputHintColor(context)),
+        counterStyle: TextStyle(color: DefaultColorSheet.textSecondary(context)),
         filled: true,
-        fillColor: disabled
-            ? DefaultColorSheet.primary.withOpacity(0.02)
-            : DefaultColorSheet.primary.withOpacity(0.04),
+        fillColor: DefaultColorSheet.inputFieldBg(context),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(color: DefaultColorSheet.primary),
@@ -47,7 +53,9 @@ class PrimaryTextAreaField extends StatelessWidget {
         disabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(
-            color: DefaultColorSheet.primary.withOpacity(0.2),
+            color: DefaultColorSheet.isDark(context)
+                ? Colors.white24
+                : Colors.black12,
           ),
         ),
       ),

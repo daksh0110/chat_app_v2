@@ -9,10 +9,12 @@ class ProfileMediaSection extends StatelessWidget {
     super.key,
     required this.media,
     required this.totalMediaCount,
+    this.onViewAllTap,
   });
 
   final List<MediaShared> media;
   final int totalMediaCount;
+  final VoidCallback? onViewAllTap;
 
   @override
   Widget build(BuildContext context) {
@@ -28,12 +30,15 @@ class ProfileMediaSection extends StatelessWidget {
               color: DefaultColorSheet.grey500,
             ),
             const Spacer(),
-            PrimaryText(
-              totalMediaCount > media.length
-                  ? 'View all ($totalMediaCount)'
-                  : 'View all',
-              color: DefaultColorSheet.green500,
-              fontWeight: FontWeight.w600,
+            InkWell(
+              onTap: onViewAllTap,
+              child: PrimaryText(
+                totalMediaCount > media.length
+                    ? 'View all ($totalMediaCount)'
+                    : 'View all',
+                color: DefaultColorSheet.green500,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),

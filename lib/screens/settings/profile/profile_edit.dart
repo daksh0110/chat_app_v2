@@ -3,11 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:my_app/colors/defaullt_color_sheet.dart';
-
+import 'package:my_app/core/network/api_client.dart';
+import 'package:my_app/data/services/user_api_service.dart';
+import 'package:my_app/modal/upload_responses/upload_attachment.dart';
+import 'package:my_app/modal/user.modal.dart';
 import 'package:my_app/providers/image_picker_provider.dart';
 import 'package:my_app/providers/profile_edit_provider.dart';
-
+import 'package:my_app/providers/tables/users_table_provider.dart';
 import 'package:my_app/providers/tables/user_preference_table_provider.dart';
+import 'package:my_app/providers/token_provider.dart';
 import 'package:my_app/widgets/comman/primary_button.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
 import 'package:my_app/widgets/comman/primary_text_field.dart';
@@ -31,7 +35,7 @@ class ProfileEditState extends ConsumerState<ProfileEdit> {
   late final TextEditingController bioController;
   late final TextEditingController profilePhotoController;
   XFile? image;
-  late final String userId;
+  String userId = '';
   String _originalBio = '';
   String _originalProfilePhoto = '';
 
@@ -45,6 +49,67 @@ class ProfileEditState extends ConsumerState<ProfileEdit> {
     profilePhotoController = TextEditingController();
     bioController.addListener(_onChanged);
     profilePhotoController.addListener(_onChanged);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshProfile();
+    });
+  }
+
+  Future<void> _refreshProfile() async {
+    try {
+      final token = await ref.read(tokenProvider.future);
+      if (token == null || token.isEmpty) return;
+
+      final profile = await UserApiService(
+        ApiClient(),
+      ).getMyProfile(token: token);
+
+      if (profile.data != null && mounted) {
+        final data = profile.data!;
+        await ref.read(usersTableProvider.notifier).updateUserProfile(
+              UserModel(
+                id: data.id,
+                name: data.name,
+                email: data.email,
+                bio: data.bio ?? "",
+              ),
+              data.media != null
+                  ? UploadAttachment(
+                      key: data.media!.key,
+                      contentType: data.media!.contentType,
+                      type: data.media!.type,
+                      actorId: data.id,
+                      name: data.media!.name,
+                      url: data.media!.url,
+                    )
+                  : null,
+            );
+
+        if (nameController.text.isEmpty && data.name.isNotEmpty) {
+          nameController.text = data.name;
+        }
+        if (emailController.text.isEmpty && data.email.isNotEmpty) {
+          emailController.text = data.email;
+        }
+        if (bioController.text.isEmpty && (data.bio?.isNotEmpty ?? false)) {
+          bioController.text = data.bio!;
+          _originalBio = data.bio!;
+        }
+        final photo = (data.media?.location != null &&
+                data.media!.location!.isNotEmpty)
+            ? data.media!.location
+            : data.media?.url;
+        if (profilePhotoController.text.isEmpty &&
+            (photo?.isNotEmpty ?? false)) {
+          profilePhotoController.text = photo!;
+          _originalProfilePhoto = photo;
+        }
+        userId = data.id;
+        if (mounted) setState(() {});
+      }
+    } catch (e) {
+      debugPrint("Failed to refresh profile in ProfileEdit: $e");
+    }
   }
 
   void _onChanged() {
@@ -83,7 +148,7 @@ class ProfileEditState extends ConsumerState<ProfileEdit> {
   }
 
   Future<void> _onSubmit() async {
-    if (!hasChanges) return;
+    if (!hasChanges || userId.isEmpty) return;
 
     try {
       await ref
@@ -125,15 +190,22 @@ class ProfileEditState extends ConsumerState<ProfileEdit> {
 
     userAsync.whenData((user) {
       if (user == null) return;
-      if (nameController.text.isEmpty) {
+      if (nameController.text.isEmpty && user.name.isNotEmpty) {
         nameController.text = user.name;
-        emailController.text = user.email;
-        bioController.text = user.bio ?? '';
-        profilePhotoController.text = user.profilePic ?? '';
-        _originalBio = user.bio ?? '';
-        _originalProfilePhoto = user.profilePic ?? '';
-        userId = user.id;
       }
+      if (emailController.text.isEmpty && user.email.isNotEmpty) {
+        emailController.text = user.email;
+      }
+      if (bioController.text.isEmpty && (user.bio?.isNotEmpty ?? false)) {
+        bioController.text = user.bio ?? '';
+        _originalBio = user.bio ?? '';
+      }
+      if (profilePhotoController.text.isEmpty &&
+          (user.profilePic?.isNotEmpty ?? false)) {
+        profilePhotoController.text = user.profilePic ?? '';
+        _originalProfilePhoto = user.profilePic ?? '';
+      }
+      userId = user.id;
     });
 
     return Scaffold(
@@ -165,7 +237,7 @@ class ProfileEditState extends ConsumerState<ProfileEdit> {
                         showPopover(
                           context: avatarContext,
                           direction: PopoverDirection.bottom,
-                          backgroundColor: Colors.white,
+                          backgroundColor: DefaultColorSheet.cardBg(context),
                           width: 220,
                           bodyBuilder: (popoverContext) => _ProfilePhotoPopover(
                             onAddPhoto: () {
@@ -249,6 +321,10 @@ class _ProfilePhotoPopover extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textPrimary = DefaultColorSheet.textPrimary(context);
+    final iconColor = DefaultColorSheet.iconPrimary(context);
+    final dividerColor = DefaultColorSheet.divider(context);
+
     return Material(
       color: Colors.transparent,
       child: Column(
@@ -256,20 +332,20 @@ class _ProfilePhotoPopover extends StatelessWidget {
         children: [
           if (profilePhoto.text.isEmpty) ...[
             ListTile(
-              leading: const Icon(LucideIcons.camera, size: 20),
-              title: const Text('Add photo'),
+              leading: Icon(LucideIcons.camera, size: 20, color: iconColor),
+              title: Text('Add photo', style: TextStyle(color: textPrimary)),
               dense: true,
               onTap: onAddPhoto,
             ),
           ] else ...[
-            const Divider(height: 1),
+            Divider(height: 1, color: dividerColor),
             ListTile(
-              leading: const Icon(Icons.edit, size: 20),
-              title: const Text('Edit photo'),
+              leading: Icon(Icons.edit, size: 20, color: iconColor),
+              title: Text('Edit photo', style: TextStyle(color: textPrimary)),
               dense: true,
               onTap: onEditPhoto,
             ),
-            const Divider(height: 1),
+            Divider(height: 1, color: dividerColor),
             ListTile(
               leading: const Icon(Icons.delete, color: Colors.red, size: 20),
               title: const Text(

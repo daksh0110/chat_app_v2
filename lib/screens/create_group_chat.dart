@@ -212,7 +212,9 @@ class _createGroupChatState extends ConsumerState<CreateGroupChat> {
                                             width: 100,
                                             height: 100,
                                             decoration: BoxDecoration(
-                                              color: DefaultColorSheet.green100,
+                                              color: DefaultColorSheet.isDark(context)
+                                                  ? DefaultColorSheet.darkSurface
+                                                  : DefaultColorSheet.green100,
                                               shape: BoxShape.circle,
                                             ),
                                             child: const Icon(
@@ -231,7 +233,9 @@ class _createGroupChatState extends ConsumerState<CreateGroupChat> {
                                           onTap: _removePhoto,
                                           child: Container(
                                             decoration: BoxDecoration(
-                                              color: DefaultColorSheet.grey200,
+                                              color: DefaultColorSheet.isDark(context)
+                                                  ? DefaultColorSheet.darkSurface
+                                                  : DefaultColorSheet.grey200,
                                               shape: BoxShape.circle,
                                             ),
                                             padding: const EdgeInsets.all(6),
@@ -272,20 +276,25 @@ class _createGroupChatState extends ConsumerState<CreateGroupChat> {
                                 controller: _groupNameController,
                                 textAlign: TextAlign.center,
                                 enabled: !_isCreating,
-                                style: const TextStyle(
+                                maxLines: 1,
+                                maxLength: 50,
+                                cursorColor: DefaultColorSheet.primary,
+                                style: TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
-                                  color: DefaultColorSheet.lightBlack,
+                                  color: DefaultColorSheet.textPrimary(context),
                                 ),
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
                                   hintText: "Group Name",
+                                  counterText: "",
                                   border: InputBorder.none,
                                   hintStyle: TextStyle(
                                     fontWeight: FontWeight.normal,
+                                    color: DefaultColorSheet.inputHintColor(context),
                                   ),
                                 ),
                                 validator: (value) {
-                                  if (value == null || value.isEmpty) {
+                                  if (value == null || value.trim().isEmpty) {
                                     return 'Please Enter name';
                                   }
                                   return null;
@@ -306,15 +315,19 @@ class _createGroupChatState extends ConsumerState<CreateGroupChat> {
                         TextFormField(
                           controller: _descriptionController,
                           enabled: !_isCreating,
-                          style: const TextStyle(
+                          cursorColor: DefaultColorSheet.primary,
+                          style: TextStyle(
                             fontSize: 16,
-                            color: DefaultColorSheet.lightBlack,
+                            color: DefaultColorSheet.textPrimary(context),
                           ),
                           maxLines: 2,
                           decoration: InputDecoration(
                             hintText: "What's this group about?",
+                            hintStyle: TextStyle(
+                              color: DefaultColorSheet.inputHintColor(context),
+                            ),
                             filled: true,
-                            fillColor: DefaultColorSheet.grey600,
+                            fillColor: DefaultColorSheet.inputFieldBg(context),
                             contentPadding: const EdgeInsets.all(16),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
@@ -322,7 +335,7 @@ class _createGroupChatState extends ConsumerState<CreateGroupChat> {
                             ),
                           ),
                           validator: (value) {
-                            if (value == null || value.isEmpty) {
+                            if (value == null || value.trim().isEmpty) {
                               return 'Please Enter description';
                             }
                             return null;
@@ -385,8 +398,10 @@ class _createGroupChatState extends ConsumerState<CreateGroupChat> {
                                         onTap: () => _removeMember(user),
                                         child: Container(
                                           padding: const EdgeInsets.all(2),
-                                          decoration: const BoxDecoration(
-                                            color: Colors.white,
+                                          decoration: BoxDecoration(
+                                            color: DefaultColorSheet.isDark(context)
+                                                ? DefaultColorSheet.darkSurface
+                                                : Colors.white,
                                             shape: BoxShape.circle,
                                           ),
                                           child: const Icon(
@@ -399,7 +414,7 @@ class _createGroupChatState extends ConsumerState<CreateGroupChat> {
                                     ),
                                 ],
                               );
-                            }).toList(),
+                            }),
                           ],
                         ),
                         const SizedBox(height: 40),

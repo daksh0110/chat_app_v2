@@ -15,6 +15,7 @@ import 'package:my_app/screens/settings/account/accounts_main.dart';
 import 'package:my_app/screens/settings/account/blocked_users_screen.dart';
 import 'package:my_app/screens/settings/profile/profile_edit.dart';
 import 'package:my_app/screens/settings/settings_main.dart';
+import 'package:my_app/screens/shared_media_screen.dart';
 import 'package:my_app/screens/sign_up.dart';
 import 'package:my_app/screens/user_profile.dart';
 import 'package:my_app/screens/verify_email.dart';
@@ -42,6 +43,7 @@ class AppRoutes {
   static const String notifications = "/notifications";
   static const String chatSettings = "/chat-settings";
   static const String archivedChats = "/archived-chats";
+  static const String sharedMedia = "/shared-media";
 
   static Map<String, WidgetBuilder> get routes => {
     home: (context) => MainScreen(),
@@ -64,5 +66,6 @@ class AppRoutes {
     notifications: (context) => const NotificationsScreen(),
     chatSettings: (context) => const ChatSettingsScreen(),
     archivedChats: (context) => const ArchivedChatsScreen(),
+    sharedMedia: (context) => const SharedMediaScreen(),
   };
 }

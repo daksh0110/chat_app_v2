@@ -109,11 +109,11 @@ class _GooglePasswordSetupState extends ConsumerState<GooglePasswordSetup> {
     final isDisabled = !isFormFilled;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: DefaultColorSheet.scaffoldBg(context),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: DefaultColorSheet.appBarBg(context),
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: IconThemeData(color: DefaultColorSheet.appBarIcon(context)),
         scrolledUnderElevation: 0,
       ),
       body: SafeArea(

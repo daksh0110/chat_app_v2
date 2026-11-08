@@ -132,18 +132,18 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     final imageWidget = _pickedPhotoBytes != null
         ? CircleAvatar(
             radius: 54,
-            backgroundColor: DefaultColorSheet.primary.withOpacity(0.12),
+            backgroundColor: DefaultColorSheet.primary.withValues(alpha: 0.12),
             backgroundImage: MemoryImage(_pickedPhotoBytes!),
           )
         : _profilePicUrl != null
         ? CircleAvatar(
             radius: 54,
-            backgroundColor: DefaultColorSheet.primary.withOpacity(0.12),
+            backgroundColor: DefaultColorSheet.primary.withValues(alpha: 0.12),
             backgroundImage: NetworkImage(_profilePicUrl!),
           )
         : CircleAvatar(
             radius: 54,
-            backgroundColor: DefaultColorSheet.primary.withOpacity(0.08),
+            backgroundColor: DefaultColorSheet.primary.withValues(alpha: 0.08),
             child: Icon(
               Icons.camera_alt_outlined,
               size: 34,
@@ -156,21 +156,22 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: DefaultColorSheet.scaffoldBg(context),
       appBar: AppBar(
         scrolledUnderElevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: DefaultColorSheet.appBarBg(context),
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
-        title: const PrimaryText(
+        iconTheme: IconThemeData(color: DefaultColorSheet.appBarIcon(context)),
+        title: PrimaryText(
           'Profile Setup',
           fontSize: 18,
           fontWeight: FontWeight.w600,
+          color: DefaultColorSheet.appBarTitle(context),
         ),
         actions: [
           IconButton(
             onPressed: () {},
-            icon: const Icon(Icons.more_vert, color: Colors.black),
+            icon: Icon(Icons.more_vert, color: DefaultColorSheet.appBarIcon(context)),
           ),
         ],
       ),

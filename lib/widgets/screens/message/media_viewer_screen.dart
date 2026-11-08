@@ -29,6 +29,7 @@ class MediaViewerScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
         titleSpacing: 0,
         title: Row(
@@ -53,6 +54,7 @@ class MediaViewerScreen extends StatelessWidget {
                   Text(
                     senderName,
                     style: const TextStyle(
+                      color: Colors.white,
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                     ),
