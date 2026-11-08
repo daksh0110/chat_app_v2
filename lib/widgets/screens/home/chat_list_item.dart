@@ -98,6 +98,8 @@ class ChatListItem extends ConsumerWidget {
                       fontSize: 20,
                       fontWeight: FontWeight.w500,
                       color: DefaultColorSheet.textPrimary(context),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     isTyping

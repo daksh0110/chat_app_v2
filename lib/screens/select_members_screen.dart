@@ -110,8 +110,9 @@ class _SelectMembersScreenState extends ConsumerState<SelectMembersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: DefaultColorSheet.scaffoldBg(context),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: DefaultColorSheet.appBarBg(context),
         elevation: 0,
         toolbarHeight: 120,
         automaticallyImplyLeading: false,
@@ -121,9 +122,9 @@ class _SelectMembersScreenState extends ConsumerState<SelectMembersScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.close,
-                    color: DefaultColorSheet.lightBlack,
+                    color: DefaultColorSheet.appBarIcon(context),
                   ),
                   onPressed: () => Navigator.pop(context),
                 ),
@@ -156,7 +157,7 @@ class _SelectMembersScreenState extends ConsumerState<SelectMembersScreen> {
               height: 44,
               padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
-                color: DefaultColorSheet.disbaledButton,
+                color: DefaultColorSheet.inputFieldBg(context),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
@@ -170,8 +171,16 @@ class _SelectMembersScreenState extends ConsumerState<SelectMembersScreen> {
                   Expanded(
                     child: TextField(
                       onChanged: _onSearchChanged,
-                      decoration: const InputDecoration(
+                      cursorColor: DefaultColorSheet.primary,
+                      style: TextStyle(
+                        color: DefaultColorSheet.textPrimary(context),
+                        fontSize: 14,
+                      ),
+                      decoration: InputDecoration(
                         hintText: "Search users...",
+                        hintStyle: TextStyle(
+                          color: DefaultColorSheet.inputHintColor(context),
+                        ),
                         border: InputBorder.none,
                         isDense: true,
                       ),
@@ -183,7 +192,6 @@ class _SelectMembersScreenState extends ConsumerState<SelectMembersScreen> {
           ],
         ),
       ),
-      backgroundColor: Colors.white,
       body: _isSearching ? _buildSearchResults() : _buildContactsList(),
     );
   }

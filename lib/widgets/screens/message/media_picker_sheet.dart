@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:my_app/colors/defaullt_color_sheet.dart';
 import 'package:photo_manager/photo_manager.dart';
 
 /// A small multi-select gallery picker backed by `photo_manager`.
@@ -80,9 +81,9 @@ class _MediaPickerSheetState extends State<MediaPickerSheet> {
       top: false,
       child: Container(
         height: MediaQuery.sizeOf(context).height * .74,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        decoration: BoxDecoration(
+          color: DefaultColorSheet.surfaceBg(context),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
         ),
         child: Column(
           children: [
@@ -92,20 +93,27 @@ class _MediaPickerSheetState extends State<MediaPickerSheet> {
                 children: [
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(LucideIcons.x),
+                    icon: Icon(
+                      LucideIcons.x,
+                      color: DefaultColorSheet.iconColor(context),
+                    ),
                   ),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Select media',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
+                        color: DefaultColorSheet.textPrimary(context),
                       ),
                     ),
                   ),
                   TextButton(
                     onPressed: _selected.isEmpty ? null : _sendSelected,
+                    style: TextButton.styleFrom(
+                      foregroundColor: DefaultColorSheet.primary,
+                    ),
                     child: Text(
                       'Add${_selected.isEmpty ? '' : ' (${_selected.length})'}',
                     ),
@@ -121,17 +129,29 @@ class _MediaPickerSheetState extends State<MediaPickerSheet> {
   }
 
   Widget _buildBody() {
-    if (_loading) return const Center(child: CircularProgressIndicator());
+    if (_loading) {
+      return const Center(
+        child: CircularProgressIndicator(color: DefaultColorSheet.primary),
+      );
+    }
     if (_permissionDenied) {
       return Center(
         child: TextButton(
           onPressed: PhotoManager.openSetting,
-          child: const Text('Allow photo access in Settings'),
+          child: Text(
+            'Allow photo access in Settings',
+            style: TextStyle(color: DefaultColorSheet.primary),
+          ),
         ),
       );
     }
     if (_assets.isEmpty) {
-      return const Center(child: Text('No photos or videos found'));
+      return Center(
+        child: Text(
+          'No photos or videos found',
+          style: TextStyle(color: DefaultColorSheet.textSecondary(context)),
+        ),
+      );
     }
     return GridView.builder(
       padding: const EdgeInsets.all(3),

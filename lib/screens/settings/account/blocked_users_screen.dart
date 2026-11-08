@@ -112,14 +112,16 @@ class _BlockedUsersScreenState extends ConsumerState<BlockedUsersScreen> {
                   Icon(
                     Icons.block_outlined,
                     size: 72,
-                    color: Colors.grey.shade300,
+                    color: DefaultColorSheet.isDark(context)
+                        ? Colors.grey.shade700
+                        : Colors.grey.shade300,
                   ),
                   const SizedBox(height: 16),
                   PrimaryText(
                     "No blocked contacts",
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade700,
+                    color: DefaultColorSheet.textPrimary(context),
                   ),
                   const SizedBox(height: 8),
                   Padding(
@@ -129,7 +131,7 @@ class _BlockedUsersScreenState extends ConsumerState<BlockedUsersScreen> {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey.shade500,
+                        color: DefaultColorSheet.textSecondary(context),
                         height: 1.4,
                       ),
                     ),

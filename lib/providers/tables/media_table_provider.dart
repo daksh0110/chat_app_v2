@@ -59,12 +59,24 @@ class MediaTableProvider extends Notifier {
         db.mediaTable,
       )..where((t) => t.id.equals(existing.id))).write(
         MediaTableCompanion(
-          key: Value(media.key),
-          contentType: Value(media.contentType),
-          Type: Value(media.type),
-          location: Value(localPath),
-          name: Value(media.name),
-          url: Value(media.url),
+          key: Value(media.key.isNotEmpty ? media.key : (existing.key ?? '')),
+          contentType: Value(
+            media.contentType.isNotEmpty
+                ? media.contentType
+                : (existing.contentType ?? ''),
+          ),
+          Type: Value(
+            media.type.isNotEmpty ? media.type : (existing.Type ?? ''),
+          ),
+          location: Value(
+            (localPath != null && localPath.isNotEmpty)
+                ? localPath
+                : existing.location,
+          ),
+          name: Value(
+            media.name.isNotEmpty ? media.name : (existing.name ?? ''),
+          ),
+          url: Value(media.url ?? existing.url),
         ),
       );
     }
@@ -96,6 +108,7 @@ class MediaTableProvider extends Notifier {
       type: media.Type ?? "",
       location: media.location ?? "",
       name: media.name ?? "",
+      url: media.url,
     );
   }
 

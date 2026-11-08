@@ -1,8 +1,3 @@
-import 'package:image_picker/image_picker.dart';
-import 'package:mime/mime.dart';
-import 'package:my_app/core/network/api_client.dart';
-import 'package:my_app/core/util/get_file_type.dart';
-import 'package:my_app/data/services/upload_service.dart';
 import 'package:my_app/screens/select_members_screen.dart';
 import 'package:my_app/modal/user.modal.dart';
 import 'package:my_app/providers/socket_provider.dart';
@@ -14,6 +9,7 @@ import 'package:my_app/core/app_routes.dart';
 import 'package:my_app/screens/chat_settings_screen.dart';
 import 'package:my_app/modal/screens/search/message_screen_arguments.dart';
 import 'package:my_app/providers/user_relationship_provider.dart';
+import 'package:my_app/modal/screens/userProfile/shared_media_arguments.dart';
 import 'package:my_app/modal/group_profile_modal.dart';
 import 'package:my_app/modal/user_profile_modal.dart';
 import 'package:my_app/providers/tables/groups_table_provider.dart';
@@ -26,6 +22,7 @@ import 'package:my_app/widgets/comman/primary_text.dart';
 import 'package:my_app/widgets/comman/toast_notification.dart';
 import 'package:my_app/widgets/comman/user_bubble.dart';
 import 'package:my_app/widgets/screens/userProfile/build_relationship_button.dart';
+import 'package:my_app/widgets/screens/userProfile/edit_group_sheet.dart';
 import 'package:my_app/widgets/screens/userProfile/media_shared_list.dart';
 import 'package:my_app/widgets/screens/userProfile/profile_detail_item.dart';
 import 'package:toastification/toastification.dart';
@@ -40,82 +37,6 @@ class UserProfile extends ConsumerStatefulWidget {
 class UserProfileState extends ConsumerState<UserProfile> {
   SearchItem? user;
   String? _refreshedProfileId;
-  bool _isUpdatingGroupPhoto = false;
-
-  Future<void> _updateGroupPhoto(BuildContext context, String chatId) async {
-    try {
-      final picker = ImagePicker();
-      final pickedImage = await picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1024,
-        maxHeight: 1024,
-        imageQuality: 85,
-      );
-      if (pickedImage == null) return;
-
-      setState(() {
-        _isUpdatingGroupPhoto = true;
-      });
-
-      final mime =
-          lookupMimeType(pickedImage.path) ?? 'application/octet-stream';
-
-      final presignedUrl = await UploadService(ApiClient()).getPresignedUrl(
-        assetType: 'chat',
-        entityType: 'avatar',
-        contentType: mime,
-      );
-
-      if (!presignedUrl.success || presignedUrl.data == null) {
-        throw Exception('Unable to generate presigned URL');
-      }
-
-      final response = presignedUrl.data!;
-      final result = await UploadService(ApiClient()).uploadToSignedUrl(
-        await pickedImage.readAsBytes(),
-        response.url,
-        mime,
-      );
-
-      if (result != 200) {
-        throw Exception('Failed to upload image file');
-      }
-
-      await ref.read(socketProvider).updateGroupProfile(
-        chatId: chatId,
-        media: {
-          'key': response.key ?? '',
-          'name': pickedImage.name,
-          'type': getMediaType(mime),
-          'content_type': mime,
-        },
-        image: response.key ?? '',
-      );
-
-      if (context.mounted) {
-        ToastHelper.show(
-          context: context,
-          message: 'Group photo updated successfully',
-          type: ToastificationType.success,
-        );
-      }
-    } catch (e) {
-      debugPrint('Failed to update group photo: $e');
-      if (context.mounted) {
-        ToastHelper.show(
-          context: context,
-          message: 'Failed to update group photo: $e',
-          type: ToastificationType.error,
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isUpdatingGroupPhoto = false;
-        });
-      }
-    }
-  }
 
   @override
   void didChangeDependencies() {
@@ -196,16 +117,23 @@ class UserProfileState extends ConsumerState<UserProfile> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.grey.shade900,
-        title: const Text('Leave Group', style: TextStyle(color: Colors.white)),
-        content: const Text(
+        backgroundColor: DefaultColorSheet.cardBg(context),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Leave Group',
+          style: TextStyle(color: DefaultColorSheet.textPrimary(context)),
+        ),
+        content: Text(
           'Are you sure you want to leave this group?',
-          style: TextStyle(color: Colors.white70),
+          style: TextStyle(color: DefaultColorSheet.textSecondary(context)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white60)),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: DefaultColorSheet.textSecondary(context)),
+            ),
           ),
           TextButton(
             onPressed: () async {
@@ -239,16 +167,23 @@ class UserProfileState extends ConsumerState<UserProfile> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.grey.shade900,
-        title: Text('Remove ${member.name}', style: const TextStyle(color: Colors.white)),
+        backgroundColor: DefaultColorSheet.cardBg(context),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Remove ${member.name}',
+          style: TextStyle(color: DefaultColorSheet.textPrimary(context)),
+        ),
         content: Text(
           'Are you sure you want to remove ${member.name} from this group?',
-          style: const TextStyle(color: Colors.white70),
+          style: TextStyle(color: DefaultColorSheet.textSecondary(context)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white60)),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: DefaultColorSheet.textSecondary(context)),
+            ),
           ),
           TextButton(
             onPressed: () async {
@@ -284,11 +219,10 @@ class UserProfileState extends ConsumerState<UserProfile> {
     final isCurrentUserAdmin = group.members.any(
       (m) => m.userId == currentUser && m.role.toUpperCase() == 'ADMIN',
     );
-    final displayName = args.name?.isNotEmpty == true
-        ? args.name!
-        : group.name.isNotEmpty
+    final displayName = group.name.isNotEmpty
         ? group.name
-        : 'Group Chat';
+        : (args.name?.isNotEmpty == true ? args.name! : 'Group Chat');
+    final displayPic = group.profilePicUrl ?? args.profilePicUrl;
     final adminCount = group.members
         .where((member) => member.role.toUpperCase() == 'ADMIN')
         .length;
@@ -306,6 +240,16 @@ class UserProfileState extends ConsumerState<UserProfile> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
         ),
         actions: [
+          if (isCurrentUserAdmin)
+            IconButton(
+              icon: const Icon(LucideIcons.pencil, color: Colors.white, size: 20),
+              tooltip: 'Edit Group Info',
+              onPressed: () => EditGroupSheet.show(
+                context,
+                group: group,
+                fallbackProfilePic: args.profilePicUrl,
+              ),
+            ),
           IconButton(
             icon: const Icon(LucideIcons.settings, color: Colors.white),
             tooltip: 'Chat Settings',
@@ -316,7 +260,7 @@ class UserProfileState extends ConsumerState<UserProfile> {
                 arguments: ChatSettingsArguments(
                   chatId: group.chatId,
                   name: displayName,
-                  profilePicUrl: args.profilePicUrl ?? group.profilePicUrl,
+                  profilePicUrl: displayPic,
                   isGroupChat: true,
                 ),
               );
@@ -328,14 +272,18 @@ class UserProfileState extends ConsumerState<UserProfile> {
         children: [
           const SizedBox(height: 10),
           GestureDetector(
-            onTap: isCurrentUserAdmin && !_isUpdatingGroupPhoto
-                ? () => _updateGroupPhoto(context, group.chatId)
+            onTap: isCurrentUserAdmin
+                ? () => EditGroupSheet.show(
+                      context,
+                      group: group,
+                      fallbackProfilePic: args.profilePicUrl,
+                    )
                 : null,
             child: Stack(
               clipBehavior: Clip.none,
               children: [
                 UserBubble(
-                  profilePicUrl: args.profilePicUrl ?? group.profilePicUrl,
+                  profilePicUrl: displayPic,
                   name: displayName,
                   size: 80,
                   needActiveIndicator: false,
@@ -351,37 +299,35 @@ class UserProfileState extends ConsumerState<UserProfile> {
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.black, width: 2),
                       ),
-                      child: _isUpdatingGroupPhoto
-                          ? const SizedBox(
-                              width: 14,
-                              height: 14,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Icon(
-                              Icons.camera_alt,
-                              size: 14,
-                              color: Colors.white,
-                            ),
+                      child: const Icon(
+                        Icons.camera_alt,
+                        size: 14,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
               ],
             ),
           ),
           const SizedBox(height: 10),
-          PrimaryText(
-            displayName,
-            fontSize: 20,
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: PrimaryText(
+              displayName,
+              fontSize: 20,
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
           const SizedBox(height: 8),
           PrimaryText(
             '${group.members.length} members · $adminCount admin${adminCount == 1 ? '' : 's'}',
             color: Colors.white70,
             fontSize: 14,
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
           Expanded(
@@ -396,12 +342,26 @@ class UserProfileState extends ConsumerState<UserProfile> {
                       ProfileDetailItem(
                         title: 'Group Name',
                         value: displayName,
+                        onEdit: isCurrentUserAdmin
+                            ? () => EditGroupSheet.show(
+                                  context,
+                                  group: group,
+                                  fallbackProfilePic: args.profilePicUrl,
+                                )
+                            : null,
                       ),
                       ProfileDetailItem(
                         title: 'Description',
                         value: group.description.isNotEmpty
                             ? group.description
                             : '--',
+                        onEdit: isCurrentUserAdmin
+                            ? () => EditGroupSheet.show(
+                                  context,
+                                  group: group,
+                                  fallbackProfilePic: args.profilePicUrl,
+                                )
+                            : null,
                       ),
                       ProfileDetailItem(
                         title: 'Members',
@@ -497,6 +457,17 @@ class UserProfileState extends ConsumerState<UserProfile> {
                           ),
                           const Spacer(),
                           InkWell(
+                            onTap: () {
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.sharedMedia,
+                                arguments: SharedMediaArguments(
+                                  chatId: group.chatId,
+                                  title: displayName,
+                                  isGroupChat: true,
+                                ),
+                              );
+                            },
                             child: PrimaryText(
                               mediaCount > media.length
                                   ? 'View all ($mediaCount)'
@@ -651,11 +622,17 @@ class UserProfileState extends ConsumerState<UserProfile> {
             needActiveIndicator: false,
           ),
           const SizedBox(height: 10),
-          PrimaryText(
-            info.name ?? "",
-            fontSize: 20,
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: PrimaryText(
+              info.name ?? "",
+              fontSize: 20,
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
           const SizedBox(height: 18),
           buildRelationshipButton(
@@ -708,6 +685,17 @@ class UserProfileState extends ConsumerState<UserProfile> {
                           ),
                           const Spacer(),
                           InkWell(
+                            onTap: () {
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.sharedMedia,
+                                arguments: SharedMediaArguments(
+                                  chatId: info.chatId ?? info.id ?? '',
+                                  title: info.name ?? 'User',
+                                  isGroupChat: false,
+                                ),
+                              );
+                            },
                             child: PrimaryText(
                               mediaCount > media.length
                                   ? 'View all ($mediaCount)'

@@ -437,7 +437,7 @@ class MessageNotifer extends Notifier {
             final mime =
                 lookupMimeType(attachment.path) ?? "application/octet-stream";
             return UploadAttachment(
-              key: "",
+              key: const Uuid().v4(),
               contentType: mime,
               type: getMediaType(mime),
               location: attachment.path,

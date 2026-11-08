@@ -21,6 +21,7 @@ import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:my_app/modal/screens/message/message_item_model.dart';
 import 'package:my_app/providers/tables/messages_table_provider.dart';
+import 'package:my_app/providers/tables/request_user_provider.dart';
 import 'package:my_app/providers/tables/user_preference_table_provider.dart';
 import 'package:my_app/providers/user_relationship_provider.dart';
 import 'package:my_app/widgets/comman/primary_text.dart';
@@ -547,6 +548,21 @@ class _MessageScreen extends ConsumerState<MessageScreen> {
       _lastActiveUserId = newChatId;
       _chatListController.setActiveChatId(newChatId);
       ref.read(messageProvider.notifier).markChatMessagesRead(newChatId);
+    }
+
+    if (!isGroup &&
+        receiverId.isNotEmpty &&
+        chatId.isNotEmpty &&
+        !chatId.startsWith("local_")) {
+      final currentStatus = await ref
+          .read(requestUserProvider.notifier)
+          .getRelationshipStatus(receiverId);
+      if (currentStatus != RelationshipStatus.friends &&
+          currentStatus != RelationshipStatus.blocked) {
+        await ref
+            .read(requestUserProvider.notifier)
+            .insertOrUpdateRequest(receiverId, 'FRIENDS');
+      }
     }
   }
 

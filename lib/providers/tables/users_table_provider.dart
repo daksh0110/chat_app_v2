@@ -43,12 +43,16 @@ class UsersTableProvider extends Notifier {
         final user = row.readTable(db.usersTable);
         final media = row.readTableOrNull(db.mediaTable);
 
+        final pic = (media?.location != null && media!.location!.isNotEmpty)
+            ? media.location
+            : media?.url;
+
         return UserModel(
           id: user.userId,
           name: user.name,
           email: user.email,
           bio: user.bio,
-          profilePic: media?.location,
+          profilePic: pic,
         );
       }).toList();
     });
@@ -60,21 +64,36 @@ class UsersTableProvider extends Notifier {
   ) async {
     final db = ref.read(databaseProvider);
 
-    await db
-        .into(db.usersTable)
-        .insertOnConflictUpdate(
+    final existing = await (db.select(db.usersTable)
+          ..where((tbl) => tbl.userId.equals(userData.id)))
+        .getSingleOrNull();
+
+    final name = userData.name.trim().isNotEmpty
+        ? userData.name
+        : (existing?.name ?? '');
+
+    final email = userData.email.trim().isNotEmpty
+        ? userData.email
+        : (existing?.email ?? '');
+
+    final bio = (userData.bio != null && userData.bio!.trim().isNotEmpty)
+        ? userData.bio
+        : existing?.bio;
+
+    await db.into(db.usersTable).insertOnConflictUpdate(
           UsersTableCompanion(
-            bio: Value(userData.bio),
-            email: Value(userData.email),
-            name: Value(userData.name),
+            bio: Value(bio),
+            email: Value(email),
+            name: Value(name),
             userId: Value(userData.id),
           ),
         );
 
-    if (media != null) {
+    final mediaToUpdate = media ?? userData.media;
+    if (mediaToUpdate != null) {
       await ref
           .read(mediaTableProvider.notifier)
-          .addOrUpdateMediaDocument(media, userData.id);
+          .addOrUpdateMediaDocument(mediaToUpdate, userData.id);
     }
 
     return getUserById(userData.id);
@@ -111,12 +130,16 @@ class UsersTableProvider extends Notifier {
 
     final user = result.readTable(db.usersTable);
     final friend = result.readTableOrNull(db.friendsTable);
+    final pic = (media?.location != null && media!.location!.isNotEmpty)
+        ? media.location
+        : media?.url;
+
     return UserModel(
       id: user.userId,
       name: user.name,
       email: user.email,
       bio: user.bio,
-      profilePic: media?.location,
+      profilePic: pic,
       relationshipStatus: friend?.status,
     );
   }
@@ -154,6 +177,8 @@ class UsersTableProvider extends Notifier {
                 type: data.media!.type,
                 actorId: data.id,
                 name: data.media!.name,
+                url: data.media!.url,
+                location: data.media!.location,
               )
             : null,
       );

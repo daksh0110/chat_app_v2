@@ -91,7 +91,7 @@ class NewChatScreen extends ConsumerWidget {
             ),
           ),
 
-          Container(height: 1, color: DefaultColorSheet.grey200),
+          Container(height: 1, color: DefaultColorSheet.divider(context)),
 
           const Padding(
             padding: EdgeInsets.fromLTRB(20, 20, 20, 10),

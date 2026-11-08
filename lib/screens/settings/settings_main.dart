@@ -9,6 +9,7 @@ import 'package:my_app/providers/tables/user_preference_table_provider.dart';
 import 'package:my_app/widgets/comman/primary_container.dart';
 import 'package:my_app/widgets/screens/search/search_group_item.dart';
 import 'package:my_app/widgets/screens/settings/settingsMain/setting_menu_item.dart';
+import 'package:my_app/widgets/screens/settings/settingsMain/support_ticket_sheet.dart';
 import 'package:my_app/widgets/screens/settings/settingsMain/theme_selection_sheet.dart';
 
 class SettingsMain extends ConsumerWidget {
@@ -30,16 +31,19 @@ class SettingsMain extends ConsumerWidget {
                 }
 
                 final user = snapshot.data!;
-
+                debugPrint(user.toString());
                 return SearchGroupItem(
                   item: SearchItem(
                     id: user.id,
                     name: user.name,
                     email: user.email,
-                    bio: user.bio,
+                    bio: (user.bio?.trim().isNotEmpty ?? false)
+                        ? user.bio ?? user.email
+                        : user.email,
                     profilePicUrl: user.profilePic ?? '',
                     media: user.media,
                   ),
+
                   onTap: () {
                     Navigator.pushNamed(context, AppRoutes.profileEdit);
                   },
@@ -66,7 +70,9 @@ class SettingsMain extends ConsumerWidget {
                     item: item,
                     onTap: item.link == 'theme_settings'
                         ? () => ThemeSelectionSheet.show(context)
-                        : null,
+                        : item.link == 'support_sheet'
+                            ? () => SupportTicketSheet.show(context)
+                            : null,
                   );
                 },
                 separatorBuilder: (context, index) =>

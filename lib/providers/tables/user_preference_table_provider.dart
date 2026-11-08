@@ -39,14 +39,20 @@ class UserPreferenceTableProvider extends AsyncNotifier<String?> {
       final row = rows.first;
 
       final media = row.readTableOrNull(db.mediaTable);
-      final user = row.readTable(db.usersTable);
+      final user = row.readTableOrNull(db.usersTable);
+
+      if (user == null) return null;
+
+      final pic = (media?.location != null && media!.location!.isNotEmpty)
+          ? media.location
+          : media?.url;
 
       return UserModel(
         id: user.userId,
         name: user.name,
         email: user.email,
         bio: user.bio,
-        profilePic: media?.location,
+        profilePic: pic,
       );
     });
   }

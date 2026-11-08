@@ -21,4 +21,10 @@ final List<SettingsMainModal> settingMenuData = [
     icon: Icons.archive_outlined,
     link: AppRoutes.archivedChats,
   ),
+  SettingsMainModal(
+    name: "Help & Support",
+    description: "Contact us, report issues or bugs",
+    icon: Icons.support_agent_outlined,
+    link: "support_sheet",
+  ),
 ];
